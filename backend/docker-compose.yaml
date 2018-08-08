@@ -1,0 +1,29 @@
+version: '3.1'
+
+services:
+
+  smithy-db:
+    image: postgres:10.4
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: example
+      POSTGRES_DB: fortress
+
+    ports:
+      - 5432:5432
+
+  smithy-db-test:
+    image: postgres:10.4
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: example
+      POSTGRES_DB: test
+
+    ports:
+      - 5439:5432
+
+  smithy-adminer:
+    image: adminer
+    restart: always
+    ports:
+      - 8080:8080

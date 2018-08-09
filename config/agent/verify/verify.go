@@ -1,8 +1,8 @@
 package verify
 
 import (
-	agentConfig "github.com/dwarvesf/smithy/backend/config/agent"
-	"github.com/dwarvesf/smithy/backend/config/database"
+	agentConfig "github.com/dwarvesf/smithy/config/agent"
+	"github.com/dwarvesf/smithy/config/database"
 )
 
 // Verifier interface for verify agent model_list config

@@ -8,9 +8,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/dwarvesf/smithy/backend/config"
-	dashboardConfig "github.com/dwarvesf/smithy/backend/config/dashboard"
-	dashboardHandler "github.com/dwarvesf/smithy/backend/handler/dashboard"
+	"github.com/dwarvesf/smithy/config"
+	dashboardConfig "github.com/dwarvesf/smithy/config/dashboard"
+	dashboardHandler "github.com/dwarvesf/smithy/handler/dashboard"
 	"github.com/go-chi/chi"
 )
 

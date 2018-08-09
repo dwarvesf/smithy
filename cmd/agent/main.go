@@ -8,10 +8,10 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/dwarvesf/smithy/backend/config"
-	agentConfig "github.com/dwarvesf/smithy/backend/config/agent"
-	"github.com/dwarvesf/smithy/backend/config/agent/automigrate"
-	"github.com/dwarvesf/smithy/backend/handler/agent"
+	"github.com/dwarvesf/smithy/config"
+	agentConfig "github.com/dwarvesf/smithy/config/agent"
+	"github.com/dwarvesf/smithy/config/agent/automigrate"
+	"github.com/dwarvesf/smithy/handler/agent"
 	"github.com/go-chi/chi"
 )
 

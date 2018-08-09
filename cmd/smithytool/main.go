@@ -5,9 +5,9 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/dwarvesf/smithy/backend/config"
-	agentConfig "github.com/dwarvesf/smithy/backend/config/agent"
-	"github.com/dwarvesf/smithy/backend/config/agent/automigrate"
+	"github.com/dwarvesf/smithy/config"
+	agentConfig "github.com/dwarvesf/smithy/config/agent"
+	"github.com/dwarvesf/smithy/config/agent/automigrate"
 )
 
 func main() {

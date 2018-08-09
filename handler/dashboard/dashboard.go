@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/dwarvesf/smithy/backend/config/dashboard"
-	"github.com/dwarvesf/smithy/backend/handler/common"
+	"github.com/dwarvesf/smithy/config/dashboard"
+	"github.com/dwarvesf/smithy/handler/common"
 )
 
 // Handler handler for dashboard

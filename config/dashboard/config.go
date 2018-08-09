@@ -10,8 +10,8 @@ import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 
-	"github.com/dwarvesf/smithy/backend/config/agent"
-	"github.com/dwarvesf/smithy/backend/config/database"
+	"github.com/dwarvesf/smithy/config/agent"
+	"github.com/dwarvesf/smithy/config/database"
 )
 
 // Config contain config for agent

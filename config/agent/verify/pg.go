@@ -3,8 +3,8 @@ package verify
 import (
 	"fmt"
 
-	agentConfig "github.com/dwarvesf/smithy/backend/config/agent"
-	"github.com/dwarvesf/smithy/backend/config/database"
+	agentConfig "github.com/dwarvesf/smithy/config/agent"
+	"github.com/dwarvesf/smithy/config/database"
 	"github.com/jinzhu/gorm"
 )
 

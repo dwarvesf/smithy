@@ -5,9 +5,9 @@ import (
 
 	"github.com/jinzhu/gorm"
 
-	agentConfig "github.com/dwarvesf/smithy/backend/config/agent"
-	"github.com/dwarvesf/smithy/backend/config/agent/verify"
-	"github.com/dwarvesf/smithy/backend/config/database"
+	agentConfig "github.com/dwarvesf/smithy/config/agent"
+	"github.com/dwarvesf/smithy/config/agent/verify"
+	"github.com/dwarvesf/smithy/config/database"
 )
 
 // AutoMigrater interface for automigrate implement

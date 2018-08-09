@@ -1,7 +1,7 @@
 package config
 
 import (
-	"github.com/dwarvesf/smithy/backend/config/dashboard"
+	"github.com/dwarvesf/smithy/config/dashboard"
 )
 
 // NewDashboardConfig check dashboard config is correct

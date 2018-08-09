@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/dwarvesf/smithy/backend/config/agent"
-	"github.com/dwarvesf/smithy/backend/handler/common"
+	"github.com/dwarvesf/smithy/config/agent"
+	"github.com/dwarvesf/smithy/handler/common"
 )
 
 // NewAgentHandler return handler for expose metadata, connection for dashboard

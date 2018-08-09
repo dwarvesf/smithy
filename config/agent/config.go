@@ -3,7 +3,7 @@ package agent
 import (
 	"fmt"
 
-	"github.com/dwarvesf/smithy/backend/config/database"
+	"github.com/dwarvesf/smithy/config/database"
 )
 
 // Config contain config for agent

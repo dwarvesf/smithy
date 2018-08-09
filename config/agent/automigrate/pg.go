@@ -6,7 +6,7 @@ import (
 
 	"github.com/jinzhu/gorm"
 
-	agentConfig "github.com/dwarvesf/smithy/backend/config/agent"
+	agentConfig "github.com/dwarvesf/smithy/config/agent"
 )
 
 type pgStore struct {

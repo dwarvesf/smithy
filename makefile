@@ -3,8 +3,7 @@
 build:
 	go build -o bin/agent ./cmd/agent
 	go build -o bin/dashboard ./cmd/backend
-	go build -o bin/smithytool ./cmd/smithytool
-
+	go build -o bin/smithy ./cmd/smithy
 
 up-agent:
 	go build -o bin/agent ./cmd/agent

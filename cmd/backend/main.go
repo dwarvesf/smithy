@@ -9,6 +9,7 @@ import (
 	"syscall"
 
 	"github.com/go-chi/chi"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
 
 	"github.com/dwarvesf/smithy/backend"
 	backendConfig "github.com/dwarvesf/smithy/backend/config"

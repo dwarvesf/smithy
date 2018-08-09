@@ -17,7 +17,7 @@ func NewConfig(r agentConfig.Reader) (*agentConfig.Config, error) {
 	}
 
 	if cfg.VerifyConfig {
-		err = checkAgentConfig(cfg)
+		err = checkConfig(cfg)
 		if err != nil {
 			return nil, err
 		}
@@ -26,8 +26,8 @@ func NewConfig(r agentConfig.Reader) (*agentConfig.Config, error) {
 	return cfg, nil
 }
 
-// checkAgentConfig check agent config is correct
-func checkAgentConfig(c *agentConfig.Config) error {
+// checkConfig check agent config is correct
+func checkConfig(c *agentConfig.Config) error {
 	return checkModelList(c)
 }
 

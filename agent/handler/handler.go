@@ -5,20 +5,20 @@ import (
 	"net/http"
 
 	agentConfig "github.com/dwarvesf/smithy/agent/config"
-	"github.com/dwarvesf/smithy/handler/common"
+	handlerCommon "github.com/dwarvesf/smithy/common/handler"
 )
 
 // Expose return handler for expose metadata, connection for dashboard
 func Expose(cfg *agentConfig.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") != cfg.SerectKey {
-			common.EncodeJSONError(errorMissingAuth{}, w)
+			handlerCommon.EncodeJSONError(errorMissingAuth{}, w)
 			return
 		}
 
 		err := encodeAgentConfig(w, cfg)
 		if err != nil {
-			common.EncodeJSONError(err, w)
+			handlerCommon.EncodeJSONError(err, w)
 			return
 		}
 	}

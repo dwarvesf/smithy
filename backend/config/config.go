@@ -1,4 +1,4 @@
-package dashboard
+package config
 
 import (
 	"encoding/json"
@@ -8,13 +8,12 @@ import (
 
 	"github.com/boltdb/bolt"
 	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/postgres"
 
-	"github.com/dwarvesf/smithy/config/agent"
-	"github.com/dwarvesf/smithy/config/database"
+	agentConfig "github.com/dwarvesf/smithy/agent/config"
+	"github.com/dwarvesf/smithy/common/database"
 )
 
-// Config contain config for agent
+// Config contain config for dashboard
 type Config struct {
 	SerectKey           string `yaml:"agent_serect_key"`
 	AgentURL            string `yaml:"agent_url"`
@@ -51,7 +50,7 @@ func (c Config) UpdateConfigFromAgent() error {
 	}
 	defer res.Body.Close()
 
-	agentCfg := agent.Config{}
+	agentCfg := agentConfig.Config{}
 	err = json.NewDecoder(res.Body).Decode(&agentCfg)
 	if err != nil {
 		return err
@@ -68,7 +67,7 @@ func (c Config) UpdateConfigFromAgent() error {
 }
 
 // updateDB update db connection
-func (c Config) updateDB() error {
+func (c *Config) updateDB() error {
 	c.db.Lock()
 	defer c.db.Unlock()
 
@@ -83,7 +82,7 @@ func (c Config) updateDB() error {
 }
 
 // TODO: extend for using mutiple DB
-func (c Config) openNewDBConnection() (*gorm.DB, error) {
+func (c *Config) openNewDBConnection() (*gorm.DB, error) {
 	sslmode := "disable"
 	if c.DBSSLModeOption == "enable" {
 		sslmode = "require"
@@ -106,7 +105,7 @@ type serviceDB struct {
 	*gorm.DB
 }
 
-// ConfigReader interface for reading config for agent
-type ConfigReader interface {
+// Reader interface for reading config for agent
+type Reader interface {
 	Read() (*Config, error)
 }

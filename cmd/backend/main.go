@@ -8,10 +8,11 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/dwarvesf/smithy/config"
-	dashboardConfig "github.com/dwarvesf/smithy/config/dashboard"
-	dashboardHandler "github.com/dwarvesf/smithy/handler/dashboard"
 	"github.com/go-chi/chi"
+
+	"github.com/dwarvesf/smithy/backend"
+	backendConfig "github.com/dwarvesf/smithy/backend/config"
+	backendHandler "github.com/dwarvesf/smithy/backend/handler"
 )
 
 var (
@@ -19,12 +20,12 @@ var (
 )
 
 func main() {
-	cfg, err := config.NewDashboardConfig(dashboardConfig.NewYAMLConfigReader("example_dashboard_config.yaml"))
+	cfg, err := backend.NewConfig(backendConfig.NewYAMLConfigReader("example_dashboard_config.yaml"))
 	if err != nil {
 		panic(err)
 	}
 
-	h := dashboardHandler.NewDashboardHandler(cfg)
+	h := backendHandler.NewHandler(cfg)
 
 	r := chi.NewRouter()
 

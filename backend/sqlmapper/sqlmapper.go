@@ -3,13 +3,41 @@ package sqlmapper
 import (
 	"database/sql"
 	"encoding/json"
+	"strings"
 
 	"github.com/dwarvesf/smithy/common/database"
 )
 
 // Mapper interface for mapping query from sql to corresponding database engine
 type Mapper interface {
+	Create(d RowData) ([]byte, error)
 	FindAll() ([]byte, error)
+	FindByID(id int) ([]byte, error)
+}
+
+// Columns return columns listed in RowData
+func (r RowData) Columns() []string {
+	tmp := []string{}
+	for colName := range r {
+		tmp = append(tmp, colName)
+	}
+
+	return tmp
+}
+
+// ColumnsString return columns listed in RowData in string
+func (r RowData) ColumnsString() string {
+	return strings.Join(r.Columns(), ", ")
+}
+
+// Datas return columns listed in RowData
+func (r RowData) Data() []interface{} {
+	res := []interface{}{}
+	for _, colname := range r.Columns() {
+		data := r[colname]
+		res = append(res, data.Data)
+	}
+	return res
 }
 
 // ColData hold data of a column
@@ -43,7 +71,7 @@ func makeRowDataSet(columns []database.Column) RowData {
 
 // RowsToQueryResults rows to query results
 func RowsToQueryResults(rows *sql.Rows, coldefs []database.Column) (QueryResults, error) {
-	cols, _ := rows.Columns()
+	cols := database.Columns(coldefs).Names()
 	res := []RowData{}
 	for rows.Next() {
 		columns := make([]interface{}, len(cols))

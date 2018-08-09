@@ -3,9 +3,10 @@ package verify
 import (
 	"fmt"
 
-	agentConfig "github.com/dwarvesf/smithy/backend/config/agent"
-	"github.com/dwarvesf/smithy/backend/config/database"
 	"github.com/jinzhu/gorm"
+
+	agentConfig "github.com/dwarvesf/smithy/agent/config"
+	"github.com/dwarvesf/smithy/common/database"
 )
 
 type pgStore struct {

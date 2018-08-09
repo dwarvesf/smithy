@@ -1,20 +1,20 @@
-package dashboard
+package handler
 
 import (
 	"fmt"
 	"net/http"
 
-	"github.com/dwarvesf/smithy/backend/config/dashboard"
-	"github.com/dwarvesf/smithy/backend/handler/common"
+	backendConfig "github.com/dwarvesf/smithy/backend/config"
+	handlerCommon "github.com/dwarvesf/smithy/common/handler"
 )
 
 // Handler handler for dashboard
 type Handler struct {
-	Config *dashboard.Config
+	Config *backendConfig.Config
 }
 
-// NewDashboardHandler new dashboard handler
-func NewDashboardHandler(cfg *dashboard.Config) *Handler {
+// NewHandler new dashboard handler
+func NewHandler(cfg *backendConfig.Config) *Handler {
 	return &Handler{cfg}
 }
 
@@ -23,7 +23,7 @@ func (h *Handler) NewUpdateConfigFromAgent() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := h.Config.UpdateConfigFromAgent()
 		if err != nil {
-			common.EncodeJSONError(err, w)
+			handlerCommon.EncodeJSONError(err, w)
 			return
 		}
 

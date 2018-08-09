@@ -1,22 +1,23 @@
-package config
+package agent
 
 import (
 	"fmt"
 
-	"github.com/dwarvesf/smithy/backend/config/agent"
-	"github.com/dwarvesf/smithy/backend/config/agent/verify"
 	"github.com/jinzhu/gorm"
+
+	agentConfig "github.com/dwarvesf/smithy/agent/config"
+	"github.com/dwarvesf/smithy/agent/verify"
 )
 
-// NewAgentConfig get agent config
-func NewAgentConfig(r agent.ConfigReader) (*agent.Config, error) {
+// NewConfig get agent config from reader
+func NewConfig(r agentConfig.Reader) (*agentConfig.Config, error) {
 	cfg, err := r.Read()
 	if err != nil {
 		return nil, err
 	}
 
 	if cfg.VerifyConfig {
-		err = checkAgentConfig(cfg)
+		err = checkConfig(cfg)
 		if err != nil {
 			return nil, err
 		}
@@ -25,12 +26,12 @@ func NewAgentConfig(r agent.ConfigReader) (*agent.Config, error) {
 	return cfg, nil
 }
 
-// checkAgentConfig check agent config is correct
-func checkAgentConfig(c *agent.Config) error {
+// checkConfig check agent config is correct
+func checkConfig(c *agentConfig.Config) error {
 	return checkModelList(c)
 }
 
-func checkModelList(c *agent.Config) error {
+func checkModelList(c *agentConfig.Config) error {
 	switch c.DBType {
 	case "postgres":
 		return checkModelListPG(c)
@@ -39,7 +40,7 @@ func checkModelList(c *agent.Config) error {
 	}
 }
 
-func checkModelListPG(c *agent.Config) error {
+func checkModelListPG(c *agentConfig.Config) error {
 	db, err := gorm.Open("postgres", c.DBConnectionString())
 	if err != nil {
 		return err

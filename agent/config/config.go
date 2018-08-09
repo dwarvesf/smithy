@@ -1,9 +1,9 @@
-package agent
+package config
 
 import (
 	"fmt"
 
-	"github.com/dwarvesf/smithy/backend/config/database"
+	"github.com/dwarvesf/smithy/common/database"
 )
 
 // Config contain config for agent
@@ -38,8 +38,8 @@ func (c Config) pgConnectionString() string {
 	)
 }
 
-// ConfigReader interface for reading config for agent
-type ConfigReader interface {
+// Reader interface for reading config for agent
+type Reader interface {
 	Read() (*Config, error)
 }
 

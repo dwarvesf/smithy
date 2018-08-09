@@ -1,4 +1,4 @@
-package agent
+package config
 
 import (
 	"io/ioutil"
@@ -11,7 +11,7 @@ type yamlReaderImpl struct {
 }
 
 // NewYAMLConfigReader .
-func NewYAMLConfigReader(file string) ConfigReader {
+func NewYAMLConfigReader(file string) Reader {
 	return yamlReaderImpl{file}
 }
 

@@ -8,11 +8,13 @@ import (
 	"os/signal"
 	"syscall"
 
-	"github.com/dwarvesf/smithy/backend/config"
-	agentConfig "github.com/dwarvesf/smithy/backend/config/agent"
-	"github.com/dwarvesf/smithy/backend/config/agent/automigrate"
-	"github.com/dwarvesf/smithy/backend/handler/agent"
 	"github.com/go-chi/chi"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
+
+	"github.com/dwarvesf/smithy/agent"
+	"github.com/dwarvesf/smithy/agent/automigrate"
+	agentConfig "github.com/dwarvesf/smithy/agent/config"
+	agentHandler "github.com/dwarvesf/smithy/agent/handler"
 )
 
 var (
@@ -20,7 +22,7 @@ var (
 )
 
 func main() {
-	cfg, err := config.NewAgentConfig(agentConfig.NewYAMLConfigReader("example_agent_config.yaml"))
+	cfg, err := agent.NewConfig(agentConfig.NewYAMLConfigReader("example_agent_config.yaml"))
 	if err != nil {
 		panic(err)
 	}
@@ -32,7 +34,7 @@ func main() {
 		panic(err)
 	}
 
-	r.Get("/agent", agent.NewAgentHandler(cfg))
+	r.Get("/agent", agentHandler.Expose(cfg))
 
 	errs := make(chan error)
 	go func() {

@@ -1,4 +1,4 @@
-package dashboard
+package config
 
 import (
 	"io/ioutil"
@@ -12,8 +12,8 @@ type yamlReaderImpl struct {
 	file string
 }
 
-// NewYAMLConfigReader .
-func NewYAMLConfigReader(file string) ConfigReader {
+// NewYAMLConfigReader reader dashboard config from front-end
+func NewYAMLConfigReader(file string) Reader {
 	return yamlReaderImpl{file}
 }
 

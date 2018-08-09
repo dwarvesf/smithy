@@ -3,16 +3,17 @@ package main
 import (
 	"log"
 
+	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/spf13/cobra"
 
-	"github.com/dwarvesf/smithy/backend/config"
-	agentConfig "github.com/dwarvesf/smithy/backend/config/agent"
-	"github.com/dwarvesf/smithy/backend/config/agent/automigrate"
+	"github.com/dwarvesf/smithy/agent"
+	"github.com/dwarvesf/smithy/agent/automigrate"
+	agentConfig "github.com/dwarvesf/smithy/agent/config"
 )
 
 func main() {
 	// TODO: remove static config file
-	cfg, err := config.NewAgentConfig(agentConfig.NewYAMLConfigReader("example_agent_config.yaml"))
+	cfg, err := agent.NewConfig(agentConfig.NewYAMLConfigReader("example_agent_config.yaml"))
 	if err != nil {
 		panic(err)
 	}
@@ -30,7 +31,7 @@ func main() {
 		},
 	}
 
-	var rootCmd = &cobra.Command{Use: "smithytool"}
+	var rootCmd = &cobra.Command{Use: "smithy"}
 	rootCmd.AddCommand(cmdAgentMigrate)
 	rootCmd.Execute()
 }

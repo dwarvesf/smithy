@@ -3,7 +3,6 @@ package sqlmapper
 import (
 	"database/sql"
 	"encoding/json"
-	"strings"
 
 	"github.com/dwarvesf/smithy/common/database"
 )
@@ -25,19 +24,16 @@ func (r RowData) Columns() []string {
 	return tmp
 }
 
-// ColumnsString return columns listed in RowData in string
-func (r RowData) ColumnsString() string {
-	return strings.Join(r.Columns(), ", ")
-}
-
-// Datas return columns listed in RowData
-func (r RowData) Data() []interface{} {
-	res := []interface{}{}
-	for _, colname := range r.Columns() {
-		data := r[colname]
-		res = append(res, data.Data)
+// ColumnsAndData return columns and data of a row_data
+func (r RowData) ColumnsAndData() ([]string, []interface{}) {
+	cols := []string{}
+	data := []interface{}{}
+	for k, v := range r {
+		cols = append(cols, k)
+		data = append(data, v.Data)
 	}
-	return res
+
+	return cols, data
 }
 
 // ColData hold data of a column

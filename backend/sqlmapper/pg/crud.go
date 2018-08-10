@@ -53,18 +53,18 @@ func (s *querier) executeFindByIDQuery(id int) (sqlmapper.QueryResult, error) {
 func (s *querier) Create(d sqlmapper.RowData) ([]byte, error) {
 	// TODO: verify column in data-set is correct, check rowData is empty, check primary key is not exist
 	db := s.db.DB()
+	cols, data := d.ColumnsAndData()
 
 	qms := []string{}
-	for i := 0; i < len(d.Data()); i++ {
+	for i := 0; i < len(cols); i++ {
 		qms = append(qms, fmt.Sprintf("$%d", i+1))
 	}
 
 	execQuery := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s) RETURNING id;",
 		s.TableName,
-		d.ColumnsString(),
+		strings.Join(cols, ","),
 		strings.Join(qms, ","))
 
-	data := d.Data()
 	res := db.QueryRow(execQuery, data...)
 
 	var id int

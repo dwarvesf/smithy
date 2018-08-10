@@ -61,7 +61,7 @@ func (h *Handler) NewCRUD() http.HandlerFunc {
 		if err != nil {
 			pp.Print(err)
 		}
-		pp.Print(buf)
+		pp.Print(string(buf))
 
 		fmt.Fprintln(w, `{"status": "success"}`)
 	}

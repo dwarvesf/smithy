@@ -31,6 +31,7 @@ func main() {
 	r := chi.NewRouter()
 
 	r.Get("/agent-sync", h.NewUpdateConfigFromAgent())
+	r.Get("/crud", h.NewCRUD()) // TODO: REMOVE THIS
 
 	errs := make(chan error)
 	go func() {

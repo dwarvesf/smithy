@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/volatiletech/sqlboiler/strmangle"
+
 	"github.com/dwarvesf/smithy/backend/sqlmapper"
 )
 
@@ -55,15 +57,12 @@ func (s *querier) Create(d sqlmapper.RowData) ([]byte, error) {
 	db := s.db.DB()
 	cols, data := d.ColumnsAndData()
 
-	qms := []string{}
-	for i := 0; i < len(cols); i++ {
-		qms = append(qms, fmt.Sprintf("$%d", i+1))
-	}
+	phs := strmangle.Placeholders(true, len(cols), 1, 1)
 
 	execQuery := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s) RETURNING id;",
 		s.TableName,
 		strings.Join(cols, ","),
-		strings.Join(qms, ","))
+		phs)
 
 	res := db.QueryRow(execQuery, data...)
 

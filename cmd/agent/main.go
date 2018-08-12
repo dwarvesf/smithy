@@ -12,9 +12,8 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 
 	"github.com/dwarvesf/smithy/agent"
-	"github.com/dwarvesf/smithy/agent/automigrate"
-	agentConfig "github.com/dwarvesf/smithy/agent/config"
-	agentHandler "github.com/dwarvesf/smithy/agent/handler"
+	"github.com/dwarvesf/smithy/agent/config"
+	"github.com/dwarvesf/smithy/agent/handler"
 )
 
 var (
@@ -22,19 +21,19 @@ var (
 )
 
 func main() {
-	cfg, err := agent.NewConfig(agentConfig.NewYAMLConfigReader("example_agent_config.yaml"))
+	cfg, err := agent.NewConfig(config.ReadYAML("example_agent_config.yaml"))
 	if err != nil {
 		panic(err)
 	}
 
 	r := chi.NewRouter()
 
-	err = automigrate.AutoMigrate(cfg)
+	err = agent.AutoMigrate(cfg)
 	if err != nil {
 		panic(err)
 	}
 
-	r.Get("/agent", agentHandler.Expose(cfg))
+	r.Get("/agent", handler.Expose(cfg))
 
 	errs := make(chan error)
 	go func() {

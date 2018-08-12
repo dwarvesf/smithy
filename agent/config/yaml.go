@@ -10,8 +10,8 @@ type yamlReaderImpl struct {
 	file string
 }
 
-// NewYAMLConfigReader .
-func NewYAMLConfigReader(file string) Reader {
+// ReadYAML .
+func ReadYAML(file string) Reader {
 	return yamlReaderImpl{file}
 }
 

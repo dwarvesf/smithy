@@ -1,16 +1,33 @@
-package pg
+package drivers
 
 import (
 	"encoding/json"
 	"fmt"
 	"strings"
 
+	"github.com/jinzhu/gorm"
 	"github.com/volatiletech/sqlboiler/strmangle"
 
 	"github.com/dwarvesf/smithy/backend/sqlmapper"
+	"github.com/dwarvesf/smithy/common/database"
 )
 
-func (s *querier) FindAll() ([]byte, error) {
+type pgStore struct {
+	db        *gorm.DB
+	TableName string
+	Columns   []database.Column
+}
+
+func (s *pgStore) columnNames() string {
+	return strings.Join(database.Columns(s.Columns).Names(), ",")
+}
+
+// NewPGStore .
+func NewPGStore(db *gorm.DB, tableName string, columns []database.Column) sqlmapper.Mapper {
+	return &pgStore{db, tableName, columns}
+}
+
+func (s *pgStore) FindAll() ([]byte, error) {
 	rs, err := s.executeFindAllQuery()
 	if err != nil {
 		return nil, err
@@ -24,7 +41,7 @@ func (s *querier) FindAll() ([]byte, error) {
 	return buf, nil
 }
 
-func (s *querier) executeFindAllQuery() (sqlmapper.QueryResults, error) {
+func (s *pgStore) executeFindAllQuery() (sqlmapper.QueryResults, error) {
 	rows, err := s.db.Table(s.TableName).Select(s.columnNames()).Rows()
 	defer rows.Close()
 	if err != nil {
@@ -33,7 +50,7 @@ func (s *querier) executeFindAllQuery() (sqlmapper.QueryResults, error) {
 	return sqlmapper.RowsToQueryResults(rows, s.Columns)
 }
 
-func (s *querier) FindByID(id int) ([]byte, error) {
+func (s *pgStore) FindByID(id int) ([]byte, error) {
 	rs, err := s.executeFindByIDQuery(id)
 	if err != nil {
 		return nil, err
@@ -47,12 +64,12 @@ func (s *querier) FindByID(id int) ([]byte, error) {
 	return buf, nil
 }
 
-func (s *querier) executeFindByIDQuery(id int) (sqlmapper.QueryResult, error) {
+func (s *pgStore) executeFindByIDQuery(id int) (sqlmapper.QueryResult, error) {
 	row := s.db.Table(s.TableName).Select(s.columnNames()).Where("id = ?", id).Row()
 	return sqlmapper.RowToQueryResult(row, s.Columns)
 }
 
-func (s *querier) Create(d sqlmapper.RowData) ([]byte, error) {
+func (s *pgStore) Create(d sqlmapper.RowData) ([]byte, error) {
 	// TODO: verify column in data-set is correct, check rowData is empty, check primary key is not exist
 	db := s.db.DB()
 	cols, data := d.ColumnsAndData()

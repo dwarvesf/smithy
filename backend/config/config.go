@@ -13,6 +13,11 @@ import (
 	"github.com/dwarvesf/smithy/common/database"
 )
 
+// Reader interface for reading config for agent
+type Reader interface {
+	Read() (*Config, error)
+}
+
 // Config contain config for dashboard
 type Config struct {
 	SerectKey           string `yaml:"agent_serect_key"`
@@ -103,9 +108,4 @@ func (c *Config) openNewDBConnection() (*gorm.DB, error) {
 type serviceDB struct {
 	sync.Mutex
 	*gorm.DB
-}
-
-// Reader interface for reading config for agent
-type Reader interface {
-	Read() (*Config, error)
 }

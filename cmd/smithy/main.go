@@ -7,13 +7,12 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/dwarvesf/smithy/agent"
-	"github.com/dwarvesf/smithy/agent/automigrate"
 	agentConfig "github.com/dwarvesf/smithy/agent/config"
 )
 
 func main() {
 	// TODO: remove static config file
-	cfg, err := agent.NewConfig(agentConfig.NewYAMLConfigReader("example_agent_config.yaml"))
+	cfg, err := agent.NewConfig(agentConfig.ReadYAML("example_agent_config.yaml"))
 	if err != nil {
 		panic(err)
 	}
@@ -24,7 +23,7 @@ func main() {
 		Long:  `agent-migrate migrate missing columns, tables described in config file`,
 		Args:  cobra.MinimumNArgs(0),
 		Run: func(cmd *cobra.Command, args []string) {
-			err = automigrate.AutoMigrate(cfg)
+			err = agent.AutoMigrate(cfg)
 			if err != nil {
 				log.Fatalln(err)
 			}

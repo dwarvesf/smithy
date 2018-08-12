@@ -6,6 +6,11 @@ import (
 	"github.com/dwarvesf/smithy/common/database"
 )
 
+// Reader interface for reading config for agent
+type Reader interface {
+	Read() (*Config, error)
+}
+
 // Config contain config for agent
 type Config struct {
 	SerectKey               string `yaml:"serect_key" json:"-"`
@@ -36,11 +41,6 @@ func (c Config) pgConnectionString() string {
 		c.DBHostname,
 		c.DBPort,
 	)
-}
-
-// Reader interface for reading config for agent
-type Reader interface {
-	Read() (*Config, error)
 }
 
 // ExistingColumnByTableName list of existing column_schema in database

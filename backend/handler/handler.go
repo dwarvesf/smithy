@@ -6,7 +6,7 @@ import (
 
 	backendConfig "github.com/dwarvesf/smithy/backend/config"
 	"github.com/dwarvesf/smithy/backend/sqlmapper"
-	pgMapper "github.com/dwarvesf/smithy/backend/sqlmapper/pg"
+	"github.com/dwarvesf/smithy/backend/sqlmapper/drivers"
 	"github.com/dwarvesf/smithy/common/database"
 	handlerCommon "github.com/dwarvesf/smithy/common/handler"
 	"github.com/k0kubun/pp"
@@ -40,8 +40,7 @@ func (h *Handler) NewUpdateConfigFromAgent() http.HandlerFunc {
 // TODO: REMOVE and UPDATE FOR TMP ONLY
 func (h *Handler) NewCRUD() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-
-		buf, err := pgMapper.NewQuerier(h.Config.GetDB(), "users", []database.Column{
+		buf, err := drivers.NewPGStore(h.Config.GetDB(), "users", []database.Column{
 			{
 				Name: "id",
 				Type: "int",

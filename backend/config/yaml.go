@@ -12,8 +12,8 @@ type yamlReaderImpl struct {
 	file string
 }
 
-// NewYAMLConfigReader reader dashboard config from front-end
-func NewYAMLConfigReader(file string) Reader {
+// ReadYAML reader dashboard config from front-end
+func ReadYAML(file string) Reader {
 	return yamlReaderImpl{file}
 }
 

@@ -21,7 +21,7 @@ var (
 )
 
 func main() {
-	cfg, err := backend.NewConfig(backendConfig.NewYAMLConfigReader("example_dashboard_config.yaml"))
+	cfg, err := backend.NewConfig(backendConfig.ReadYAML("example_dashboard_config.yaml"))
 	if err != nil {
 		panic(err)
 	}
@@ -31,6 +31,7 @@ func main() {
 	r := chi.NewRouter()
 
 	r.Get("/agent-sync", h.NewUpdateConfigFromAgent())
+	r.Get("/crud", h.NewCRUD()) // TODO: REMOVE THIS
 
 	errs := make(chan error)
 	go func() {

@@ -6,7 +6,8 @@ import (
 	"github.com/jinzhu/gorm"
 
 	agentConfig "github.com/dwarvesf/smithy/agent/config"
-	"github.com/dwarvesf/smithy/agent/verify"
+	"github.com/dwarvesf/smithy/agent/dbtool/drivers"
+	"github.com/dwarvesf/smithy/common/database"
 )
 
 // NewConfig get agent config from reader
@@ -46,5 +47,42 @@ func checkModelListPG(c *agentConfig.Config) error {
 		return err
 	}
 
-	return verify.NewPGStore(c.DBName, c.DBSchemaName, db).Verify(c.ModelList)
+	return drivers.NewPGStore(c.DBName, c.DBSchemaName, db).Verify(c.ModelList)
+}
+
+// AutoMigrate using config to auto migrate missing columns and table
+func AutoMigrate(cfg *agentConfig.Config) error {
+	switch cfg.DBType {
+	case "postgres":
+		return autoMigrationPG(cfg)
+	default:
+		return fmt.Errorf("using not support database type: %s", cfg.DBType)
+	}
+}
+
+func autoMigrationPG(cfg *agentConfig.Config) error {
+	db, err := gorm.Open("postgres", cfg.DBConnectionString())
+	if err != nil {
+		return err
+	}
+
+	models := []database.Model{}
+	for _, m := range cfg.ModelList {
+		if m.AutoMigration {
+			models = append(models, m)
+		}
+	}
+
+	s := drivers.NewPGStore(cfg.DBName, cfg.DBSchemaName, db)
+	missmap, err := s.MissingColumns(models)
+	if err != nil {
+		return err
+	}
+
+	err = s.AutoMigrate(missmap)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

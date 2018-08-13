@@ -29,19 +29,29 @@ type Config struct {
 	PersistenceDB           *bolt.DB
 	database.ConnectionInfo `yaml:"-"`
 	ModelList               []database.Model `yaml:"-"`
-	db                      *serviceDB
+	db                      *gorm.DB
+
+	sync.Mutex
 }
 
-// GetDB get db connection from config
-func (c Config) GetDB() *gorm.DB {
-	c.db.Lock()
-	defer c.db.Unlock()
+// DB get db connection from config
+func (c *Config) DB() *gorm.DB {
+	return c.db
+}
 
-	return c.db.DB
+// Config get synchronization config
+func (c *Config) Config() *Config {
+	c.Lock()
+	defer c.Unlock()
+	return c
 }
 
 // UpdateConfigFromAgent update configuration from agent
-func (c Config) UpdateConfigFromAgent() error {
+func (c *Config) UpdateConfigFromAgent() error {
+	// check config was enable
+	c.Lock()
+	defer c.Unlock()
+
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", c.AgentURL, nil)
 	if err != nil {
@@ -73,15 +83,12 @@ func (c Config) UpdateConfigFromAgent() error {
 
 // updateDB update db connection
 func (c *Config) updateDB() error {
-	c.db.Lock()
-	defer c.db.Unlock()
-
 	newDB, err := c.openNewDBConnection()
 	if err != nil {
 		// TODO: add nicer error
 		return err
 	}
-	c.db.DB = newDB
+	c.db = newDB
 
 	return nil
 }
@@ -103,9 +110,4 @@ func (c *Config) openNewDBConnection() (*gorm.DB, error) {
 	)
 
 	return gorm.Open("postgres", dbstring)
-}
-
-type serviceDB struct {
-	sync.Mutex
-	*gorm.DB
 }

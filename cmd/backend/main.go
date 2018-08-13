@@ -32,6 +32,8 @@ func main() {
 
 	r.Get("/agent-sync", h.NewUpdateConfigFromAgent())
 	r.Get("/crud", h.NewCRUD()) // TODO: REMOVE THIS
+	r.Get("/query", h.Query())  // TODO: REMOVE THIS
+	r.Post("/query", h.Query()) // TODO: REMOVE THIS
 
 	errs := make(chan error)
 	go func() {

@@ -2,6 +2,7 @@ package drivers
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -170,4 +171,34 @@ func (s *pgStore) FindByColumnName(columnName string, value string, offset int, 
 	}
 
 	return sqlmapper.RowsToQueryResults(rows, s.Columns)
+}
+
+func (s *pgStore) Update(d sqlmapper.RowData, rowID string) ([]byte, error) {
+	// TODO: verify column in data-set is correct, check rowData is empty, check primary key is not exist
+	db := s.db.DB()
+	cols, data := d.ColumnsAndData()
+
+	rowQuery := make([]string, len(cols))
+
+	for i := 0; i < len(cols); i++ {
+		rowQuery[i] = fmt.Sprintf("%s = $%d", cols[i], i+1)
+	}
+
+	execQuery := fmt.Sprintf("UPDATE %s SET %s WHERE id = %s RETURNING id;",
+		s.TableName,
+		strings.Join(rowQuery, ","),
+		rowID)
+
+	res := db.QueryRow(execQuery, data...)
+
+	var id int
+	err := res.Scan(&id)
+	if err != nil {
+		return nil, err
+	}
+
+	// update id if create success
+	d["id"] = sqlmapper.ColData{Data: id}
+
+	return json.Marshal(d)
 }

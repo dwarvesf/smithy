@@ -12,6 +12,7 @@ type Mapper interface {
 	Create(d RowData) ([]byte, error)
 	FindAll() ([]byte, error)
 	FindByID(id int) ([]byte, error)
+	FindByColumnName(columnNames string, value string) ([]byte, error)
 }
 
 // Columns return columns listed in RowData

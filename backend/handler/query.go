@@ -2,7 +2,6 @@ package handler
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -12,11 +11,10 @@ import (
 	"github.com/dwarvesf/smithy/backend"
 	"github.com/dwarvesf/smithy/common/database"
 	handlerCommon "github.com/dwarvesf/smithy/common/handler"
-
-	"github.com/k0kubun/pp"
 )
 
 // QueryRequest request for query data
+// TODO: verify query request query data for matching with each find
 type QueryRequest struct {
 	Method    string   `json:"method" schema:"method,required"`
 	TableName string   `json:"table_name" schema:"table_name,required"`
@@ -70,8 +68,8 @@ func (h *Handler) Query() http.HandlerFunc {
 		var buf []byte
 		switch qr.Method {
 		case "FindByID":
-			id, err := strconv.Atoi(qr.QueryData)
-			if err != nil {
+			var id int
+			if id, err = strconv.Atoi(qr.QueryData); err != nil {
 				handlerCommon.EncodeJSONError(err, w)
 				return
 			}
@@ -88,8 +86,6 @@ func (h *Handler) Query() http.HandlerFunc {
 			return
 		}
 
-		pp.Print(string(buf))
-
-		fmt.Fprintln(w, `{"status": "success"}`)
+		handlerCommon.EncodeJSONSuccess(buf, w)
 	}
 }

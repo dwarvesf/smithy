@@ -2,14 +2,15 @@ package drivers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
-	"github.com/jinzhu/gorm"
-	"github.com/volatiletech/sqlboiler/strmangle"
-
+	backendConfig "github.com/dwarvesf/smithy/backend/config"
 	"github.com/dwarvesf/smithy/backend/sqlmapper"
 	"github.com/dwarvesf/smithy/common/database"
+	"github.com/jinzhu/gorm"
+	"github.com/volatiletech/sqlboiler/strmangle"
 )
 
 type pgStore struct {
@@ -71,6 +72,10 @@ func (s *pgStore) executeFindByIDQuery(id int) (sqlmapper.QueryResult, error) {
 
 func (s *pgStore) Create(d sqlmapper.RowData) ([]byte, error) {
 	// TODO: verify column in data-set is correct, check rowData is empty, check primary key is not exist
+	if err := verifyCreate(&d, s); err != nil {
+		return nil, err
+	}
+
 	db := s.db.DB()
 	cols, data := d.ColumnsAndData()
 
@@ -93,4 +98,59 @@ func (s *pgStore) Create(d sqlmapper.RowData) ([]byte, error) {
 	d["id"] = sqlmapper.ColData{Data: id}
 
 	return json.Marshal(d)
+}
+
+func verifyCreate(d *sqlmapper.RowData, s *pgStore) error {
+	// name data_type nullable primary_key
+	tableNotExist := true
+	for _, table := range backendConfig.AgentConfig.ModelList {
+		if table.TableName == s.TableName {
+			// table existed
+			tableNotExist = false
+
+			cols, _ := d.ColumnsAndData()
+
+			// create field valid
+			for _, column := range table.Columns {
+				if column.Name == "id" {
+					continue
+				}
+				if !column.IsNullable || column.IsPrimary {
+					err := true
+					for _, name := range cols {
+						if name == column.Name {
+							err = false
+						}
+					}
+					if err {
+						errMess := fmt.Sprintf("%s is Obligated", column.Name)
+						return errors.New(errMess)
+					}
+				}
+			}
+
+			// field invalid
+			for _, name := range cols {
+				err := true
+				for _, column := range table.Columns {
+					if name == column.Name {
+						err = false
+					}
+				}
+
+				if err {
+					errMess := fmt.Sprintf("field %s in valid", name)
+					return errors.New(errMess)
+				}
+			}
+
+			break
+		}
+	}
+
+	if tableNotExist {
+		return errors.New("Table have existed yet")
+	}
+
+	return nil
 }

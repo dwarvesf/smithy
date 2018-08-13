@@ -35,6 +35,8 @@ func (h *Handler) NewUpdateConfigFromAgent() http.HandlerFunc {
 	}
 }
 
+// check
+
 // NewCRUD .
 // FIXME: REMOVE
 // TODO: REMOVE and UPDATE FOR TMP ONLY
@@ -53,12 +55,19 @@ func (h *Handler) NewCRUD() http.HandlerFunc {
 				Name: "age",
 				Type: "int",
 			},
+			{
+				Name: "meow",
+				Type: "string",
+			},
 		}).Create(map[string]sqlmapper.ColData{
 			"name": sqlmapper.ColData{Name: "name", Data: "hieu"},
 			"age":  sqlmapper.ColData{Name: "name", Data: 26},
+			"meow": sqlmapper.ColData{Name: "name", Data: "132"},
 		})
 		if err != nil {
+			fmt.Fprintln(w, `{"status": "failure"}`)
 			pp.Print(err)
+			return
 		}
 		pp.Print(string(buf))
 

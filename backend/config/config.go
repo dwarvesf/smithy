@@ -13,6 +13,9 @@ import (
 	"github.com/dwarvesf/smithy/common/database"
 )
 
+// AgentConfig store global client's config
+var AgentConfig agentConfig.Config
+
 // Reader interface for reading config for agent
 type Reader interface {
 	Read() (*Config, error)
@@ -47,6 +50,7 @@ func (c Config) UpdateConfigFromAgent() error {
 	if err != nil {
 		return err
 	}
+
 	req.Header.Set("Authorization", c.SerectKey)
 
 	res, err := client.Do(req)
@@ -57,13 +61,18 @@ func (c Config) UpdateConfigFromAgent() error {
 
 	agentCfg := agentConfig.Config{}
 	err = json.NewDecoder(res.Body).Decode(&agentCfg)
+
 	if err != nil {
 		return err
 	}
 
+	// store agent config to global
+	AgentConfig = agentCfg
+
 	c.ConnectionInfo = agentCfg.ConnectionInfo
 	c.ModelList = agentCfg.ModelList
 	err = c.updateDB()
+
 	if err != nil {
 		return err
 	}

@@ -130,3 +130,10 @@ func (r QueryResult) MarshalJSON() ([]byte, error) {
 
 	return json.Marshal(res)
 }
+
+type RequestFindBy struct {
+	ColumnName string
+	Value      string
+	Offset     int `default:"0"`
+	Limit      int `default:"0"`
+}

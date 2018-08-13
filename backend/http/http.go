@@ -54,7 +54,7 @@ func NewHTTPHandler(endpoints endpoints.Endpoints,
 		options...,
 	).ServeHTTP)
 
-	r.Post("/query", httptransport.NewServer(
+	r.Post("/query", httptransport.NewServer( // Post query for case a query have more than 2048 character
 		endpoints.DBQuery,
 		decodeDBQueryRequest,
 		httptransport.EncodeJSONResponse,

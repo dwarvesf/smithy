@@ -31,7 +31,12 @@ func main() {
 	r := chi.NewRouter()
 
 	r.Get("/agent-sync", h.NewUpdateConfigFromAgent())
-	r.Get("/crud", h.NewCRUD()) // TODO: REMOVE THIS
+	// Query
+	r.Get("/query", h.Query())
+	r.Post("/query", h.Query()) // Post query for query parameter longer than 2048 character
+
+	// Create
+	r.Post("/create", h.Create())
 
 	errs := make(chan error)
 	go func() {

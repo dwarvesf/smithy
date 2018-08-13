@@ -39,9 +39,9 @@ func (r RowData) ColumnsAndData() ([]string, []interface{}) {
 
 // ColData hold data of a column
 type ColData struct {
-	Name     string
-	Data     interface{}
-	DataType string
+	Name     string      `json:"name"`
+	Data     interface{} `json:"data"`
+	DataType string      `json:"data_type"`
 }
 
 // RowData hold data of a row

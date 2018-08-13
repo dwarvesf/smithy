@@ -2,6 +2,7 @@ package handler
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 )
 
@@ -26,4 +27,14 @@ func EncodeJSONError(err error, w http.ResponseWriter) {
 	json.NewEncoder(w).Encode(map[string]interface{}{
 		"error": err.Error(),
 	})
+}
+
+// EncodeJSONSuccess response bytes data for success
+func EncodeJSONSuccess(buf []byte, w http.ResponseWriter) {
+	if len(buf) == 0 && string(buf) == "[]" {
+		fmt.Fprintln(w, `{"status": "success"}`)
+		return
+	}
+
+	fmt.Fprintln(w, `{"status": "success", "data": `+string(buf)+`}`)
 }

@@ -26,12 +26,31 @@ func NewPGStore(db *gorm.DB, tableName string, columns []database.Column) sqlmap
 	return &pgStore{db, tableName, columns}
 }
 
+<<<<<<< HEAD
 func (s *pgStore) FindAll() ([]sqlmapper.RowData, error) {
 	return s.executeFindAllQuery()
+=======
+func (s *pgStore) FindAll(request sqlmapper.RequestFindAll) ([]byte, error) {
+	rs, err := s.executeFindAllQuery(request)
+	if err != nil {
+		return nil, err
+	}
+
+	buf, err := json.Marshal(rs)
+	if err != nil {
+		return nil, err
+	}
+
+	return buf, nil
+>>>>>>> add offset, limit to FindAll
 }
 
-func (s *pgStore) executeFindAllQuery() (sqlmapper.QueryResults, error) {
-	rows, err := s.db.Table(s.TableName).Select(s.columnNames()).Rows()
+func (s *pgStore) executeFindAllQuery(request sqlmapper.RequestFindAll) (sqlmapper.QueryResults, error) {
+	rows, err := s.db.Table(s.TableName).
+		Select(s.columnNames()).
+		Offset(request.Offset).
+		Limit(request.Limit).
+		Rows()
 	defer rows.Close()
 	if err != nil {
 		return nil, err

@@ -9,10 +9,17 @@ import (
 
 // Mapper interface for mapping query from sql to corresponding database engine
 type Mapper interface {
+<<<<<<< HEAD
 	Create(d RowData) (RowData, error)
 	FindAll() ([]RowData, error)
 	FindByID(id int) (RowData, error)
 	FindByColumnName(columnNames string, value string) ([]RowData, error)
+=======
+	Create(d RowData) ([]byte, error)
+	FindAll(request RequestFindAll) ([]byte, error)
+	FindByID(id int) ([]byte, error)
+	FindByColumnName(request RequestFindBy) ([]byte, error)
+>>>>>>> add offset, limit to FindAll
 }
 
 // Columns return columns listed in RowData
@@ -136,4 +143,9 @@ type RequestFindBy struct {
 	Value      string
 	Offset     int `default:"0"`
 	Limit      int `default:"0"`
+}
+
+type RequestFindAll struct {
+	Offset int `default:"0"`
+	Limit  int `default:"0"`
 }

@@ -34,7 +34,7 @@ func (r *DBQueryRequest) UpdateColumnsByCols() error {
 	for _, col := range r.Cols {
 		tmp := strings.Split(col, ",")
 		if len(tmp) != 2 {
-			return errors.New("Wrong format of a column need at least 2 element")
+			return errors.New("wrong format of a column need at least 2 element")
 		}
 
 		name, colType := tmp[0], tmp[1]

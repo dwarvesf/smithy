@@ -3,8 +3,9 @@ package endpoints
 import (
 	"context"
 
-	"github.com/dwarvesf/smithy/backend/service"
 	"github.com/go-kit/kit/endpoint"
+
+	"github.com/dwarvesf/smithy/backend/service"
 )
 
 type agentSyncResponse struct {

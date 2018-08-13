@@ -90,7 +90,7 @@ func makeDBQueryEndpoint(s service.Service) endpoint.Endpoint {
 			}
 			data, err = sqlmp.FindByColumnName(columnName, value)
 		default:
-			return nil, errors.New("Unknown query method")
+			return nil, errors.New("unknown query method")
 		}
 		if err != nil {
 			return nil, err

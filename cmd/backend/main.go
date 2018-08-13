@@ -31,8 +31,7 @@ func main() {
 	r := chi.NewRouter()
 
 	r.Get("/agent-sync", h.NewUpdateConfigFromAgent())
-	r.Get("/crud", h.NewCRUD())                                     // TODO: REMOVE THIS
-	r.Get("/findby/{table}/{column}/{value}", h.FindByColumnName()) // TODO: REMOVE THIS
+	r.Get("/crud", h.NewCRUD()) // TODO: REMOVE THIS
 
 	errs := make(chan error)
 	go func() {

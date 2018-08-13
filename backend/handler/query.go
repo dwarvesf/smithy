@@ -40,7 +40,24 @@ func (r *QueryRequest) updateColumnsByCols() error {
 	return nil
 }
 
+func (r *QueryRequest) getResourceID() (int, error) {
+	return strconv.Atoi(r.QueryData)
+}
+
+func (r *QueryRequest) getColumnAndValue() (columnName string, value string, err error) {
+	tmp := strings.Split(r.QueryData, ",")
+	if len(tmp) != 2 {
+		err = errors.New("query_data is wrong format")
+		return
+	}
+	columnName = tmp[0]
+	value = tmp[1]
+
+	return
+}
+
 // Query query request
+// TODO: REFACTOR THIS LONG METHOD, add check verify base on query
 func (h *Handler) Query() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		err := r.ParseForm()
@@ -69,13 +86,20 @@ func (h *Handler) Query() http.HandlerFunc {
 		switch qr.Method {
 		case "FindByID":
 			var id int
-			if id, err = strconv.Atoi(qr.QueryData); err != nil {
+			if id, err = qr.getResourceID(); err != nil {
 				handlerCommon.EncodeJSONError(err, w)
 				return
 			}
 			buf, err = sqlmp.FindByID(id)
 		case "FindAll":
 			buf, err = sqlmp.FindAll()
+		case "FindByColumnName":
+			var columnName, value string
+			if columnName, value, err = qr.getColumnAndValue(); err != nil {
+				handlerCommon.EncodeJSONError(err, w)
+				return
+			}
+			buf, err = sqlmp.FindByColumnName(columnName, value)
 		default:
 			handlerCommon.EncodeJSONError(errors.New("Unknown query method"), w)
 			return

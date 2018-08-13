@@ -37,7 +37,5 @@ func (c yamlReaderImpl) Read() (*Config, error) {
 		}
 	}
 
-	res.db = &serviceDB{}
-
 	return res, nil
 }

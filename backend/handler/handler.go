@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/dwarvesf/smithy/backend"
 	backendConfig "github.com/dwarvesf/smithy/backend/config"
 	"github.com/dwarvesf/smithy/backend/sqlmapper"
-	"github.com/dwarvesf/smithy/backend/sqlmapper/drivers"
 	"github.com/dwarvesf/smithy/common/database"
 	handlerCommon "github.com/dwarvesf/smithy/common/handler"
 	"github.com/k0kubun/pp"
@@ -14,18 +14,19 @@ import (
 
 // Handler handler for dashboard
 type Handler struct {
-	Config *backendConfig.Config
+	cfg *backendConfig.Wrapper
 }
 
 // NewHandler new dashboard handler
 func NewHandler(cfg *backendConfig.Config) *Handler {
-	return &Handler{cfg}
+	return &Handler{backendConfig.NewWrapper(cfg)}
 }
 
 // NewUpdateConfigFromAgent return handler for expose metadata, connection for dashboard
 func (h *Handler) NewUpdateConfigFromAgent() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		err := h.Config.UpdateConfigFromAgent()
+		cfg := h.cfg.Config()
+		err := cfg.UpdateConfigFromAgent()
 		if err != nil {
 			handlerCommon.EncodeJSONError(err, w)
 			return
@@ -40,7 +41,7 @@ func (h *Handler) NewUpdateConfigFromAgent() http.HandlerFunc {
 // TODO: REMOVE and UPDATE FOR TMP ONLY
 func (h *Handler) NewCRUD() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		buf, err := drivers.NewPGStore(h.Config.GetDB(), "users", []database.Column{
+		sqlmp, err := backend.NewSQLMapper(h.cfg.Config(), "users", []database.Column{
 			{
 				Name: "id",
 				Type: "int",
@@ -53,7 +54,12 @@ func (h *Handler) NewCRUD() http.HandlerFunc {
 				Name: "age",
 				Type: "int",
 			},
-		}).Create(map[string]sqlmapper.ColData{
+		})
+		if err != nil {
+			handlerCommon.EncodeJSONError(err, w)
+			return
+		}
+		buf, err := sqlmp.Create(map[string]sqlmapper.ColData{
 			"name": sqlmapper.ColData{Name: "name", Data: "hieu"},
 			"age":  sqlmapper.ColData{Name: "name", Data: 26},
 		})

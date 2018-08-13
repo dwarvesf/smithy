@@ -2,6 +2,7 @@ package drivers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -16,6 +17,7 @@ type pgStore struct {
 	db        *gorm.DB
 	TableName string
 	Columns   []database.Column
+	ModelList []database.Model
 }
 
 func (s *pgStore) columnNames() string {
@@ -23,8 +25,8 @@ func (s *pgStore) columnNames() string {
 }
 
 // NewPGStore .
-func NewPGStore(db *gorm.DB, tableName string, columns []database.Column) sqlmapper.Mapper {
-	return &pgStore{db, tableName, columns}
+func NewPGStore(db *gorm.DB, tableName string, columns []database.Column, modelList []database.Model) sqlmapper.Mapper {
+	return &pgStore{db, tableName, columns, modelList}
 }
 
 func (s *pgStore) FindAll() ([]byte, error) {
@@ -71,6 +73,10 @@ func (s *pgStore) executeFindByIDQuery(id int) (sqlmapper.QueryResult, error) {
 
 func (s *pgStore) Create(d sqlmapper.RowData) ([]byte, error) {
 	// TODO: verify column in data-set is correct, check rowData is empty, check primary key is not exist
+	if err := verifyCreate(&d, s.TableName, s.ModelList); err != nil {
+		return nil, err
+	}
+
 	db := s.db.DB()
 	cols, data := d.ColumnsAndData()
 
@@ -93,4 +99,62 @@ func (s *pgStore) Create(d sqlmapper.RowData) ([]byte, error) {
 	d["id"] = sqlmapper.ColData{Data: id}
 
 	return json.Marshal(d)
+}
+
+func verifyCreate(d *sqlmapper.RowData, tableName string, modelList []database.Model) error {
+	// name data_type nullable primary_key
+	tableNotExist := true
+	for _, table := range modelList {
+		if table.TableName == tableName {
+			// table existed
+			tableNotExist = false
+
+			cols, _ := d.ColumnsAndData()
+
+			// create field valid
+			for _, column := range table.Columns {
+				// file id database will auto generate, so bypass check id
+				if column.Name == "id" {
+					continue
+				}
+
+				if !column.IsNullable || column.IsPrimary {
+					obligateErr := true
+					for _, name := range cols {
+						if name == column.Name {
+							obligateErr = false
+						}
+					}
+
+					if obligateErr {
+						errMess := fmt.Sprintf("%s Obligate", column.Name)
+						return errors.New(errMess)
+					}
+				}
+			}
+
+			// field invalid
+			for _, name := range cols {
+				err := true
+				for _, column := range table.Columns {
+					if name == column.Name {
+						err = false
+					}
+				}
+
+				if err {
+					errMess := fmt.Sprintf("field %s in valid", name)
+					return errors.New(errMess)
+				}
+			}
+
+			break
+		}
+	}
+
+	if tableNotExist {
+		return errors.New("Table have existed yet")
+	}
+
+	return nil
 }

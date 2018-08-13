@@ -64,7 +64,9 @@ func (h *Handler) NewCRUD() http.HandlerFunc {
 			"age":  sqlmapper.ColData{Name: "name", Data: 26},
 		})
 		if err != nil {
+			fmt.Fprintln(w, `{"status": "failure"}`)
 			pp.Print(err)
+			return
 		}
 		pp.Print(string(buf))
 

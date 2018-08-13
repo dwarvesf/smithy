@@ -12,7 +12,7 @@ type Mapper interface {
 	Create(d RowData) ([]byte, error)
 	FindAll() ([]byte, error)
 	FindByID(id int) ([]byte, error)
-	FindByColumnName(columnNames string, value string) ([]byte, error)
+	FindByColumnName(request RequestFindBy) ([]byte, error)
 }
 
 // Columns return columns listed in RowData
@@ -129,4 +129,11 @@ func (r QueryResult) MarshalJSON() ([]byte, error) {
 	}
 
 	return json.Marshal(res)
+}
+
+type RequestFindBy struct {
+	ColumnName string
+	Value      string
+	Offset     int `default:"0"`
+	Limit      int `default:"0"`
 }

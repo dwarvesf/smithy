@@ -95,9 +95,14 @@ func (s *pgStore) Create(d sqlmapper.RowData) ([]byte, error) {
 	return json.Marshal(d)
 }
 
-func (s *pgStore) executeFindByColumnName(columnName string, value string) (sqlmapper.QueryResults, error) {
+func (s *pgStore) executeFindByColumnName(request sqlmapper.RequestFindBy) (sqlmapper.QueryResults, error) {
 	// TODO: check sql injection
-	rows, err := s.db.Table(s.TableName).Select(s.columnNames()).Where(columnName+" = ?", value).Rows()
+	rows, err := s.db.Table(s.TableName).
+		Select(s.columnNames()).
+		Where(request.ColumnName+" = ?", request.Value).
+		Offset(request.Offset).
+		Limit(request.Limit).
+		Rows()
 	if err != nil {
 		return nil, err
 	}
@@ -105,8 +110,8 @@ func (s *pgStore) executeFindByColumnName(columnName string, value string) (sqlm
 	return sqlmapper.RowsToQueryResults(rows, s.Columns)
 }
 
-func (s *pgStore) FindByColumnName(columnName string, value string) ([]byte, error) {
-	qr, err := s.executeFindByColumnName(columnName, value)
+func (s *pgStore) FindByColumnName(request sqlmapper.RequestFindBy) ([]byte, error) {
+	qr, err := s.executeFindByColumnName(request)
 	if err != nil {
 		return nil, err
 	}

@@ -34,16 +34,26 @@ type Config struct {
 	sync.Mutex
 }
 
+// Wrapper use to hide detail of a config
+type Wrapper struct {
+	cfg *Config
+}
+
+// NewWrapper .
+func NewWrapper(cfg *Config) *Wrapper {
+	return &Wrapper{cfg}
+}
+
+// Config get sync config from wrapper
+func (w *Wrapper) Config() *Config {
+	w.cfg.Lock()
+	defer w.cfg.Unlock()
+	return w.cfg
+}
+
 // DB get db connection from config
 func (c *Config) DB() *gorm.DB {
 	return c.db
-}
-
-// Config get synchronization config
-func (c *Config) Config() *Config {
-	c.Lock()
-	defer c.Unlock()
-	return c
 }
 
 // UpdateConfigFromAgent update configuration from agent

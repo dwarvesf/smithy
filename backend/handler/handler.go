@@ -14,12 +14,12 @@ import (
 
 // Handler handler for dashboard
 type Handler struct {
-	cfg *backendConfig.Config
+	cfg *backendConfig.Wrapper
 }
 
 // NewHandler new dashboard handler
 func NewHandler(cfg *backendConfig.Config) *Handler {
-	return &Handler{cfg}
+	return &Handler{backendConfig.NewWrapper(cfg)}
 }
 
 // NewUpdateConfigFromAgent return handler for expose metadata, connection for dashboard

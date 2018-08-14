@@ -55,7 +55,7 @@ func (s *pgStore) executeFindByIDQuery(id int) (sqlmapper.RowData, error) {
 	return sqlmapper.RowData(res), nil
 }
 
-func (s *pgStore) Create(d sqlmapper.RowData) ([]byte, error) {
+func (s *pgStore) Create(d sqlmapper.RowData) (sqlmapper.RowData, error) {
 	if err := verifyCreate(&d, s.TableName, s.ModelList); err != nil {
 		return nil, err
 	}

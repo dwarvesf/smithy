@@ -10,9 +10,9 @@ import (
 // Mapper interface for mapping query from sql to corresponding database engine
 type Mapper interface {
 	Create(d RowData) (RowData, error)
-	FindAll(request RequestFindAll) ([]RowData, error)
+	FindAll(offset int, limit int) ([]RowData, error)
 	FindByID(id int) (RowData, error)
-	FindByColumnName(request RequestFindBy) ([]RowData, error)
+	FindByColumnName(columnName string, value string, offset int, limit int) ([]RowData, error)
 }
 
 // Columns return columns listed in RowData
@@ -129,16 +129,4 @@ func (r QueryResult) MarshalJSON() ([]byte, error) {
 	}
 
 	return json.Marshal(res)
-}
-
-type RequestFindBy struct {
-	ColumnName string
-	Value      string
-	Offset     int `default:"0"`
-	Limit      int `default:"0"`
-}
-
-type RequestFindAll struct {
-	Offset int `default:"0"`
-	Limit  int `default:"0"`
 }

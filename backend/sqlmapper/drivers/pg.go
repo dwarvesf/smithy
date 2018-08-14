@@ -1,6 +1,7 @@
 package drivers
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"strings"
@@ -28,12 +29,21 @@ func NewPGStore(db *gorm.DB, tableName string, columns []database.Column, modelL
 	return &pgStore{db, tableName, columns, modelList}
 }
 
-func (s *pgStore) FindAll() ([]sqlmapper.RowData, error) {
-	return s.executeFindAllQuery()
-}
+func (s *pgStore) FindAll(offset int, limit int) ([]sqlmapper.RowData, error) {
+	db := s.db.Table(s.TableName).
+		Select(s.columnNames()).
+		Offset(offset)
 
-func (s *pgStore) executeFindAllQuery() (sqlmapper.QueryResults, error) {
-	rows, err := s.db.Table(s.TableName).Select(s.columnNames()).Rows()
+	var (
+		rows *sql.Rows
+		err  error
+	)
+	if limit <= 0 {
+		rows, err = db.Rows()
+	} else {
+		rows, err = db.Limit(limit).Rows()
+	}
+
 	defer rows.Close()
 	if err != nil {
 		return nil, err
@@ -42,10 +52,6 @@ func (s *pgStore) executeFindAllQuery() (sqlmapper.QueryResults, error) {
 }
 
 func (s *pgStore) FindByID(id int) (sqlmapper.RowData, error) {
-	return s.executeFindByIDQuery(id)
-}
-
-func (s *pgStore) executeFindByIDQuery(id int) (sqlmapper.RowData, error) {
 	row := s.db.Table(s.TableName).Select(s.columnNames()).Where("id = ?", id).Row()
 	res, err := sqlmapper.RowToQueryResult(row, s.Columns)
 	if err != nil {
@@ -142,16 +148,26 @@ func verifyCreate(d *sqlmapper.RowData, tableName string, modelList []database.M
 	return nil
 }
 
-func (s *pgStore) executeFindByColumnName(columnName string, value string) (sqlmapper.QueryResults, error) {
+func (s *pgStore) FindByColumnName(columnName string, value string, offset int, limit int) ([]sqlmapper.RowData, error) {
 	// TODO: check sql injection
-	rows, err := s.db.Table(s.TableName).Select(s.columnNames()).Where(columnName+" = ?", value).Rows()
+	db := s.db.Table(s.TableName).
+		Select(s.columnNames()).
+		Where(columnName+" LIKE ?", "%"+value+"%").
+		Offset(offset)
+
+	var (
+		rows *sql.Rows
+		err  error
+	)
+	if limit <= 0 {
+		rows, err = db.Rows()
+	} else {
+		rows, err = db.Limit(limit).Rows()
+	}
+
 	if err != nil {
 		return nil, err
 	}
 
 	return sqlmapper.RowsToQueryResults(rows, s.Columns)
-}
-
-func (s *pgStore) FindByColumnName(columnName string, value string) ([]sqlmapper.RowData, error) {
-	return s.executeFindByColumnName(columnName, value)
 }

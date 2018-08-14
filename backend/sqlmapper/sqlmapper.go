@@ -9,17 +9,10 @@ import (
 
 // Mapper interface for mapping query from sql to corresponding database engine
 type Mapper interface {
-<<<<<<< HEAD
 	Create(d RowData) (RowData, error)
-	FindAll() ([]RowData, error)
+	FindAll(offset int, limit int) ([]RowData, error)
 	FindByID(id int) (RowData, error)
-	FindByColumnName(columnNames string, value string) ([]RowData, error)
-=======
-	Create(d RowData) ([]byte, error)
-	FindAll(request RequestFindAll) ([]byte, error)
-	FindByID(id int) ([]byte, error)
-	FindByColumnName(request RequestFindBy) ([]byte, error)
->>>>>>> add offset, limit to FindAll
+	FindByColumnName(columnName string, value string, offset int, limit int) ([]RowData, error)
 }
 
 // Columns return columns listed in RowData

@@ -1,6 +1,7 @@
 package drivers
 
 import (
+	"database/sql"
 	"fmt"
 	"strings"
 
@@ -26,31 +27,21 @@ func NewPGStore(db *gorm.DB, tableName string, columns []database.Column) sqlmap
 	return &pgStore{db, tableName, columns}
 }
 
-<<<<<<< HEAD
-func (s *pgStore) FindAll() ([]sqlmapper.RowData, error) {
-	return s.executeFindAllQuery()
-=======
-func (s *pgStore) FindAll(request sqlmapper.RequestFindAll) ([]byte, error) {
-	rs, err := s.executeFindAllQuery(request)
-	if err != nil {
-		return nil, err
-	}
-
-	buf, err := json.Marshal(rs)
-	if err != nil {
-		return nil, err
-	}
-
-	return buf, nil
->>>>>>> add offset, limit to FindAll
-}
-
-func (s *pgStore) executeFindAllQuery(request sqlmapper.RequestFindAll) (sqlmapper.QueryResults, error) {
-	rows, err := s.db.Table(s.TableName).
+func (s *pgStore) FindAll(offset int, limit int) ([]sqlmapper.RowData, error) {
+	db := s.db.Table(s.TableName).
 		Select(s.columnNames()).
-		Offset(request.Offset).
-		Limit(request.Limit).
-		Rows()
+		Offset(offset)
+
+	var (
+		rows *sql.Rows
+		err  error
+	)
+	if limit <= 0 {
+		rows, err = db.Rows()
+	} else {
+		rows, err = db.Limit(limit).Rows()
+	}
+
 	defer rows.Close()
 	if err != nil {
 		return nil, err
@@ -59,10 +50,6 @@ func (s *pgStore) executeFindAllQuery(request sqlmapper.RequestFindAll) (sqlmapp
 }
 
 func (s *pgStore) FindByID(id int) (sqlmapper.RowData, error) {
-	return s.executeFindByIDQuery(id)
-}
-
-func (s *pgStore) executeFindByIDQuery(id int) (sqlmapper.RowData, error) {
 	row := s.db.Table(s.TableName).Select(s.columnNames()).Where("id = ?", id).Row()
 	res, err := sqlmapper.RowToQueryResult(row, s.Columns)
 	if err != nil {
@@ -98,21 +85,26 @@ func (s *pgStore) Create(d sqlmapper.RowData) (sqlmapper.RowData, error) {
 	return d, nil
 }
 
-func (s *pgStore) executeFindByColumnName(request sqlmapper.RequestFindBy) (sqlmapper.QueryResults, error) {
+func (s *pgStore) FindByColumnName(columnName string, value string, offset int, limit int) ([]sqlmapper.RowData, error) {
 	// TODO: check sql injection
-	rows, err := s.db.Table(s.TableName).
+	db := s.db.Table(s.TableName).
 		Select(s.columnNames()).
-		Where(request.ColumnName+" = ?", request.Value).
-		Offset(request.Offset).
-		Limit(request.Limit).
-		Rows()
+		Where(columnName+" LIKE ?", "%"+value+"%").
+		Offset(offset)
+
+	var (
+		rows *sql.Rows
+		err  error
+	)
+	if limit <= 0 {
+		rows, err = db.Rows()
+	} else {
+		rows, err = db.Limit(limit).Rows()
+	}
+
 	if err != nil {
 		return nil, err
 	}
 
 	return sqlmapper.RowsToQueryResults(rows, s.Columns)
-}
-
-func (s *pgStore) FindByColumnName(columnName string, value string) ([]sqlmapper.RowData, error) {
-	return s.executeFindByColumnName(columnName, value)
 }

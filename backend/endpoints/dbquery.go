@@ -20,6 +20,8 @@ type DBQueryRequest struct {
 	Cols      []string `json:"columns" schema:"columns,required"`
 	Columns   []database.Column
 	QueryData string `json:"query_data" schema:"query_data"`
+	Offset    int    `json:"offset" schema:"offset" default:"0"`
+	Limit     int    `json:"limit" schema:"limit" default:"-1"`
 }
 
 // DBQueryResponse response for db query
@@ -82,13 +84,13 @@ func makeDBQueryEndpoint(s service.Service) endpoint.Endpoint {
 			}
 			data, err = sqlmp.FindByID(id)
 		case "FindAll":
-			data, err = sqlmp.FindAll()
+			data, err = sqlmp.FindAll(req.Offset, req.Limit)
 		case "FindByColumnName":
 			var columnName, value string
 			if columnName, value, err = req.getColumnAndValue(); err != nil {
 				return nil, err
 			}
-			data, err = sqlmp.FindByColumnName(columnName, value)
+			data, err = sqlmp.FindByColumnName(columnName, value, req.Offset, req.Limit)
 		default:
 			return nil, errors.New("unknown query method")
 		}

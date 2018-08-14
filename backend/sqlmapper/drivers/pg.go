@@ -62,7 +62,7 @@ func (s *pgStore) FindByID(id int) (sqlmapper.RowData, error) {
 }
 
 func (s *pgStore) Create(d sqlmapper.RowData) (sqlmapper.RowData, error) {
-	if err := verifyCreate(&d, s.TableName, s.ModelList); err != nil {
+	if err := verifyInput(&d, s.TableName, s.ModelList); err != nil {
 		return nil, err
 	}
 
@@ -91,7 +91,7 @@ func (s *pgStore) Create(d sqlmapper.RowData) (sqlmapper.RowData, error) {
 	return d, nil
 }
 
-func verifyCreate(d *sqlmapper.RowData, tableName string, modelList []database.Model) error {
+func verifyInput(d *sqlmapper.RowData, tableName string, modelList []database.Model) error {
 	// name data_type nullable primary_key
 	tableNotExist := true
 	for _, table := range modelList {
@@ -109,41 +109,41 @@ func verifyCreate(d *sqlmapper.RowData, tableName string, modelList []database.M
 				}
 
 				if !column.IsNullable || column.IsPrimary {
-					obligateErr := true
-					for _, name := range cols {
-						if name == column.Name {
-							obligateErr = false
-						}
-					}
-
-					if obligateErr {
-						errMess := fmt.Sprintf("%s Obligate", column.Name)
-						return errors.New(errMess)
+					if err := checkColumnFieldIsValid(cols, column.Name); err != nil {
+						return err
 					}
 				}
 			}
-
-			// field invalid
+			//field invalid
 			for _, name := range cols {
-				err := true
-				for _, column := range table.Columns {
-					if name == column.Name {
-						err = false
-					}
-				}
-
-				if err {
-					errMess := fmt.Sprintf("field %s in valid", name)
-					return errors.New(errMess)
+				agentColumns := database.Columns(table.Columns).Names()
+				if err := checkColumnFieldIsValid(agentColumns, name); err != nil {
+					return err
 				}
 			}
 
 			break
 		}
 	}
-
 	if tableNotExist {
 		return errors.New("Table have existed yet")
+	}
+
+	return nil
+}
+
+func checkColumnFieldIsValid(inputColumns []string, colName string) error {
+
+	err := true
+	for _, name := range inputColumns {
+		if name == colName {
+			err = false
+		}
+	}
+
+	if err {
+		errMess := fmt.Sprintf("field %s in valid", colName)
+		return errors.New(errMess)
 	}
 
 	return nil
@@ -173,12 +173,12 @@ func (s *pgStore) FindByColumnName(columnName string, value string, offset int, 
 	return sqlmapper.RowsToQueryResults(rows, s.Columns)
 }
 
-func (s *pgStore) Update(d sqlmapper.RowData, rowID string) (sqlmapper.RowData, error) {
+func (s *pgStore) Update(d sqlmapper.RowData, id int) (sqlmapper.RowData, error) {
 	// TODO: verify column in data-set is correct, check rowData is empty, check primary key is not exist
 
-	// if err := verifyUpdate(d, s.ModelList, s.TableName); err != nil {
-	// 	return nil, err
-	// }
+	if err := verifyInput(&d, s.TableName, s.ModelList); err != nil {
+		return nil, err
+	}
 
 	db := s.db.DB()
 	cols, data := d.ColumnsAndData()
@@ -189,70 +189,13 @@ func (s *pgStore) Update(d sqlmapper.RowData, rowID string) (sqlmapper.RowData, 
 		rowQuery[i] = fmt.Sprintf("%s = $%d", cols[i], i+1)
 	}
 
-	execQuery := fmt.Sprintf("UPDATE %s SET %s WHERE id = %s",
+	execQuery := fmt.Sprintf("UPDATE %s SET %s WHERE id = %d",
 		s.TableName,
 		strings.Join(rowQuery, ","),
-		rowID)
+		id)
 
 	if _, err := db.Exec(execQuery, data...); err != nil {
 		return nil, err
 	}
-
 	return d, nil
 }
-
-// func verifyUpdate(d sqlmapper.RowData, modelList database.Models, tableName string) error {
-
-// 	if tableName == model.TableName {
-
-// 		for localTableName := range d.Columns {
-// 			i := 0
-// 			for ; i < len(model.Columns); i++ {
-// 				if localTableName == model.Columns[i].Name {
-// 					break
-// 				}
-// 			}
-// 			if i >= len(model.Columns) {
-// 				return errors.New("local column is not exist")
-// 			}
-// 		}
-
-// 	}
-// }
-// for _, model := range modelList {
-// 	if tableName == model.TableName {
-
-// 		for localTableName := range d.Columns {
-// 			i := 0
-// 			for ; i < len(model.Columns); i++ {
-// 				if localTableName == model.Columns[i].Name {
-// 					break
-// 				}
-// 			}
-// 			if i >= len(model.Columns) {
-// 				return errors.New("local column is not exist")
-// 			}
-// 		}
-
-// 	}
-// }
-// 	for _, model := range modelList {
-// 		if tableName == model.TableName {
-
-// 			for localTableName := range d.Columns {
-// 				i := 0
-// 				for ; i < len(model.Columns); i++ {
-// 					if localTableName == model.Columns[i].Name {
-// 						break
-// 					}
-// 				}
-// 				if i >= len(model.Columns) {
-// 					return errors.New("local column is not exist")
-// 				}
-// 			}
-
-// 		}
-// 	}
-
-// 	return nil
-// }

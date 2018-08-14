@@ -11,7 +11,7 @@ import (
 type Mapper interface {
 	Create(d RowData) (RowData, error)
 	FindAll(offset int, limit int) ([]RowData, error)
-	Update(d RowData, id string) (RowData, error)
+	Update(d RowData, id int) (RowData, error)
 	FindByID(id int) (RowData, error)
 	FindByColumnName(columnName string, value string, offset int, limit int) ([]RowData, error)
 }

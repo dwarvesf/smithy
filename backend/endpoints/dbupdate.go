@@ -3,6 +3,7 @@ package endpoints
 import (
 	"context"
 	"errors"
+	"strconv"
 
 	"github.com/go-kit/kit/endpoint"
 
@@ -25,19 +26,14 @@ type DBUpdateResponse struct {
 	Data   sqlmapper.RowData `json:"data"`
 }
 
-func (r *DBUpdateRequest) getResourceID() string {
-	return r.QueryData
+func (r *DBUpdateRequest) getResourceID() (int, error) {
+	return strconv.Atoi(r.QueryData)
 }
 
 func makeDBUpdateEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(DBUpdateRequest)
 
-		id := req.getResourceID()
-
-		if id == "" {
-			return nil, errors.New("id is not exist")
-		}
 		if !ok {
 			return nil, errors.New("failed to make type assertion")
 		}
@@ -47,7 +43,12 @@ func makeDBUpdateEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, err
 		}
 
+		var id int
+		if id, err = req.getResourceID(); err != nil {
+			return nil, err
+		}
 		data, err := sqlmp.Update(req.Data, id)
+
 		if err != nil {
 			return nil, err
 		}

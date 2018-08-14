@@ -8,6 +8,7 @@ import (
 
 	"github.com/boltdb/bolt"
 	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
 
 	agentConfig "github.com/dwarvesf/smithy/agent/config"
 	"github.com/dwarvesf/smithy/common/database"

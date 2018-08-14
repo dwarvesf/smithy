@@ -68,6 +68,7 @@ func (s *pgStore) Create(d sqlmapper.RowData) (sqlmapper.RowData, error) {
 	}
 
 	db := s.db.DB()
+
 	cols, data := d.ColumnsAndData()
 
 	phs := strmangle.Placeholders(true, len(cols), 1, 1)
@@ -175,6 +176,11 @@ func (s *pgStore) FindByColumnName(columnName string, value string, offset int, 
 
 func (s *pgStore) Update(d sqlmapper.RowData, rowID string) ([]byte, error) {
 	// TODO: verify column in data-set is correct, check rowData is empty, check primary key is not exist
+
+	if err := verifyUpdate(d, s.ModelList, s.TableName); err != nil {
+		return nil, err
+	}
+
 	db := s.db.DB()
 	cols, data := d.ColumnsAndData()
 
@@ -184,21 +190,37 @@ func (s *pgStore) Update(d sqlmapper.RowData, rowID string) ([]byte, error) {
 		rowQuery[i] = fmt.Sprintf("%s = $%d", cols[i], i+1)
 	}
 
-	execQuery := fmt.Sprintf("UPDATE %s SET %s WHERE id = %s RETURNING id;",
+	execQuery := fmt.Sprintf("UPDATE %s SET %s WHERE id = %s",
 		s.TableName,
 		strings.Join(rowQuery, ","),
 		rowID)
 
-	res := db.QueryRow(execQuery, data...)
-
-	var id int
-	err := res.Scan(&id)
-	if err != nil {
+	if _, err := db.Exec(execQuery, data...); err != nil {
 		return nil, err
 	}
 
-	// update id if create success
-	d["id"] = sqlmapper.ColData{Data: id}
-
 	return json.Marshal(d)
+}
+
+func verifyUpdate(d sqlmapper.RowData, modelList database.Models, tableName string) error {
+
+	// for _, model := range modelList {
+	// 	if tableName == model.TableName {
+
+	// 		for localTableName := range d.Columns {
+	// 			i := 0
+	// 			for ; i < len(model.Columns); i++ {
+	// 				if localTableName == model.Columns[i].Name {
+	// 					break
+	// 				}
+	// 			}
+	// 			if i >= len(model.Columns) {
+	// 				return errors.New("local column is not exist")
+	// 			}
+	// 		}
+
+	// 	}
+	// }
+
+	return nil
 }

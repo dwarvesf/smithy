@@ -81,7 +81,7 @@ func (h *Handler) Update() http.HandlerFunc {
 			pp.Print("id not exist")
 		}
 
-		buf, err := drivers.NewPGStore(h.Config.GetDB(), "users", []database.Column{
+		sqlmp, err := backend.NewSQLMapper(h.cfg.Config(), "users", []database.Column{
 			{
 				Name: "id",
 				Type: "int",
@@ -94,17 +94,22 @@ func (h *Handler) Update() http.HandlerFunc {
 				Name: "age",
 				Type: "int",
 			},
-		}).Update(map[string]sqlmapper.ColData{
-			"name": sqlmapper.ColData{Name: "name", Data: "an"},
-			"age":  sqlmapper.ColData{Name: "name", Data: 21},
+		})
+		if err != nil {
+			handlerCommon.EncodeJSONError(err, w)
+			return
+		}
+		buf, err := sqlmp.Update(map[string]sqlmapper.ColData{
+			"name": sqlmapper.ColData{Name: "name", Data: "hieu"},
+			"age":  sqlmapper.ColData{Name: "name", Data: 26},
 		}, id)
-
 		if err != nil {
 			pp.Print(err)
 		}
 		pp.Print(string(buf))
 
 		fmt.Fprintln(w, `{"status": "success"}`)
+
 	}
 
 }

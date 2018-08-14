@@ -2,18 +2,19 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
 	"syscall"
 
-	"github.com/go-chi/chi"
+	"github.com/go-kit/kit/log"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 
 	"github.com/dwarvesf/smithy/backend"
 	backendConfig "github.com/dwarvesf/smithy/backend/config"
-	backendHandler "github.com/dwarvesf/smithy/backend/handler"
+	"github.com/dwarvesf/smithy/backend/endpoints"
+	serviceHttp "github.com/dwarvesf/smithy/backend/http"
+	"github.com/dwarvesf/smithy/backend/service"
 )
 
 var (
@@ -26,17 +27,23 @@ func main() {
 		panic(err)
 	}
 
-	h := backendHandler.NewHandler(cfg)
+	var logger log.Logger
+	{
+		logger = log.NewLogfmtLogger(log.NewSyncWriter(os.Stdout))
+		logger = log.With(logger, "ts", log.DefaultTimestampUTC)
+		logger = log.With(logger, "caller", log.DefaultCaller)
+	}
 
-	r := chi.NewRouter()
+	s := service.NewService(cfg)
 
-	r.Get("/agent-sync", h.NewUpdateConfigFromAgent())
-	// Query
-	r.Get("/query", h.Query())
-	r.Post("/query", h.Query()) // Post query for query parameter longer than 2048 character
-
-	// Create
-	r.Post("/create", h.Create())
+	var h http.Handler
+	{
+		h = serviceHttp.NewHTTPHandler(
+			endpoints.MakeServerEndpoints(s),
+			logger,
+			os.Getenv("ENV") == "local",
+		)
+	}
 
 	errs := make(chan error)
 	go func() {
@@ -46,8 +53,8 @@ func main() {
 	}()
 
 	go func() {
-		errs <- http.ListenAndServe(httpAddr, r)
+		errs <- http.ListenAndServe(httpAddr, h)
 	}()
 
-	log.Println("errors:", <-errs)
+	logger.Log("errors:", <-errs)
 }

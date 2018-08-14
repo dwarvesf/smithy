@@ -1,7 +1,6 @@
 package drivers
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -27,18 +26,8 @@ func NewPGStore(db *gorm.DB, tableName string, columns []database.Column) sqlmap
 	return &pgStore{db, tableName, columns}
 }
 
-func (s *pgStore) FindAll() ([]byte, error) {
-	rs, err := s.executeFindAllQuery()
-	if err != nil {
-		return nil, err
-	}
-
-	buf, err := json.Marshal(rs)
-	if err != nil {
-		return nil, err
-	}
-
-	return buf, nil
+func (s *pgStore) FindAll() ([]sqlmapper.RowData, error) {
+	return s.executeFindAllQuery()
 }
 
 func (s *pgStore) executeFindAllQuery() (sqlmapper.QueryResults, error) {
@@ -50,26 +39,21 @@ func (s *pgStore) executeFindAllQuery() (sqlmapper.QueryResults, error) {
 	return sqlmapper.RowsToQueryResults(rows, s.Columns)
 }
 
-func (s *pgStore) FindByID(id int) ([]byte, error) {
-	rs, err := s.executeFindByIDQuery(id)
-	if err != nil {
-		return nil, err
-	}
-
-	buf, err := json.Marshal(rs)
-	if err != nil {
-		return nil, err
-	}
-
-	return buf, nil
+func (s *pgStore) FindByID(id int) (sqlmapper.RowData, error) {
+	return s.executeFindByIDQuery(id)
 }
 
-func (s *pgStore) executeFindByIDQuery(id int) (sqlmapper.QueryResult, error) {
+func (s *pgStore) executeFindByIDQuery(id int) (sqlmapper.RowData, error) {
 	row := s.db.Table(s.TableName).Select(s.columnNames()).Where("id = ?", id).Row()
-	return sqlmapper.RowToQueryResult(row, s.Columns)
+	res, err := sqlmapper.RowToQueryResult(row, s.Columns)
+	if err != nil {
+		return nil, err
+	}
+
+	return sqlmapper.RowData(res), nil
 }
 
-func (s *pgStore) Create(d sqlmapper.RowData) ([]byte, error) {
+func (s *pgStore) Create(d sqlmapper.RowData) (sqlmapper.RowData, error) {
 	// TODO: verify column in data-set is correct, check rowData is empty, check primary key is not exist
 	db := s.db.DB()
 	cols, data := d.ColumnsAndData()
@@ -92,7 +76,7 @@ func (s *pgStore) Create(d sqlmapper.RowData) ([]byte, error) {
 	// update id if create success
 	d["id"] = sqlmapper.ColData{Data: id}
 
-	return json.Marshal(d)
+	return d, nil
 }
 
 func (s *pgStore) executeFindByColumnName(columnName string, value string) (sqlmapper.QueryResults, error) {
@@ -105,16 +89,6 @@ func (s *pgStore) executeFindByColumnName(columnName string, value string) (sqlm
 	return sqlmapper.RowsToQueryResults(rows, s.Columns)
 }
 
-func (s *pgStore) FindByColumnName(columnName string, value string) ([]byte, error) {
-	qr, err := s.executeFindByColumnName(columnName, value)
-	if err != nil {
-		return nil, err
-	}
-
-	buf, err := json.Marshal(qr)
-	if err != nil {
-		return nil, err
-	}
-
-	return buf, nil
+func (s *pgStore) FindByColumnName(columnName string, value string) ([]sqlmapper.RowData, error) {
+	return s.executeFindByColumnName(columnName, value)
 }

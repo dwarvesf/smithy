@@ -36,7 +36,6 @@ func main() {
 
 	s := service.NewService(cfg)
 
-<<<<<<< HEAD
 	var h http.Handler
 	{
 		h = serviceHttp.NewHTTPHandler(
@@ -45,11 +44,6 @@ func main() {
 			os.Getenv("ENV") == "local",
 		)
 	}
-=======
-	r.Get("/agent-sync", h.NewUpdateConfigFromAgent())
-	//r.Get("/crud", h.NewCRUD()) // TODO: REMOVE THIS
-	r.Put("/update/{id}", h.Update()) // TODO: REMOVE THIS
->>>>>>> implements update
 
 	errs := make(chan error)
 	go func() {

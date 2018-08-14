@@ -2,7 +2,6 @@ package drivers
 
 import (
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -174,12 +173,12 @@ func (s *pgStore) FindByColumnName(columnName string, value string, offset int, 
 	return sqlmapper.RowsToQueryResults(rows, s.Columns)
 }
 
-func (s *pgStore) Update(d sqlmapper.RowData, rowID string) ([]byte, error) {
+func (s *pgStore) Update(d sqlmapper.RowData, rowID string) (sqlmapper.RowData, error) {
 	// TODO: verify column in data-set is correct, check rowData is empty, check primary key is not exist
 
-	if err := verifyUpdate(d, s.ModelList, s.TableName); err != nil {
-		return nil, err
-	}
+	// if err := verifyUpdate(d, s.ModelList, s.TableName); err != nil {
+	// 	return nil, err
+	// }
 
 	db := s.db.DB()
 	cols, data := d.ColumnsAndData()
@@ -199,28 +198,61 @@ func (s *pgStore) Update(d sqlmapper.RowData, rowID string) ([]byte, error) {
 		return nil, err
 	}
 
-	return json.Marshal(d)
+	return d, nil
 }
 
-func verifyUpdate(d sqlmapper.RowData, modelList database.Models, tableName string) error {
+// func verifyUpdate(d sqlmapper.RowData, modelList database.Models, tableName string) error {
 
-	// for _, model := range modelList {
-	// 	if tableName == model.TableName {
+// 	if tableName == model.TableName {
 
-	// 		for localTableName := range d.Columns {
-	// 			i := 0
-	// 			for ; i < len(model.Columns); i++ {
-	// 				if localTableName == model.Columns[i].Name {
-	// 					break
-	// 				}
-	// 			}
-	// 			if i >= len(model.Columns) {
-	// 				return errors.New("local column is not exist")
-	// 			}
-	// 		}
+// 		for localTableName := range d.Columns {
+// 			i := 0
+// 			for ; i < len(model.Columns); i++ {
+// 				if localTableName == model.Columns[i].Name {
+// 					break
+// 				}
+// 			}
+// 			if i >= len(model.Columns) {
+// 				return errors.New("local column is not exist")
+// 			}
+// 		}
 
-	// 	}
-	// }
+// 	}
+// }
+// for _, model := range modelList {
+// 	if tableName == model.TableName {
 
-	return nil
-}
+// 		for localTableName := range d.Columns {
+// 			i := 0
+// 			for ; i < len(model.Columns); i++ {
+// 				if localTableName == model.Columns[i].Name {
+// 					break
+// 				}
+// 			}
+// 			if i >= len(model.Columns) {
+// 				return errors.New("local column is not exist")
+// 			}
+// 		}
+
+// 	}
+// }
+// 	for _, model := range modelList {
+// 		if tableName == model.TableName {
+
+// 			for localTableName := range d.Columns {
+// 				i := 0
+// 				for ; i < len(model.Columns); i++ {
+// 					if localTableName == model.Columns[i].Name {
+// 						break
+// 					}
+// 				}
+// 				if i >= len(model.Columns) {
+// 					return errors.New("local column is not exist")
+// 				}
+// 			}
+
+// 		}
+// 	}
+
+// 	return nil
+// }

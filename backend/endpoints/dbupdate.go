@@ -17,7 +17,7 @@ import (
 type DBUpdateRequest struct {
 	TableName string            `json:"table_name"`
 	Data      sqlmapper.RowData `json:"data"`
-	QueryData string            `json:"query_data" schema:"query_data"`
+	QueryData string            `json:"primary_id" schema:"primary_id"`
 }
 
 // DBUpdateResponse response for db Update data
@@ -33,7 +33,6 @@ func (r *DBUpdateRequest) getResourceID() (int, error) {
 func makeDBUpdateEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(DBUpdateRequest)
-
 		if !ok {
 			return nil, errors.New("failed to make type assertion")
 		}

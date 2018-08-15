@@ -62,7 +62,7 @@ func (s *pgStore) FindByID(id int) (sqlmapper.RowData, error) {
 }
 
 func (s *pgStore) Create(d sqlmapper.RowData) (sqlmapper.RowData, error) {
-	if err := verifyInput(&d, s.TableName, s.ModelList); err != nil {
+	if err := verifyInput(d, s.TableName, s.ModelList); err != nil {
 		return nil, err
 	}
 
@@ -91,8 +91,13 @@ func (s *pgStore) Create(d sqlmapper.RowData) (sqlmapper.RowData, error) {
 	return d, nil
 }
 
-func verifyInput(d *sqlmapper.RowData, tableName string, modelList []database.Model) error {
+func verifyInput(d sqlmapper.RowData, tableName string, modelList []database.Model) error {
 	// name data_type nullable primary_key
+	d = filterRowData(d)
+	if len(d) <= 0 {
+		return errors.New("rowData is empty")
+	}
+
 	tableNotExist := true
 	for _, table := range modelList {
 		if table.TableName == tableName {
@@ -133,7 +138,6 @@ func verifyInput(d *sqlmapper.RowData, tableName string, modelList []database.Mo
 }
 
 func checkColumnFieldIsValid(inputColumns []string, colName string) error {
-
 	err := true
 	for _, name := range inputColumns {
 		if name == colName {
@@ -147,6 +151,15 @@ func checkColumnFieldIsValid(inputColumns []string, colName string) error {
 	}
 
 	return nil
+}
+
+// remove id field out of rowdata because it duplicates with primary key
+func filterRowData(d sqlmapper.RowData) sqlmapper.RowData {
+	_, ok := d["id"]
+	if ok {
+		delete(d, "id")
+	}
+	return d
 }
 
 func (s *pgStore) FindByColumnName(columnName string, value string, offset int, limit int) ([]sqlmapper.RowData, error) {
@@ -174,9 +187,11 @@ func (s *pgStore) FindByColumnName(columnName string, value string, offset int, 
 }
 
 func (s *pgStore) Update(d sqlmapper.RowData, id int) (sqlmapper.RowData, error) {
-	// TODO: verify column in data-set is correct, check rowData is empty, check primary key is not exist
+	if err := s.isIDNotExist(id); err != nil {
+		return nil, err
+	}
 
-	if err := verifyInput(&d, s.TableName, s.ModelList); err != nil {
+	if err := verifyInput(d, s.TableName, s.ModelList); err != nil {
 		return nil, err
 	}
 
@@ -198,4 +213,22 @@ func (s *pgStore) Update(d sqlmapper.RowData, id int) (sqlmapper.RowData, error)
 		return nil, err
 	}
 	return d, nil
+}
+func (s *pgStore) isIDNotExist(id int) error {
+	db := s.db.DB()
+	execQuery := fmt.Sprintf("SELECT * FROM %s WHERE id = %d", s.TableName, id)
+	res, err := db.Exec(execQuery)
+	if err != nil {
+		return err
+	}
+
+	var count int64
+	count, err = res.RowsAffected()
+	if count <= 0 {
+		return errors.New("id field isn't exist")
+	}
+	if err != nil {
+		return err
+	}
+	return nil
 }

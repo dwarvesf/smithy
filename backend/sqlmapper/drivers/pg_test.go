@@ -12,11 +12,6 @@ import (
 	"github.com/dwarvesf/smithy/common/database"
 	utilTest "github.com/dwarvesf/smithy/common/utils/database/pg/test"
 	utilReflect "github.com/dwarvesf/smithy/common/utils/reflect"
-<<<<<<< HEAD
-=======
-	utilTest "github.com/dwarvesf/smithy/common/utils/test"
-	"github.com/jinzhu/gorm"
->>>>>>> Unit test
 )
 
 /**
@@ -278,6 +273,18 @@ func Test_pgStore_FindByID(t *testing.T) {
 				id: 123
 			},
 			want: []sqlmapper.RowData{sampleData},
+		},
+		{
+			name: "validate id error",
+			args: &args {
+				id: 3434
+			},
+		},
+		{
+			name: "empty string",
+			args: &args {
+				id: ""
+			}	,
 		},
 	}
 

@@ -1,3 +1,5 @@
+// +build integration
+
 package drivers
 
 import (
@@ -5,30 +7,38 @@ import (
 	"strings"
 	"testing"
 
-	backendConfig "github.com/dwarvesf/smithy/backend/config"
 	"github.com/dwarvesf/smithy/backend/sqlmapper"
 	"github.com/dwarvesf/smithy/common/database"
-	"github.com/dwarvesf/smithy/common/utils"
+	utilTest "github.com/dwarvesf/smithy/common/utils/database/pg/test"
+	utilReflect "github.com/dwarvesf/smithy/common/utils/reflect"
 )
 
-func beforeTest(t *testing.T) *backendConfig.Config {
+/**
+ * use for integration test with AGENT later
+func Test_SyncAgent(t *testing.T) {
 	// read config from agent
 	cfg, err := backendConfig.ReadYAML("../../../example_dashboard_config.yaml").Read()
 	if err != nil {
-		t.Fatalf("Can't read config file %v", err)
+		t.Errorf("Can't read config file %v", err)
 	}
 
 	err = cfg.UpdateConfigFromAgent()
 	if err != nil {
-		t.Fatalf("Can't sync from agent %v", err)
+		t.Errorf("Can't sync from agent %v", err)
 	}
-
-	return cfg
 }
+*/
 
 func Test_pgStore_FindAll(t *testing.T) {
-	// read yaml & sync config from agent
-	cfg := beforeTest(t)
+	t.Parallel()
+	cfg, clearDB := utilTest.CreateConfig(t)
+	defer clearDB()
+
+	// migrate tables
+	err := utilTest.MigrateTables(cfg.DB())
+	if err != nil {
+		t.Fatalf("Failed to migrate table by error %v", err)
+	}
 
 	//create sample data
 	sampleData := make(map[string]sqlmapper.ColData)
@@ -90,12 +100,12 @@ func Test_pgStore_FindAll(t *testing.T) {
 			}
 
 			// convert data
-			iId, err := utils.ConvertFromInterfacePtr(got[0]["id"].Data)
+			iId, err := utilReflect.ConvertFromInterfacePtr(got[0]["id"].Data)
 			if err != nil {
 				t.Fatal(err)
 			}
 			id := iId.(int)
-			iName, err := utils.ConvertFromInterfacePtr(got[0]["name"].Data)
+			iName, err := utilReflect.ConvertFromInterfacePtr(got[0]["name"].Data)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -111,8 +121,15 @@ func Test_pgStore_FindAll(t *testing.T) {
 }
 
 func Test_pgStore_FindByColumnName(t *testing.T) {
-	// read yaml & sync config from agent
-	cfg := beforeTest(t)
+	t.Parallel()
+	cfg, clearDB := utilTest.CreateConfig(t)
+	defer clearDB()
+
+	// migrate tables
+	err := utilTest.MigrateTables(cfg.DB())
+	if err != nil {
+		t.Fatalf("Failed to migrate table by error %v", err)
+	}
 
 	//create sample data
 	sampleData := make(map[string]sqlmapper.ColData)
@@ -178,12 +195,12 @@ func Test_pgStore_FindByColumnName(t *testing.T) {
 			}
 
 			// convert data
-			iId, err := utils.ConvertFromInterfacePtr(got[0]["id"].Data)
+			iId, err := utilReflect.ConvertFromInterfacePtr(got[0]["id"].Data)
 			if err != nil {
 				t.Fatal(err)
 			}
 			id := iId.(int)
-			iName, err := utils.ConvertFromInterfacePtr(got[0]["name"].Data)
+			iName, err := utilReflect.ConvertFromInterfacePtr(got[0]["name"].Data)
 			if err != nil {
 				t.Fatal(err)
 			}

@@ -68,5 +68,12 @@ func NewHTTPHandler(endpoints endpoints.Endpoints,
 		options...,
 	).ServeHTTP)
 
+	r.Get("/models", httptransport.NewServer(
+		endpoints.AvailableModels,
+		httptransport.NopRequestDecoder,
+		httptransport.EncodeJSONResponse,
+		options...,
+	).ServeHTTP)
+
 	return r
 }

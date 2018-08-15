@@ -9,6 +9,10 @@ up-agent:
 	go build -o bin/agent ./cmd/agent
 	PORT=3000 bin/agent
 
+up-agent-test:
+	go build -o bin/agent ./cmd/agent
+	PORT=3000 ENV=test bin/agent
+
 up-dashboard:
 	go build -o bin/dashboard ./cmd/backend
 	PORT=2999 bin/dashboard

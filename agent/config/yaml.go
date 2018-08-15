@@ -2,6 +2,7 @@ package config
 
 import (
 	"io/ioutil"
+	"os"
 
 	"gopkg.in/yaml.v2"
 )
@@ -24,6 +25,15 @@ func (c yamlReaderImpl) Read() (*Config, error) {
 	err = yaml.Unmarshal(buf, res)
 	if err != nil {
 		return nil, err
+	}
+
+	if os.Getenv("ENV") == "test" {
+		res.DBUsername = "postgres"
+		res.DBName = "test"
+		res.DBSSLModeOption = "disable"
+		res.DBPassword = "example"
+		res.DBHostname = "localhost"
+		res.DBPort = "5439"
 	}
 
 	return res, nil

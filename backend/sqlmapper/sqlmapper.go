@@ -12,6 +12,7 @@ type Mapper interface {
 	Create(d RowData) (RowData, error)
 	FindAll(offset int, limit int) ([]RowData, error)
 	Update(d RowData, id int) (RowData, error)
+	Delete(id int) error
 	FindByID(id int) (RowData, error)
 	FindByColumnName(columnName string, value string, offset int, limit int) ([]RowData, error)
 }

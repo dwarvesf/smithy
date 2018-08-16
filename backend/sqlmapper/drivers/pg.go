@@ -91,6 +91,22 @@ func (s *pgStore) Create(d sqlmapper.RowData) (sqlmapper.RowData, error) {
 	return d, nil
 }
 
+func (s *pgStore) Delete(id int) error {
+	if notExist, _ := s.isIDNotExist(id); !notExist {
+		return errors.New("primary key is not exist")
+	}
+
+	exec := fmt.Sprintf("DELETE FROM %s WHERE %s=%v",
+		s.TableName,
+		"id",
+		id)
+
+	if _, err := s.db.DB().Exec(exec); err != nil {
+		return errors.New("delete error")
+	}
+	return nil
+}
+
 func verifyInput(d sqlmapper.RowData, tableName string, modelList []database.Model) error {
 	// name data_type nullable primary_key
 	d = filterRowData(d)

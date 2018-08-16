@@ -1,7 +1,12 @@
 package backend
 
 import (
+	"errors"
+
 	backendConfig "github.com/dwarvesf/smithy/backend/config"
+	"github.com/dwarvesf/smithy/backend/sqlmapper"
+	sqlmapperDrv "github.com/dwarvesf/smithy/backend/sqlmapper/drivers"
+	"github.com/dwarvesf/smithy/common/database"
 )
 
 // NewConfig check dashboard config is correct
@@ -22,4 +27,14 @@ func NewConfig(r backendConfig.Reader) (*backendConfig.Config, error) {
 func checkConfig(c *backendConfig.Config) error {
 	// TODO: implement dashboard config checking
 	return nil
+}
+
+// NewSQLMapper create new new sqlmapper to working with request query
+func NewSQLMapper(c *backendConfig.Config, tableName string, columns []database.Column) (sqlmapper.Mapper, error) {
+	switch c.DBType {
+	case "postgres":
+		return sqlmapperDrv.NewPGStore(c.DB(), tableName, columns, c.ModelList), nil
+	default:
+		return nil, errors.New("Uknown DB Driver")
+	}
 }

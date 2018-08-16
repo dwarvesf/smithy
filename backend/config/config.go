@@ -8,10 +8,16 @@ import (
 
 	"github.com/boltdb/bolt"
 	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
 
 	agentConfig "github.com/dwarvesf/smithy/agent/config"
 	"github.com/dwarvesf/smithy/common/database"
 )
+
+// Reader interface for reading config for agent
+type Reader interface {
+	Read() (*Config, error)
+}
 
 // Config contain config for dashboard
 type Config struct {
@@ -24,19 +30,39 @@ type Config struct {
 	PersistenceDB           *bolt.DB
 	database.ConnectionInfo `yaml:"-"`
 	ModelList               []database.Model `yaml:"-"`
-	db                      *serviceDB
+	db                      *gorm.DB
+
+	sync.Mutex
 }
 
-// GetDB get db connection from config
-func (c Config) GetDB() *gorm.DB {
-	c.db.Lock()
-	defer c.db.Unlock()
+// Wrapper use to hide detail of a config
+type Wrapper struct {
+	cfg *Config
+}
 
-	return c.db.DB
+// NewWrapper .
+func NewWrapper(cfg *Config) *Wrapper {
+	return &Wrapper{cfg}
+}
+
+// Config get sync config from wrapper
+func (w *Wrapper) Config() *Config {
+	w.cfg.Lock()
+	defer w.cfg.Unlock()
+	return w.cfg
+}
+
+// DB get db connection from config
+func (c *Config) DB() *gorm.DB {
+	return c.db
 }
 
 // UpdateConfigFromAgent update configuration from agent
-func (c Config) UpdateConfigFromAgent() error {
+func (c *Config) UpdateConfigFromAgent() error {
+	// check config was enable
+	c.Lock()
+	defer c.Unlock()
+
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", c.AgentURL, nil)
 	if err != nil {
@@ -58,7 +84,7 @@ func (c Config) UpdateConfigFromAgent() error {
 
 	c.ConnectionInfo = agentCfg.ConnectionInfo
 	c.ModelList = agentCfg.ModelList
-	err = c.updateDB()
+	err = c.UpdateDB()
 	if err != nil {
 		return err
 	}
@@ -67,16 +93,13 @@ func (c Config) UpdateConfigFromAgent() error {
 }
 
 // updateDB update db connection
-func (c *Config) updateDB() error {
-	c.db.Lock()
-	defer c.db.Unlock()
-
+func (c *Config) UpdateDB() error {
 	newDB, err := c.openNewDBConnection()
 	if err != nil {
 		// TODO: add nicer error
 		return err
 	}
-	c.db.DB = newDB
+	c.db = newDB
 
 	return nil
 }
@@ -98,14 +121,4 @@ func (c *Config) openNewDBConnection() (*gorm.DB, error) {
 	)
 
 	return gorm.Open("postgres", dbstring)
-}
-
-type serviceDB struct {
-	sync.Mutex
-	*gorm.DB
-}
-
-// Reader interface for reading config for agent
-type Reader interface {
-	Read() (*Config, error)
 }

@@ -72,3 +72,14 @@ func (cols Columns) GroupByName() map[string][]Column {
 
 	return res
 }
+
+// Names return names of all columns
+func (cols Columns) Names() []string {
+	res := []string{}
+	for _, col := range cols {
+		res = append(res, col.Name)
+
+	}
+
+	return res
+}

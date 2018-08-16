@@ -12,8 +12,8 @@ type yamlReaderImpl struct {
 	file string
 }
 
-// NewYAMLConfigReader reader dashboard config from front-end
-func NewYAMLConfigReader(file string) Reader {
+// ReadYAML reader dashboard config from front-end
+func ReadYAML(file string) Reader {
 	return yamlReaderImpl{file}
 }
 
@@ -36,8 +36,6 @@ func (c yamlReaderImpl) Read() (*Config, error) {
 			}
 		}
 	}
-
-	res.db = &serviceDB{}
 
 	return res, nil
 }

@@ -1,12 +1,13 @@
-package verify
+package dbtool
 
 import (
 	agentConfig "github.com/dwarvesf/smithy/agent/config"
 	"github.com/dwarvesf/smithy/common/database"
 )
 
-// Verifier interface for verify agent model_list config
-type Verifier interface {
+// DBTool interface for tooling when agent working with db
+type DBTool interface {
 	MissingColumns(models []database.Model) ([]agentConfig.MissingColumns, error)
 	Verify(modelList []database.Model) error
+	AutoMigrate([]agentConfig.MissingColumns) error
 }

@@ -8,22 +8,20 @@ import (
 
 // Endpoints .
 type Endpoints struct {
-	AgentSync endpoint.Endpoint
-
-	DBQuery  endpoint.Endpoint
-	DBCreate endpoint.Endpoint
-
+	AgentSync       endpoint.Endpoint
 	AvailableModels endpoint.Endpoint
+	DBQuery         endpoint.Endpoint
+	DBCreate        endpoint.Endpoint
+	DBUpdate        endpoint.Endpoint
 }
 
 // MakeServerEndpoints returns an Endpoints struct
 func MakeServerEndpoints(s service.Service) Endpoints {
 	return Endpoints{
-		AgentSync: makeAgentSyncEndpoint(s),
-
-		DBQuery:  makeDBQueryEndpoint(s),
-		DBCreate: makeDBCreateEndpoint(s),
-
+		AgentSync:       makeAgentSyncEndpoint(s),
+		DBQuery:         makeDBQueryEndpoint(s),
+		DBCreate:        makeDBCreateEndpoint(s),
+		DBUpdate:        makeDBUpdateEndpoint(s),
 		AvailableModels: makeAvailableModelsEndpoint(s),
 	}
 }

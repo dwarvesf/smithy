@@ -10,7 +10,11 @@ type yamlReaderImpl struct {
 	file string
 }
 
-// ReadYAML .
+type yamlWriterImpl struct {
+	file string
+}
+
+// ReadYAML to read .yaml file
 func ReadYAML(file string) Reader {
 	return yamlReaderImpl{file}
 }
@@ -27,4 +31,23 @@ func (c yamlReaderImpl) Read() (*Config, error) {
 	}
 
 	return res, nil
+}
+
+// WriteYAML to write data to .yaml file
+func WriteYAML(file string) Writer {
+	return yamlWriterImpl{file: file}
+}
+
+func (c yamlWriterImpl) Write(res *Config) error {
+	buff, err := yaml.Marshal(&res)
+	if err != nil {
+		return err
+	}
+
+	err = ioutil.WriteFile(c.file, buff, 0644)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

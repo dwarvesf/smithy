@@ -1,5 +1,4 @@
-serect_key: nbSVRJlopGaLbUASkqn6zxFh2WpMyzqCjtNNDX3d9NPZRr9zCAHvfjwZ10CRAWOoqWY8XSJ3jzkjCEMtUzDT-43FnvCXBN_Uh_TUTnpQ6xvrURHMfElWagFIY-p2odD9S79YAIurY_-sDHRNBTq5xsc1BmzjeaYWjONk4hVo9uE=
-verify_config: false
+serect_key: fb0bc76a-dbb1-4944-bcf7-aaef0d9d6e95
 database_connection_info:
   db_type: postgres
   db_username: postgres

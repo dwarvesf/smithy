@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
 	"log"
 
@@ -9,12 +11,9 @@ import (
 
 	"github.com/dwarvesf/smithy/agent"
 	agentConfig "github.com/dwarvesf/smithy/agent/config"
-
-	"crypto/rand"
-	"encoding/base64"
 )
 
-func GenerateRandomBytes(n int) ([]byte, error) {
+func generateRandomBytes(n int) ([]byte, error) {
 	b := make([]byte, n)
 	_, err := rand.Read(b)
 	if err != nil {
@@ -24,8 +23,8 @@ func GenerateRandomBytes(n int) ([]byte, error) {
 	return b, nil
 }
 
-func GenerateRandomString(s int) (string, error) {
-	b, err := GenerateRandomBytes(s)
+func generateRandomString(s int) (string, error) {
+	b, err := generateRandomBytes(s)
 	return base64.URLEncoding.EncodeToString(b), err
 }
 
@@ -66,23 +65,28 @@ func main() {
 		Long:             `generate use to generate PSK use to authenticate with app`,
 		Args:             cobra.MinimumNArgs(0),
 		Run: func(cmd *cobra.Command, args []string) {
-			token, err := GenerateRandomString(128)
+
+			// If command doesn't have flag, print PSK on CLI
+			token, err := generateRandomString(128)
 			if err != nil {
 				return
 			}
+			if configFile == "" {
+				fmt.Println(token)
+				return
+			}
 
+			// If file doesn't exist, create a new file and write PSK into 'secrect_key'
 			cfg, err := agent.NewConfig(agentConfig.ReadYAML(configFile))
 			if err != nil {
 				cfg = &agentConfig.Config{}
 			}
 
+			// If file already existed, update 'secrect_key'
 			cfg.SerectKey = token
-
 			wr := agentConfig.WriteYAML(configFile)
-			wr.Write(cfg)
-
-			if configFile == "" {
-				fmt.Println(token)
+			if err := wr.Write(cfg); err != nil {
+				log.Fatalln(err)
 			}
 		},
 	}

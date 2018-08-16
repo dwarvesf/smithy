@@ -14,9 +14,7 @@ type yamlWriterImpl struct {
 	file string
 }
 
-var path = "./smithy/"
-
-// ReadYAML
+// ReadYAML to read .yaml file
 func ReadYAML(file string) Reader {
 	return yamlReaderImpl{file}
 }
@@ -35,10 +33,9 @@ func (c yamlReaderImpl) Read() (*Config, error) {
 	return res, nil
 }
 
-// WriteYAML
+// WriteYAML to write data to .yaml file
 func WriteYAML(file string) Writer {
-	return yamlWriterImpl{
-		file: file}
+	return yamlWriterImpl{file: file}
 }
 
 func (c yamlWriterImpl) Write(res *Config) error {

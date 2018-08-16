@@ -22,11 +22,46 @@ type ExecutiveAccount struct {
 
 // Model store information of model can manage
 type Model struct {
-	TableName         string   `yaml:"table_name" json:"table_name"`
-	Columns           []Column `yaml:"columns" json:"columns"`
-	AutoMigration     bool     `yaml:"auto_migration" json:"auto_migration"` // auto_migration if table not exist or misisng column
-	DisplayName       string   `yaml:"display_name" json:"display_name"`
-	NameDisplayColumn string   `yaml:"name_display_column" json:"name_display_column"`
+	ACL               string    `yaml:"acl" json:"acl"`
+	ACLDetail         ACLDetail `yaml:"-" json:"-"`
+	TableName         string    `yaml:"table_name" json:"table_name"`
+	Columns           []Column  `yaml:"columns" json:"columns"`
+	AutoMigration     bool      `yaml:"auto_migration" json:"auto_migration"` // auto_migration if table not exist or misisng column
+	DisplayName       string    `yaml:"display_name" json:"display_name"`
+	NameDisplayColumn string    `yaml:"name_display_column" json:"name_display_column"`
+}
+
+// User detail of a user in database
+type User struct {
+	Username string
+	Password string
+}
+
+// MakeACLDetailFromACL update access list detail
+func (m *Model) MakeACLDetailFromACL() {
+	ad := ACLDetail{}
+	for _, r := range m.ACL {
+		switch r {
+		case 'C', 'c':
+			ad.Insert = true
+		case 'R', 'r':
+			ad.Select = true
+		case 'U', 'u':
+			ad.Update = true
+		case 'D', 'd':
+			ad.Delete = true
+		}
+	}
+
+	m.ACLDetail = ad
+}
+
+// ACLDetail .
+type ACLDetail struct {
+	Select bool
+	Insert bool
+	Update bool
+	Delete bool
 }
 
 // Models array of model

@@ -19,11 +19,7 @@ model_list:
   - table_name: "users"
     display_name: "users"
     name_display_column: "name"
-    permission_create: true
-    permission_read: true
-    permission_read_all: true
-    permission_update: true
-    permission_delete: true
+    acl: "crud"
     auto_migration: true
     columns:
       - name: id
@@ -44,11 +40,7 @@ model_list:
   - table_name: "books"
     display_name: "users"
     name_display_column: "name"
-    permission_create: true
-    permission_read: true
-    permission_read_all: true
-    permission_update: true
-    permission_delete: true
+    acl: "cru"
     auto_migration: true
     columns:
       - name: id

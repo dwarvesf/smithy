@@ -50,6 +50,19 @@ func checkModelListPG(c *agentConfig.Config) error {
 	return drivers.NewPGStore(c.DBName, c.DBSchemaName, db).Verify(c.ModelList)
 }
 
+// CreateUserWithACL create user with access list in model
+func CreateUserWithACL(cfg *agentConfig.Config) error {
+	db, err := gorm.Open("postgres", cfg.DBConnectionString())
+	if err != nil {
+		return err
+	}
+
+	s := drivers.NewPGStore(cfg.DBName, cfg.DBSchemaName, db)
+	// TODO: return to terminal
+	_, err = s.CreateUserWithACL(cfg.ModelList)
+	return err
+}
+
 // AutoMigrate using config to auto migrate missing columns and table
 func AutoMigrate(cfg *agentConfig.Config) error {
 	switch cfg.DBType {

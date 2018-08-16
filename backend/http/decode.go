@@ -46,3 +46,12 @@ func decodeDBUpdateRequest(ctx context.Context, r *http.Request) (interface{}, e
 
 	return req, err
 }
+
+func decodeDBDeleteRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	var req endpoints.DBDeleteRequest
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	defer r.Body.Close()
+
+	return req, err
+}

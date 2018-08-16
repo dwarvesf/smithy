@@ -15,9 +15,9 @@ import (
 
 // DBUpdateRequest request for db Update data
 type DBUpdateRequest struct {
-	TableName string            `json:"table_name"`
-	Data      sqlmapper.RowData `json:"data"`
-	QueryData string            `json:"primary_id" schema:"primary_id"`
+	TableName  string            `json:"table_name"`
+	Data       sqlmapper.RowData `json:"data"`
+	PrimaryKey string            `json:"primary_key" schema:"primary_key"`
 }
 
 // DBUpdateResponse response for db Update data
@@ -27,7 +27,7 @@ type DBUpdateResponse struct {
 }
 
 func (r *DBUpdateRequest) getResourceID() (int, error) {
-	return strconv.Atoi(r.QueryData)
+	return strconv.Atoi(r.PrimaryKey)
 }
 
 func makeDBUpdateEndpoint(s service.Service) endpoint.Endpoint {

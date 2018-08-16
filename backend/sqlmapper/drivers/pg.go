@@ -146,8 +146,7 @@ func checkColumnFieldIsValid(inputColumns []string, colName string) error {
 	}
 
 	if err {
-		errMess := fmt.Sprintf("field %s in valid", colName)
-		return errors.New(errMess)
+		return fmt.Errorf("field %s in valid", colName)
 	}
 
 	return nil
@@ -187,8 +186,8 @@ func (s *pgStore) FindByColumnName(columnName string, value string, offset int, 
 }
 
 func (s *pgStore) Update(d sqlmapper.RowData, id int) (sqlmapper.RowData, error) {
-	if err := s.isIDNotExist(id); err != nil {
-		return nil, err
+	if notExist, _ := s.isIDNotExist(id); !notExist {
+		return nil, errors.New("primary key is not exist")
 	}
 
 	if err := verifyInput(d, s.TableName, s.ModelList); err != nil {
@@ -214,21 +213,12 @@ func (s *pgStore) Update(d sqlmapper.RowData, id int) (sqlmapper.RowData, error)
 	}
 	return d, nil
 }
-func (s *pgStore) isIDNotExist(id int) error {
-	db := s.db.DB()
-	execQuery := fmt.Sprintf("SELECT * FROM %s WHERE id = %d", s.TableName, id)
-	res, err := db.Exec(execQuery)
-	if err != nil {
-		return err
-	}
+func (s *pgStore) isIDNotExist(id int) (bool, error) {
+	data := struct {
+		Result bool
+	}{}
 
-	var count int64
-	count, err = res.RowsAffected()
-	if count <= 0 {
-		return errors.New("id field isn't exist")
-	}
-	if err != nil {
-		return err
-	}
-	return nil
+	execQuery := fmt.Sprintf("SELECT EXISTS(SELECT 1 FROM %s WHERE id = %d) as result", s.TableName, id)
+
+	return data.Result, s.db.Raw(execQuery).Scan(&data).Error
 }

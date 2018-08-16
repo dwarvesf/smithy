@@ -8,6 +8,7 @@ import (
 
 	"github.com/boltdb/bolt"
 	"github.com/jinzhu/gorm"
+	_ "github.com/jinzhu/gorm/dialects/postgres"
 
 	agentConfig "github.com/dwarvesf/smithy/agent/config"
 	"github.com/dwarvesf/smithy/common/database"
@@ -83,7 +84,7 @@ func (c *Config) UpdateConfigFromAgent() error {
 
 	c.ConnectionInfo = agentCfg.ConnectionInfo
 	c.ModelList = agentCfg.ModelList
-	err = c.updateDB()
+	err = c.UpdateDB()
 	if err != nil {
 		return err
 	}
@@ -92,7 +93,7 @@ func (c *Config) UpdateConfigFromAgent() error {
 }
 
 // updateDB update db connection
-func (c *Config) updateDB() error {
+func (c *Config) UpdateDB() error {
 	newDB, err := c.openNewDBConnection()
 	if err != nil {
 		// TODO: add nicer error

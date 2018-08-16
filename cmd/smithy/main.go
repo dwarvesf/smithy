@@ -69,6 +69,7 @@ func main() {
 			// If command doesn't have flag, print PSK on CLI
 			token, err := generateRandomString(128)
 			if err != nil {
+				log.Fatalln(err)
 				return
 			}
 			if configFile == "" {

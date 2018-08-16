@@ -13,6 +13,7 @@ type Endpoints struct {
 	DBQuery         endpoint.Endpoint
 	DBCreate        endpoint.Endpoint
 	DBUpdate        endpoint.Endpoint
+	DBDelete        endpoint.Endpoint
 }
 
 // MakeServerEndpoints returns an Endpoints struct
@@ -22,6 +23,7 @@ func MakeServerEndpoints(s service.Service) Endpoints {
 		DBQuery:         makeDBQueryEndpoint(s),
 		DBCreate:        makeDBCreateEndpoint(s),
 		DBUpdate:        makeDBUpdateEndpoint(s),
+		DBDelete:        makeDBDeleteEndpoint(s),
 		AvailableModels: makeAvailableModelsEndpoint(s),
 	}
 }

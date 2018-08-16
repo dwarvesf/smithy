@@ -53,10 +53,4 @@ func (c yamlWriterImpl) Write(res *Config) error {
 	}
 
 	return nil
-
-}
-func check(err error) {
-	if err != nil {
-		panic(err)
-	}
 }

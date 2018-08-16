@@ -1,77 +1,106 @@
-serect_key: fb0bc76a-dbb1-4944-bcf7-aaef0d9d6e95
+serect_key: nbSVRJlopGaLbUASkqn6zxFh2WpMyzqCjtNNDX3d9NPZRr9zCAHvfjwZ10CRAWOoqWY8XSJ3jzkjCEMtUzDT-43FnvCXBN_Uh_TUTnpQ6xvrURHMfElWagFIY-p2odD9S79YAIurY_-sDHRNBTq5xsc1BmzjeaYWjONk4hVo9uE=
 verify_config: false
+database_connection_info:
+  db_type: postgres
+  db_username: postgres
+  db_password: example
+  db_name: fortress
+  db_ssl_mode_option: disable
+  db_hostname: localhost
+  db_port: "5432"
+  db_environment: development
+  db_schema_name: public
 create_management_db_user: true
 db_executive_account:
   username: agent_db_manager
   password: this_is_password
   force_recreate: true
-database_connection_info:
-  db_type: "postgres"
-  db_username: "postgres"
-  db_password: "example"
-  db_name: "fortress"
-  db_ssl_mode_option: "disable"
-  db_hostname: "localhost"
-  db_port: "5432"
-  db_environment: "development"
-  db_schema_name: "public"
 model_list:
-  - table_name: "users"
-    display_name: "users"
-    name_display_column: "name"
-    permission_create: true
-    permission_read: true
-    permission_read_all: true
-    permission_update: true
-    permission_delete: true
-    auto_migration: true
-    columns:
-      - name: id
-        type: int
-        is_primary: true
-      - name: name
-        type: string
-        is_nullable: true
-      - name: title
-        type: string
-        is_nullable: true
-      - name: description
-        type: string
-        is_nullable: true
-      - name: age
-        type: int
-        is_nullable: true
-  - table_name: "books"
-    display_name: "users"
-    name_display_column: "name"
-    permission_create: true
-    permission_read: true
-    permission_read_all: true
-    permission_update: true
-    permission_delete: true
-    auto_migration: true
-    columns:
-      - name: id
-        type: int
-        is_primary: true
-      - name: created_at
-        type: timestamp
-        is_nullable: true
-      - name: updated_at
-        type: timestamp
-        is_nullable: true
-      - name: deleted_at
-        type: timestamp
-        is_nullable: true
-      - name: name
-        type: string
-        is_nullable: false
-      - name: title
-        type: string
-        is_nullable: true
-      - name: description
-        type: string
-        is_nullable: true
-      - name: age
-        type: int
-        is_nullable: true
+- table_name: users
+  columns:
+  - name: id
+    type: int
+    tags: ""
+    is_nullable: false
+    is_primary: true
+    default_value: ""
+  - name: name
+    type: string
+    tags: ""
+    is_nullable: true
+    is_primary: false
+    default_value: ""
+  - name: title
+    type: string
+    tags: ""
+    is_nullable: true
+    is_primary: false
+    default_value: ""
+  - name: description
+    type: string
+    tags: ""
+    is_nullable: true
+    is_primary: false
+    default_value: ""
+  - name: age
+    type: int
+    tags: ""
+    is_nullable: true
+    is_primary: false
+    default_value: ""
+  auto_migration: true
+  display_name: users
+  name_display_column: name
+- table_name: books
+  columns:
+  - name: id
+    type: int
+    tags: ""
+    is_nullable: false
+    is_primary: true
+    default_value: ""
+  - name: created_at
+    type: timestamp
+    tags: ""
+    is_nullable: true
+    is_primary: false
+    default_value: ""
+  - name: updated_at
+    type: timestamp
+    tags: ""
+    is_nullable: true
+    is_primary: false
+    default_value: ""
+  - name: deleted_at
+    type: timestamp
+    tags: ""
+    is_nullable: true
+    is_primary: false
+    default_value: ""
+  - name: name
+    type: string
+    tags: ""
+    is_nullable: false
+    is_primary: false
+    default_value: ""
+  - name: title
+    type: string
+    tags: ""
+    is_nullable: true
+    is_primary: false
+    default_value: ""
+  - name: description
+    type: string
+    tags: ""
+    is_nullable: true
+    is_primary: false
+    default_value: ""
+  - name: age
+    type: int
+    tags: ""
+    is_nullable: true
+    is_primary: false
+    default_value: ""
+  auto_migration: true
+  display_name: users
+  name_display_column: name

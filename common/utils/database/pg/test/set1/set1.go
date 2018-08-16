@@ -1,13 +1,14 @@
-package test
+package set1
 
 import (
+	"strconv"
 	"testing"
 
-	backendConfig "github.com/dwarvesf/smithy/backend/config"
 	"github.com/dwarvesf/smithy/common/database"
-	utilDB "github.com/dwarvesf/smithy/common/utils/database/pg"
 	"github.com/jinzhu/gorm"
-	_ "github.com/lib/pq" // postgresql driver
+
+	backendConfig "github.com/dwarvesf/smithy/backend/config"
+	utilDB "github.com/dwarvesf/smithy/common/utils/database/pg"
 )
 
 const (
@@ -20,13 +21,31 @@ const (
 
 // MigrateTables migrate db with tables base by domain model
 func MigrateTables(db *gorm.DB) error {
-	type User struct {
-		Id   int `sql:"primary_key"`
-		Name string
+	return db.Exec(`CREATE TABLE "users" (
+		"id" int NOT NULL,
+		"name" text,
+		CONSTRAINT "users_pkey" PRIMARY KEY ("id")
+	  ) WITH (oids = false);`).Error
+}
+
+func CreateUserSampleData(db *gorm.DB) ([]utilDB.User, error) {
+	users := make([]utilDB.User, 0)
+
+	for i := 0; i < 15; i++ {
+		user := utilDB.User{
+			Id:   i + 1,
+			Name: "hieudeptrai" + strconv.Itoa(i),
+		}
+		err := db.Create(&user).Error
+
+		if err != nil {
+			return nil, err
+		}
+
+		users = append(users, user)
 	}
-	return db.AutoMigrate(
-		User{},
-	).Error
+
+	return users, nil
 }
 
 func CreateModelList() []database.Model {
@@ -68,8 +87,6 @@ func CreateModelList() []database.Model {
 
 func CreateConfig(t *testing.T) (*backendConfig.Config, func()) {
 	cfg := &backendConfig.Config{
-		SerectKey: "fb0bc76a-dbb1-4944-bcf7-aaef0d9d6e95",
-		AgentURL:  "http://localhost:3000/agent",
 		ModelList: CreateModelList(),
 		ConnectionInfo: database.ConnectionInfo{
 			DBType:          "postgres",

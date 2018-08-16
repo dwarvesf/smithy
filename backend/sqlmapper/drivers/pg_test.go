@@ -3,13 +3,12 @@
 package drivers
 
 import (
-	"fmt"
-	"strings"
 	"testing"
 
 	"github.com/dwarvesf/smithy/backend/sqlmapper"
 	"github.com/dwarvesf/smithy/common/database"
-	utilTest "github.com/dwarvesf/smithy/common/utils/database/pg/test"
+	utilPg "github.com/dwarvesf/smithy/common/utils/database/pg"
+	utilTest "github.com/dwarvesf/smithy/common/utils/database/pg/test/set1"
 	utilReflect "github.com/dwarvesf/smithy/common/utils/reflect"
 )
 
@@ -41,23 +40,10 @@ func Test_pgStore_FindAll(t *testing.T) {
 	}
 
 	//create sample data
-	sampleData := make(map[string]sqlmapper.ColData)
-	sampleData["id"] = sqlmapper.ColData{
-		Data:     999,
-		DataType: "int",
+	users, err := utilTest.CreateUserSampleData(cfg.DB())
+	if err != nil {
+		t.Fatalf("Failed to create sample data by error %v", err)
 	}
-	sampleData["name"] = sqlmapper.ColData{
-		Data:     "hieudeptrai",
-		DataType: "string",
-	}
-
-	tableName := "users"
-	cfg.DB().Exec(fmt.Sprintf("DELETE FROM %s;", tableName))
-	execQuery := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s) RETURNING id;",
-		tableName,
-		strings.Join([]string{"id", "name"}, ","),
-		"?,?")
-	cfg.DB().Exec(execQuery, sampleData["id"].Data, sampleData["name"].Data)
 
 	cols := []database.Column{
 		{
@@ -76,45 +62,97 @@ func Test_pgStore_FindAll(t *testing.T) {
 	}
 
 	tests := []struct {
-		name    string
-		args    *args
-		want    []sqlmapper.RowData
-		wantErr bool
+		name              string
+		tableName         string
+		args              *args
+		want              []utilPg.User
+		wantErr           bool
+		testForEmptyTable bool
 	}{
 		{
-			name: "Valid test case",
+			name:      "Valid test case",
+			tableName: "users",
 			args: &args{
 				Offset: 0,
+				Limit:  0,
+			},
+			want: users,
+		},
+		{
+			name:      "empty table",
+			tableName: "users",
+			args: &args{
+				Offset: 0,
+				Limit:  0,
+			},
+			want:              []utilPg.User{},
+			testForEmptyTable: true,
+		},
+		{
+			name:      "offset = 2 limit = 10",
+			tableName: "users",
+			args: &args{
+				Offset: 2,
 				Limit:  10,
 			},
-			want: []sqlmapper.RowData{sampleData},
+			want: users[2:12],
+		},
+		{
+			name:      "offset = 2 limit = 0",
+			tableName: "users",
+			args: &args{
+				Offset: 2,
+				Limit:  0,
+			},
+			want: users[2:],
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := NewPGStore(cfg.DB(), tableName, cols, cfg.ModelList)
+			var s sqlmapper.Mapper
+			if tt.testForEmptyTable {
+				cfgEmpty, clearDB := utilTest.CreateConfig(t)
+				defer clearDB()
+
+				// migrate tables
+				err := utilTest.MigrateTables(cfgEmpty.DB())
+				if err != nil {
+					t.Fatalf("Failed to migrate table by error %v", err)
+				}
+				s = NewPGStore(cfgEmpty.DB(), tt.tableName, cols, cfgEmpty.ModelList)
+			} else {
+				s = NewPGStore(cfg.DB(), tt.tableName, cols, cfg.ModelList)
+			}
+
 			got, err := s.FindAll(tt.args.Offset, tt.args.Limit)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("pgStore.FindAll() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 
-			// convert data
-			iId, err := utilReflect.ConvertFromInterfacePtr(got[0]["id"].Data)
-			if err != nil {
-				t.Fatal(err)
+			if len(got) != len(tt.want) {
+				t.Errorf("len(got)=%v != len(tt.want)=%v", len(got), len(tt.want))
+				return
 			}
-			id := iId.(int)
-			iName, err := utilReflect.ConvertFromInterfacePtr(got[0]["name"].Data)
-			if err != nil {
-				t.Fatal(err)
-			}
-			name := iName.(string)
 
-			if len(got) != len(tt.want) ||
-				id != tt.want[0]["id"].Data ||
-				name != tt.want[0]["name"].Data {
-				t.Errorf("pgStore.FindAll() = %v, want %v", got, tt.want)
+			for i := 0; i < len(got); i++ {
+				// convert data
+				iId, err := utilReflect.ConvertFromInterfacePtr(got[i]["id"].Data)
+				if err != nil {
+					t.Fatal(err)
+				}
+				id := iId.(int)
+				iName, err := utilReflect.ConvertFromInterfacePtr(got[i]["name"].Data)
+				if err != nil {
+					t.Fatal(err)
+				}
+				name := iName.(string)
+
+				if len(got) != len(tt.want) ||
+					id != tt.want[i].Id ||
+					name != tt.want[i].Name {
+					t.Errorf("pgStore.FindByColumnName() = %v, want %v", got, tt.want)
+				}
 			}
 		})
 	}
@@ -132,23 +170,10 @@ func Test_pgStore_FindByColumnName(t *testing.T) {
 	}
 
 	//create sample data
-	sampleData := make(map[string]sqlmapper.ColData)
-	sampleData["id"] = sqlmapper.ColData{
-		Data:     999,
-		DataType: "int",
+	users, err := utilTest.CreateUserSampleData(cfg.DB())
+	if err != nil {
+		t.Fatalf("Failed to create sample data by error %v", err)
 	}
-	sampleData["name"] = sqlmapper.ColData{
-		Data:     "hieudeptrai",
-		DataType: "string",
-	}
-
-	tableName := "users"
-	cfg.DB().Exec(fmt.Sprintf("DELETE FROM %s;", tableName))
-	execQuery := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s) RETURNING id;",
-		tableName,
-		strings.Join([]string{"id", "name"}, ","),
-		"?,?")
-	cfg.DB().Exec(execQuery, sampleData["id"].Data, sampleData["name"].Data)
 
 	cols := []database.Column{
 		{
@@ -169,47 +194,116 @@ func Test_pgStore_FindByColumnName(t *testing.T) {
 	}
 
 	tests := []struct {
-		name    string
-		args    *args
-		want    []sqlmapper.RowData
-		wantErr bool
+		name              string
+		tableName         string
+		args              *args
+		want              []utilPg.User
+		wantErr           bool
+		testForEmptyTable bool
 	}{
 		{
-			name: "Valid test case",
+			name:      "Valid test case",
+			tableName: "users",
 			args: &args{
 				ColumnName: "name",
 				Value:      "hieudeptrai",
 				Offset:     0,
+				Limit:      0,
+			},
+			want: users,
+		},
+		{
+			name:      "empty table",
+			tableName: "users",
+			args: &args{
+				ColumnName: "name",
+				Value:      "hieudeptrai",
+				Offset:     0,
+				Limit:      0,
+			},
+			want:              []utilPg.User{},
+			testForEmptyTable: true,
+		},
+		{
+			name:      "offset = 2 limit = 10",
+			tableName: "users",
+			args: &args{
+				ColumnName: "name",
+				Value:      "hieudeptrai",
+				Offset:     2,
 				Limit:      10,
 			},
-			want: []sqlmapper.RowData{sampleData},
+			want: users[2:12],
+		},
+		{
+			name:      "offset = 2 limit = 0",
+			tableName: "users",
+			args: &args{
+				ColumnName: "name",
+				Value:      "hieudeptrai",
+				Offset:     2,
+				Limit:      0,
+			},
+			want: users[2:],
+		},
+		{
+			name:      "invalid column name",
+			tableName: "users",
+			args: &args{
+				ColumnName: "namexxx",
+				Value:      "hieudeptrai",
+				Offset:     2,
+				Limit:      0,
+			},
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := NewPGStore(cfg.DB(), tableName, cols, cfg.ModelList)
+			var s sqlmapper.Mapper
+			if tt.testForEmptyTable {
+				cfgEmpty, clearDB := utilTest.CreateConfig(t)
+				defer clearDB()
+
+				// migrate tables
+				err := utilTest.MigrateTables(cfgEmpty.DB())
+				if err != nil {
+					t.Fatalf("Failed to migrate table by error %v", err)
+				}
+				s = NewPGStore(cfgEmpty.DB(), tt.tableName, cols, cfgEmpty.ModelList)
+			} else {
+				s = NewPGStore(cfg.DB(), tt.tableName, cols, cfg.ModelList)
+			}
+
 			got, err := s.FindByColumnName(tt.args.ColumnName, tt.args.Value, tt.args.Offset, tt.args.Limit)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("pgStore.FindByColumnName() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 
-			// convert data
-			iId, err := utilReflect.ConvertFromInterfacePtr(got[0]["id"].Data)
-			if err != nil {
-				t.Fatal(err)
+			if len(got) != len(tt.want) {
+				t.Errorf("len(got)=%v != len(tt.want)=%v", len(got), len(tt.want))
+				return
 			}
-			id := iId.(int)
-			iName, err := utilReflect.ConvertFromInterfacePtr(got[0]["name"].Data)
-			if err != nil {
-				t.Fatal(err)
-			}
-			name := iName.(string)
 
-			if len(got) != len(tt.want) ||
-				id != tt.want[0]["id"].Data ||
-				name != tt.want[0]["name"].Data {
-				t.Errorf("pgStore.FindByColumnName() = %v, want %v", got, tt.want)
+			for i := 0; i < len(got); i++ {
+				// convert data
+				iId, err := utilReflect.ConvertFromInterfacePtr(got[i]["id"].Data)
+				if err != nil {
+					t.Fatal(err)
+				}
+				id := iId.(int)
+				iName, err := utilReflect.ConvertFromInterfacePtr(got[i]["name"].Data)
+				if err != nil {
+					t.Fatal(err)
+				}
+				name := iName.(string)
+
+				if len(got) != len(tt.want) ||
+					id != tt.want[i].Id ||
+					name != tt.want[i].Name {
+					t.Errorf("pgStore.FindByColumnName() = %v, want %v", got, tt.want)
+				}
 			}
 		})
 	}

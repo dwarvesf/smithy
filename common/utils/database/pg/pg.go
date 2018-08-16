@@ -34,3 +34,8 @@ func CreateDatabase(t *testing.T, cfg *backendConfig.Config) func() {
 		}
 	}
 }
+
+type User struct {
+	Id   int `sql:"primary_key"`
+	Name string
+}

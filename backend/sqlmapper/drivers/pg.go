@@ -62,11 +62,12 @@ func (s *pgStore) FindByID(id int) (sqlmapper.RowData, error) {
 }
 
 func (s *pgStore) Create(d sqlmapper.RowData) (sqlmapper.RowData, error) {
-	if err := verifyCreate(&d, s.TableName, s.ModelList); err != nil {
+	if err := verifyInput(d, s.TableName, s.ModelList); err != nil {
 		return nil, err
 	}
 
 	db := s.db.DB()
+
 	cols, data := d.ColumnsAndData()
 
 	phs := strmangle.Placeholders(true, len(cols), 1, 1)
@@ -90,8 +91,13 @@ func (s *pgStore) Create(d sqlmapper.RowData) (sqlmapper.RowData, error) {
 	return d, nil
 }
 
-func verifyCreate(d *sqlmapper.RowData, tableName string, modelList []database.Model) error {
+func verifyInput(d sqlmapper.RowData, tableName string, modelList []database.Model) error {
 	// name data_type nullable primary_key
+	d = filterRowData(d)
+	if len(d) <= 0 {
+		return errors.New("rowData is empty")
+	}
+
 	tableNotExist := true
 	for _, table := range modelList {
 		if table.TableName == tableName {
@@ -108,44 +114,51 @@ func verifyCreate(d *sqlmapper.RowData, tableName string, modelList []database.M
 				}
 
 				if !column.IsNullable || column.IsPrimary {
-					obligateErr := true
-					for _, name := range cols {
-						if name == column.Name {
-							obligateErr = false
-						}
-					}
-
-					if obligateErr {
-						errMess := fmt.Sprintf("%s Obligate", column.Name)
-						return errors.New(errMess)
+					if err := checkColumnFieldIsValid(cols, column.Name); err != nil {
+						return err
 					}
 				}
 			}
-
-			// field invalid
+			//field invalid
 			for _, name := range cols {
-				err := true
-				for _, column := range table.Columns {
-					if name == column.Name {
-						err = false
-					}
-				}
-
-				if err {
-					errMess := fmt.Sprintf("field %s in valid", name)
-					return errors.New(errMess)
+				agentColumns := database.Columns(table.Columns).Names()
+				if err := checkColumnFieldIsValid(agentColumns, name); err != nil {
+					return err
 				}
 			}
 
 			break
 		}
 	}
-
 	if tableNotExist {
 		return errors.New("Table have existed yet")
 	}
 
 	return nil
+}
+
+func checkColumnFieldIsValid(inputColumns []string, colName string) error {
+	err := true
+	for _, name := range inputColumns {
+		if name == colName {
+			err = false
+		}
+	}
+
+	if err {
+		return fmt.Errorf("field %s in valid", colName)
+	}
+
+	return nil
+}
+
+// remove id field out of rowdata because it duplicates with primary key
+func filterRowData(d sqlmapper.RowData) sqlmapper.RowData {
+	_, ok := d["id"]
+	if ok {
+		delete(d, "id")
+	}
+	return d
 }
 
 func (s *pgStore) FindByColumnName(columnName string, value string, offset int, limit int) ([]sqlmapper.RowData, error) {
@@ -170,4 +183,42 @@ func (s *pgStore) FindByColumnName(columnName string, value string, offset int, 
 	}
 
 	return sqlmapper.RowsToQueryResults(rows, s.Columns)
+}
+
+func (s *pgStore) Update(d sqlmapper.RowData, id int) (sqlmapper.RowData, error) {
+	if notExist, _ := s.isIDNotExist(id); !notExist {
+		return nil, errors.New("primary key is not exist")
+	}
+
+	if err := verifyInput(d, s.TableName, s.ModelList); err != nil {
+		return nil, err
+	}
+
+	db := s.db.DB()
+	cols, data := d.ColumnsAndData()
+
+	rowQuery := make([]string, len(cols))
+
+	for i := 0; i < len(cols); i++ {
+		rowQuery[i] = fmt.Sprintf("%s = $%d", cols[i], i+1)
+	}
+
+	execQuery := fmt.Sprintf("UPDATE %s SET %s WHERE id = %d",
+		s.TableName,
+		strings.Join(rowQuery, ","),
+		id)
+
+	if _, err := db.Exec(execQuery, data...); err != nil {
+		return nil, err
+	}
+	return d, nil
+}
+func (s *pgStore) isIDNotExist(id int) (bool, error) {
+	data := struct {
+		Result bool
+	}{}
+
+	execQuery := fmt.Sprintf("SELECT EXISTS(SELECT 1 FROM %s WHERE id = %d) as result", s.TableName, id)
+
+	return data.Result, s.db.Raw(execQuery).Scan(&data).Error
 }

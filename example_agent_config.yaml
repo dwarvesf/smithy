@@ -1,10 +1,5 @@
 serect_key: fb0bc76a-dbb1-4944-bcf7-aaef0d9d6e95
 verify_config: false
-create_management_db_user: true
-db_executive_account:
-  username: agent_db_manager
-  password: this_is_password
-  force_recreate: true
 database_connection_info:
   db_type: "postgres"
   db_username: "postgres"
@@ -15,15 +10,14 @@ database_connection_info:
   db_port: "5432"
   db_environment: "development"
   db_schema_name: "public"
+  user_with_acl:
+    username: agent_db_manager
+    password: this_is_password
 model_list:
   - table_name: "users"
     display_name: "users"
     name_display_column: "name"
-    permission_create: true
-    permission_read: true
-    permission_read_all: true
-    permission_update: true
-    permission_delete: true
+    acl: "crud"
     auto_migration: true
     columns:
       - name: id
@@ -44,11 +38,7 @@ model_list:
   - table_name: "books"
     display_name: "users"
     name_display_column: "name"
-    permission_create: true
-    permission_read: true
-    permission_read_all: true
-    permission_update: true
-    permission_delete: true
+    acl: "cru"
     auto_migration: true
     columns:
       - name: id

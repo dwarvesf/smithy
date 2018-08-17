@@ -3,6 +3,7 @@ package drivers
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/jinzhu/gorm"
 
@@ -268,4 +269,80 @@ func (s *pgStore) groupUpdateQueries(queries []string) string {
 	}
 
 	return res
+}
+
+// ACLUser information
+type aclByTableName struct {
+	TableName string
+	ACL       database.ACLDetail
+}
+
+func (a aclByTableName) GrantToUserSQL(username string) string {
+	query := []string{}
+	c, r, u, d := a.ACL.Insert, a.ACL.Select, a.ACL.Update, a.ACL.Delete
+	if c {
+		query = append(query, "INSERT")
+	}
+
+	if r {
+		query = append(query, "SELECT")
+	}
+
+	if u {
+		query = append(query, "UPDATE")
+	}
+
+	if d {
+		query = append(query, "DELETE")
+	}
+
+	if len(query) == 0 {
+		return ""
+	}
+	return fmt.Sprintf("GRANT %s ON %s TO %s", strings.Join(query, ","), a.TableName, username)
+}
+
+func (s *pgStore) createACLUser(username, password string, forceCreate bool) error {
+	if forceCreate {
+		s.db.Exec(fmt.Sprintf("REASSIGN OWNED BY %s TO postgres;", username))
+		s.db.Exec(fmt.Sprintf("DROP OWNED BY %s;", username))
+
+		err := s.db.Exec(fmt.Sprintf("DROP ROLE IF EXISTS %s;", username)).Error
+		if err != nil {
+			return err
+		}
+	}
+	if err := s.db.Exec(fmt.Sprintf("CREATE ROLE %s LOGIN PASSWORD '%s';", username, password)).Error; err != nil {
+		return err
+	}
+
+	return s.db.Exec(fmt.Sprintf("GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO %s;", username)).Error
+}
+
+func (s *pgStore) CreateUserWithACL(models []database.Model, username, password string, forceCreate bool) (*database.User, error) {
+	if username == "" || password == "" {
+		return nil, errors.New("missing username, password for acl user")
+	}
+
+	err := s.createACLUser(username, password, forceCreate)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, m := range models {
+		m.MakeACLDetailFromACL()
+		acl := aclByTableName{}
+		acl.TableName = m.TableName
+		acl.ACL = m.ACLDetail
+		execSQL := acl.GrantToUserSQL(username)
+		if execSQL == "" {
+			continue
+		}
+		err = s.db.Exec(execSQL).Error
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &database.User{Username: username, Password: password}, nil
 }

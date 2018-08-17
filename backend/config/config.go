@@ -83,6 +83,8 @@ func (c *Config) UpdateConfigFromAgent() error {
 	}
 
 	c.ConnectionInfo = agentCfg.ConnectionInfo
+	c.DBUsername = c.UserWithACL.Username
+	c.DBPassword = c.UserWithACL.Password
 	c.ModelList = agentCfg.ModelList
 	err = c.UpdateDB()
 	if err != nil {
@@ -92,7 +94,7 @@ func (c *Config) UpdateConfigFromAgent() error {
 	return nil
 }
 
-// updateDB update db connection
+// UpdateDB update db connection
 func (c *Config) UpdateDB() error {
 	newDB, err := c.openNewDBConnection()
 	if err != nil {

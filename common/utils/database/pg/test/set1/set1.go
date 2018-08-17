@@ -21,8 +21,9 @@ const (
 
 // MigrateTables migrate db with tables base by domain model
 func MigrateTables(db *gorm.DB) error {
-	return db.Exec(`CREATE TABLE "users" (
-		"id" int NOT NULL,
+	return db.Exec(`CREATE SEQUENCE user_id_seq;
+		CREATE TABLE "users" (
+		"id" int NOT NULL DEFAULT nextval('user_id_seq'),
 		"name" text,
 		CONSTRAINT "users_pkey" PRIMARY KEY ("id")
 	  ) WITH (oids = false);`).Error

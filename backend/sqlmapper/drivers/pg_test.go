@@ -4,6 +4,7 @@ package drivers
 
 import (
 	"testing"
+	"math"
 
 	"github.com/dwarvesf/smithy/backend/sqlmapper"
 	"github.com/dwarvesf/smithy/common/database"
@@ -367,7 +368,7 @@ func Test_pgStore_FindByID(t *testing.T) {
 			name: "id too long",
 			tableName: "users",
 			args: &args {
-				id: 11111111111111111111111111111111111111111,
+				id: id: math.MaxInt32 + 1,
 			}
 			wantErr: true
 		},
@@ -488,7 +489,7 @@ func Test_pgStore_Delete(t *testing.T) {
 			name: "id too long",
 			tableName: "users",
 			args: &args {
-				id: 11111111111111111111111111111111111111111,
+				id: math.MaxInt32 + 1,
 			}
 			wantErr: true
 		},

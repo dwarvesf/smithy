@@ -29,11 +29,8 @@ func generateRandomString(s int) (string, error) {
 }
 
 func main() {
-	cfg, err := agent.NewConfig(agentConfig.ReadYAML("example_agent_config.yaml"))
-	if err != nil {
-		panic(err)
-	}
 	var configFile string
+	var forceCreate bool
 
 	var cmdAgentMigrate = &cobra.Command{
 		Use:   "agent-migrate",
@@ -41,10 +38,17 @@ func main() {
 		Long:  `agent-migrate migrate missing columns, tables described in config file`,
 		Args:  cobra.MinimumNArgs(0),
 		Run: func(cmd *cobra.Command, args []string) {
+
+			cfg, err := agent.NewConfig(agentConfig.ReadYAML(configFile))
+			if err != nil {
+				log.Fatalln(err)
+			}
 			err = agent.AutoMigrate(cfg)
 			if err != nil {
 				log.Fatalln(err)
 			}
+
+			fmt.Println("Finish auto-migrate")
 		},
 	}
 
@@ -92,9 +96,37 @@ func main() {
 		},
 	}
 
+	var cmdGenerateUser = &cobra.Command{
+		Use:              "user",
+		TraverseChildren: true,
+		Short:            "generate user with ACL describe in model list",
+		Long:             `generate user with ACL describe in model list`,
+		Args:             cobra.MinimumNArgs(0),
+		Run: func(cmd *cobra.Command, args []string) {
+			cfg, err := agent.NewConfig(agentConfig.ReadYAML(configFile))
+			if err != nil {
+				cfg = &agentConfig.Config{}
+			}
+
+			user, err := agent.CreateUserWithACL(cfg, forceCreate)
+			if err != nil {
+				log.Fatalln(err)
+			}
+			fmt.Printf("UserName: %s\n", user.Username)
+			fmt.Printf("Password: %s\n", user.Password)
+		},
+	}
+
 	var rootCmd = &cobra.Command{Use: "smithy"}
 	rootCmd.AddCommand(cmdAgentMigrate, cmdGenerate)
 	cmdGenerate.AddCommand(cmdPSK)
-	cmdPSK.Flags().StringVarP(&configFile, "config-file", "f", "", "put your name of config file here, with extension")
+	cmdGenerate.AddCommand(cmdGenerateUser)
+
+	// Set flags
+	cmdPSK.Flags().StringVarP(&configFile, "config-file", "c", "", "put your name of config file here, with extension")
+	cmdAgentMigrate.Flags().StringVarP(&configFile, "config-file", "c", "example_agent_config.yaml", "put your name of config file here, with extension")
+	cmdGenerateUser.Flags().StringVarP(&configFile, "config-file", "c", "example_agent_config.yaml", "put your name of config file here, with extension")
+	cmdGenerateUser.Flags().BoolVarP(&forceCreate, "force-create", "f", false, "put your name of config file here, with extension")
+
 	rootCmd.Execute()
 }

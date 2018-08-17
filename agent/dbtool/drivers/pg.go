@@ -272,11 +272,6 @@ func (s *pgStore) groupUpdateQueries(queries []string) string {
 }
 
 // ACLUser information
-const (
-	ACLUsername     = "smithy_user_acl"
-	ACLUserPassword = "password"
-)
-
 type aclByTableName struct {
 	TableName string
 	ACL       database.ACLDetail
@@ -324,8 +319,12 @@ func (s *pgStore) createACLUser(username, password string, forceCreate bool) err
 	return s.db.Exec(fmt.Sprintf("GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO %s;", username)).Error
 }
 
-func (s *pgStore) CreateUserWithACL(models []database.Model, forceCreate bool) (*database.User, error) {
-	err := s.createACLUser(ACLUsername, ACLUserPassword, forceCreate)
+func (s *pgStore) CreateUserWithACL(models []database.Model, username, password string, forceCreate bool) (*database.User, error) {
+	if username == "" || password == "" {
+		return nil, errors.New("missing username, password for acl user")
+	}
+
+	err := s.createACLUser(username, password, forceCreate)
 	if err != nil {
 		return nil, err
 	}
@@ -335,7 +334,7 @@ func (s *pgStore) CreateUserWithACL(models []database.Model, forceCreate bool) (
 		acl := aclByTableName{}
 		acl.TableName = m.TableName
 		acl.ACL = m.ACLDetail
-		execSQL := acl.GrantToUserSQL(ACLUsername)
+		execSQL := acl.GrantToUserSQL(username)
 		if execSQL == "" {
 			continue
 		}
@@ -345,5 +344,5 @@ func (s *pgStore) CreateUserWithACL(models []database.Model, forceCreate bool) (
 		}
 	}
 
-	return &database.User{ACLUsername, ACLUserPassword}, nil
+	return &database.User{Username: username, Password: password}, nil
 }

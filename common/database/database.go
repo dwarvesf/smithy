@@ -11,6 +11,7 @@ type ConnectionInfo struct {
 	DBPort          string `yaml:"db_port" json:"db_port"`
 	DBEnvironment   string `yaml:"db_environment" json:"db_environment"`
 	DBSchemaName    string `yaml:"db_schema_name" json:"db_schema_name"`
+	UserWithACL     User   `yaml:"user_with_acl" json:"-"`
 }
 
 // Model store information of model can manage

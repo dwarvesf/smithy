@@ -74,10 +74,10 @@ func createUserWithACLPG(cfg *agentConfig.Config, forceCreate bool) (*database.U
 	s := drivers.NewPGStore(cfg.DBName, cfg.DBSchemaName, db)
 	// priority passing argument than config file
 	if forceCreate {
-		return s.CreateUserWithACL(cfg.ModelList, true)
+		return s.CreateUserWithACL(cfg.ModelList, cfg.UserWithACL.Username, cfg.UserWithACL.Password, true)
 	}
 
-	return s.CreateUserWithACL(cfg.ModelList, cfg.ForceRecreate)
+	return s.CreateUserWithACL(cfg.ModelList, cfg.UserWithACL.Username, cfg.UserWithACL.Password, cfg.ForceRecreate)
 }
 
 // AutoMigrate using config to auto migrate missing columns and table

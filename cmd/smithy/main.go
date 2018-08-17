@@ -29,8 +29,11 @@ func generateRandomString(s int) (string, error) {
 }
 
 func main() {
-	var configFile string
-	var forceCreate bool
+	var (
+		configFile     string
+		configFilePath string
+		forceCreate    bool
+	)
 
 	var cmdAgentMigrate = &cobra.Command{
 		Use:   "agent-migrate",
@@ -76,20 +79,20 @@ func main() {
 				log.Fatalln(err)
 				return
 			}
-			if configFile == "" {
+			if configFilePath == "" {
 				fmt.Println(token)
 				return
 			}
 
 			// If file doesn't exist, create a new file and write PSK into 'secrect_key'
-			cfg, err := agent.NewConfig(agentConfig.ReadYAML(configFile))
+			cfg, err := agent.NewConfig(agentConfig.ReadYAML(configFilePath))
 			if err != nil {
 				cfg = &agentConfig.Config{}
 			}
 
 			// If file already existed, update 'secrect_key'
 			cfg.SerectKey = token
-			wr := agentConfig.WriteYAML(configFile)
+			wr := agentConfig.WriteYAML(configFilePath)
 			if err := wr.Write(cfg); err != nil {
 				log.Fatalln(err)
 			}
@@ -123,10 +126,10 @@ func main() {
 	cmdGenerate.AddCommand(cmdGenerateUser)
 
 	// Set flags
-	cmdPSK.Flags().StringVarP(&configFile, "config-file", "c", "", "put your name of config file here, with extension")
 	cmdAgentMigrate.Flags().StringVarP(&configFile, "config-file", "c", "example_agent_config.yaml", "put your name of config file here, with extension")
 	cmdGenerateUser.Flags().StringVarP(&configFile, "config-file", "c", "example_agent_config.yaml", "put your name of config file here, with extension")
 	cmdGenerateUser.Flags().BoolVarP(&forceCreate, "force-create", "f", false, "put your name of config file here, with extension")
+	cmdPSK.Flags().StringVarP(&configFilePath, "config-file", "c", "", "put your name of config file here, with extension")
 
 	rootCmd.Execute()
 }

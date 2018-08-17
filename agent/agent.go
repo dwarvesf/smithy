@@ -59,7 +59,7 @@ func CreateUserWithACL(cfg *agentConfig.Config) error {
 
 	s := drivers.NewPGStore(cfg.DBName, cfg.DBSchemaName, db)
 	// TODO: return to terminal
-	_, err = s.CreateUserWithACL(cfg.ModelList)
+	_, err = s.CreateUserWithACL(cfg.ModelList, cfg.ForceRecreate)
 	return err
 }
 

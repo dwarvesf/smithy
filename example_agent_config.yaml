@@ -1,6 +1,6 @@
 serect_key: fb0bc76a-dbb1-4944-bcf7-aaef0d9d6e95
 verify_config: false
-create_management_db_user: true
+force_recreate: true
 db_executive_account:
   username: agent_db_manager
   password: this_is_password

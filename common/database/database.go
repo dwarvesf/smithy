@@ -13,13 +13,6 @@ type ConnectionInfo struct {
 	DBSchemaName    string `yaml:"db_schema_name" json:"db_schema_name"`
 }
 
-// ExecutiveAccount store information of user manage tables define in model_list
-type ExecutiveAccount struct {
-	UserName      string `yaml:"username" json:"username"`
-	Password      string `yaml:"password" json:"password"`
-	ForceRecreate bool   `yaml:"force_recreate" json:"force_recreate"`
-}
-
 // Model store information of model can manage
 type Model struct {
 	ACL               string    `yaml:"acl" json:"acl"`

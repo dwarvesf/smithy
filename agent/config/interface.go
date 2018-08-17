@@ -18,12 +18,11 @@ type Writer interface {
 
 // Config contain config for agent
 type Config struct {
-	SerectKey               string `yaml:"serect_key,omitempty" json:"-"`
-	VerifyConfig            bool   `yaml:"verify_config,omitempty" json:"-"`
-	database.ConnectionInfo `yaml:"database_connection_info,omitempty" json:"database_connection_info"`
-	CreateManagementDBUser  bool                      `yaml:"create_management_db_user,omitempty" json:"create_management_db_user"`
-	DBExecutiveAccount      database.ExecutiveAccount `yaml:"db_executive_account,omitempty" json:"db_executive_account"`
-	ModelList               []database.Model          `yaml:"model_list,omitempty" json:"model_list"`
+	SerectKey               string `yaml:"serect_key" json:"-"`
+	VerifyConfig            bool   `yaml:"verify_config" json:"-"`
+	database.ConnectionInfo `yaml:"database_connection_info" json:"database_connection_info"`
+	ForceRecreate           bool             `yaml:"force_recreate" json:"force_recreate"`
+	ModelList               []database.Model `yaml:"model_list" json:"model_list"`
 }
 
 // DBConnectionString get pg connection string

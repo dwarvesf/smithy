@@ -10,5 +10,5 @@ type DBTool interface {
 	MissingColumns(models []database.Model) ([]agentConfig.MissingColumns, error)
 	Verify(modelList []database.Model) error
 	AutoMigrate([]agentConfig.MissingColumns) error
-	CreateUserWithACL([]database.Model) (*database.User, error)
+	CreateUserWithACL([]database.Model, bool) (*database.User, error)
 }

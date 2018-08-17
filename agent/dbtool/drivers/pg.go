@@ -307,24 +307,25 @@ func (a aclByTableName) GrantToUserSQL(username string) string {
 	return fmt.Sprintf("GRANT %s ON %s TO %s", strings.Join(query, ","), a.TableName, username)
 }
 
-func (s *pgStore) createACLUser(username, password string) error {
-	s.db.Exec(fmt.Sprintf("REASSIGN OWNED BY %s TO postgres;", username))
-	s.db.Exec(fmt.Sprintf("DROP OWNED BY %s;", username))
+func (s *pgStore) createACLUser(username, password string, forceCreate bool) error {
+	if forceCreate {
+		s.db.Exec(fmt.Sprintf("REASSIGN OWNED BY %s TO postgres;", username))
+		s.db.Exec(fmt.Sprintf("DROP OWNED BY %s;", username))
 
-	err := s.db.Exec(fmt.Sprintf("DROP ROLE IF EXISTS %s;", username)).Error
-	if err != nil {
-		return err
+		err := s.db.Exec(fmt.Sprintf("DROP ROLE IF EXISTS %s;", username)).Error
+		if err != nil {
+			return err
+		}
 	}
-	if err = s.db.Exec(fmt.Sprintf("CREATE ROLE %s LOGIN PASSWORD '%s';", username, password)).Error; err != nil {
+	if err := s.db.Exec(fmt.Sprintf("CREATE ROLE %s LOGIN PASSWORD '%s';", username, password)).Error; err != nil {
 		return err
 	}
 
 	return s.db.Exec(fmt.Sprintf("GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO %s;", username)).Error
 }
 
-func (s *pgStore) CreateUserWithACL(models []database.Model) (*database.User, error) {
-	// TODO: IMPLEMEN NOT FORCE CREATE ACL USER
-	err := s.createACLUser(ACLUsername, ACLUserPassword)
+func (s *pgStore) CreateUserWithACL(models []database.Model, forceCreate bool) (*database.User, error) {
+	err := s.createACLUser(ACLUsername, ACLUserPassword, forceCreate)
 	if err != nil {
 		return nil, err
 	}

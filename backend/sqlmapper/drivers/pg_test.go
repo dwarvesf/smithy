@@ -585,3 +585,117 @@ func Test_pgStore_Create(t *testing.T) {
 		})
 	}
 }
+
+func Test_pgStore_Update(t *testing.T) {
+	t.Parallel()
+	cfg, clearDB := utilTest.CreateConfig(t)
+	defer clearDB()
+	// migrate tables
+	err := utilTest.MigrateTables(cfg.DB())
+	if err != nil {
+		t.Fatalf("Failed to migrate table by error %v", err)
+	}
+	//create sample data
+	users, err := utilTest.CreateUserSampleData(cfg.DB())
+	if err != nil {
+		t.Fatalf("Failed to create sample data by error %v", err)
+	}
+	type args struct {
+		d  sqlmapper.RowData
+		id int
+	}
+	tests := []struct {
+		name      string
+		tableName string
+		args      args
+		want      sqlmapper.RowData
+		wantErr   bool
+	}{
+		{
+			name:      "success",
+			tableName: "users",
+			args: args{
+				d: sqlmapper.RowData{
+					"name": sqlmapper.ColData{
+						Data: "demo",
+					},
+				},
+				id: users[0].Id,
+			},
+			want: sqlmapper.RowData{
+				"name": sqlmapper.ColData{
+					Data: "demo",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name:      "primary key isn't exist",
+			tableName: "users",
+			args: args{
+				d: sqlmapper.RowData{
+					"name": sqlmapper.ColData{
+						Data: "demo",
+					},
+				},
+				id: -1,
+			},
+			wantErr: true,
+		},
+		{
+			name:      "primary key is duplicated",
+			tableName: "users",
+			args: args{
+				d: sqlmapper.RowData{
+					"name": sqlmapper.ColData{
+						Data: "demo",
+					},
+					"id": sqlmapper.ColData{
+						Data: "1",
+					},
+				},
+				id: users[0].Id,
+			},
+			want: sqlmapper.RowData{
+				"name": sqlmapper.ColData{
+					Data: "demo",
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name:      "rowData is empty",
+			tableName: "users",
+			args: args{
+				id: users[0].Id,
+			},
+			wantErr: true,
+		},
+		{
+			name:      "invalid column name",
+			tableName: "users",
+			args: args{
+				d: sqlmapper.RowData{
+					"blabla": sqlmapper.ColData{
+						Data: "anmt",
+					},
+				},
+				id: users[0].Id,
+			},
+			wantErr: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := NewPGStore(cfg.DB(), tt.tableName, []database.Column{}, cfg.ModelList)
+			got, err := s.Update(tt.args.d, tt.args.id)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("pgStore.Update() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("pgStore.Update() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}

@@ -11,10 +11,9 @@ services:
 before_script:
   - docker run -d --rm --name pg_test -p 5439:5432 --env POSTGRES_PASSWORD=example --env POSTGRES_DB=test postgres:10.4
   - |
-    while ! docker exec pg_test pg_isready -h localhost -p 5432 > /dev/null; do\                                                                                                                                  [2.5.1]
+    while ! docker exec pg_test pg_isready -h localhost -p 5432 > /dev/null; do\
       sleep 1; \
     done
-
 script:
   - make test
 

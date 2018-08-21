@@ -19,5 +19,10 @@ script:
   - make test
 
 notifications:
-  slack: dwarvesv:vUNqaDxaw0OJeq9Rf8dTOdXI
+  slack:
+    rooms:
+      - dwarvesv:vUNqaDxaw0OJeq9Rf8dTOdXI
+    only:
+      - master
+      - develop
 

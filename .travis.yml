@@ -17,6 +17,7 @@ before_script:
 
 script:
   - make test
+  - make build
 
 notifications:
   slack: dwarvesv:vUNqaDxaw0OJeq9Rf8dTOdXI

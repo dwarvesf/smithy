@@ -17,6 +17,7 @@ import (
 // Reader interface for reading config for agent
 type Reader interface {
 	Read() (*Config, error)
+	ReadRoles() (*Permission, error)
 }
 
 // Config contain config for dashboard
@@ -123,4 +124,14 @@ func (c *Config) openNewDBConnection() (*gorm.DB, error) {
 	)
 
 	return gorm.Open("postgres", dbstring)
+}
+
+type Permission struct {
+	Roles []Role `yaml:"roles" json:"roles"`
+}
+
+type Role struct {
+	Username string `yaml:"username" json:"username"`
+	Password string `yaml:"password" json:"password"`
+	Role     string `yaml:"role" json:"role"`
 }

@@ -38,3 +38,12 @@ func NewSQLMapper(c *backendConfig.Config, tableName string, columns []database.
 		return nil, errors.New("Uknown DB Driver")
 	}
 }
+
+// NewConfig check dashboard config is correct
+func NewConfigRoles(r backendConfig.Reader) (*backendConfig.Permission, error) {
+	cfg, err := r.ReadRoles()
+	if err != nil {
+		return nil, err
+	}
+	return cfg, nil
+}

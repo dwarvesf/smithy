@@ -6,10 +6,12 @@ import (
 
 // Service ...
 type Service struct {
-	Config *backendConfig.Wrapper
+	Config    *backendConfig.Wrapper
+	SecretKey string
 }
 
 // NewService new dashboard handler
 func NewService(cfg *backendConfig.Config) Service {
-	return Service{backendConfig.NewWrapper(cfg)}
+	// We must load secrect key from persistant
+	return Service{backendConfig.NewWrapper(cfg), "K8UeMDPyb9AwFkzS"}
 }

@@ -14,6 +14,10 @@ before_script:
     while ! docker exec pg_test pg_isready -h localhost -p 5432 > /dev/null; do\
       sleep 1; \
     done
+
 script:
   - make test
+
+notifications:
+  slack: dwarvesv:vUNqaDxaw0OJeq9Rf8dTOdXI
 

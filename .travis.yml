@@ -1,0 +1,10 @@
+language: go
+
+go: "1.10"
+
+git:
+  depth: 1
+
+before_script:
+  - make test
+

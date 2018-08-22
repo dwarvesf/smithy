@@ -4,14 +4,12 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"sync"
 
 	"github.com/boltdb/bolt"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
-	yaml "gopkg.in/yaml.v2"
 
 	agentConfig "github.com/dwarvesf/smithy/agent/config"
 	"github.com/dwarvesf/smithy/common/database"
@@ -73,13 +71,12 @@ func (c *Config) DB() *gorm.DB {
 
 // CheckSum to checksum sha256 when agent-sync check version
 func (c *Config) CheckSum() (string, error) {
-	buff, err := yaml.Marshal(c)
+	buff, err := json.Marshal(c)
 	if err != nil {
 		return "", err
 	}
 	sum := sha256.Sum256(buff)
-	fmt.Printf("%x", sum)
-	return string(sum[:]), nil
+	return fmt.Sprintf("%x", sum), nil
 }
 
 // UpdateConfigFromAgent update configuration from agent
@@ -106,13 +103,11 @@ func (c *Config) UpdateConfigFromAgent() error {
 	}
 
 	// Copy config file into tempCfg
-	c.Lock()
 	tempCfg := *c
-	c.Unlock()
 
 	tempCfg.ConnectionInfo = agentCfg.ConnectionInfo
-	tempCfg.DBUsername = c.UserWithACL.Username
-	tempCfg.DBPassword = c.UserWithACL.Password
+	tempCfg.DBUsername = agentCfg.UserWithACL.Username
+	tempCfg.DBPassword = agentCfg.UserWithACL.Password
 	tempCfg.ModelList = agentCfg.ModelList
 
 	// If available new version, update config then save it into persistence
@@ -124,6 +119,7 @@ func (c *Config) UpdateConfigFromAgent() error {
 		return nil
 	}
 	tempCfg.Version = checksum
+	tempCfg.Lock()
 
 	err = c.UpdateConfig(&tempCfg)
 	if err != nil {
@@ -133,7 +129,6 @@ func (c *Config) UpdateConfigFromAgent() error {
 	wr := NewBoltWriter(c.PersistenceDB)
 	err = wr.Write(c)
 	if err != nil {
-		log.Fatalln(err)
 		return err
 	}
 
@@ -146,7 +141,12 @@ func (c *Config) UpdateConfig(cfg *Config) error {
 	c.Lock()
 	defer c.Unlock()
 
-	c = cfg
+	c.ConnectionInfo = cfg.ConnectionInfo
+	c.DBUsername = cfg.DBUsername
+	c.DBPassword = cfg.DBPassword
+	c.ModelList = cfg.ModelList
+	c.Version = cfg.Version
+
 	return c.UpdateDB()
 }
 

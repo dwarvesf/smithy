@@ -10,17 +10,17 @@ import (
 	"github.com/dwarvesf/smithy/backend/service"
 )
 
-type revertVersionResquest struct {
+type RevertVersionResquest struct {
 	Version string `json:"version"`
 }
 
-type revertVersionResponse struct {
+type RevertVersionResponse struct {
 	Status string `json:"status"`
 }
 
 func makeRevertVersionEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(revertVersionResquest)
+		req, ok := request.(RevertVersionResquest)
 		if !ok {
 			return nil, errors.New("failed to make type assertion")
 		}
@@ -28,6 +28,9 @@ func makeRevertVersionEndpoint(s service.Service) endpoint.Endpoint {
 		cfg := s.Config.Config()
 		reader := config.NewBoltReader(req.Version, cfg.PersistenceDB)
 		vCfg, err := reader.Read()
+		if vCfg != nil {
+			vCfg.Lock()
+		}
 
 		if err != nil {
 			return nil, err
@@ -37,6 +40,6 @@ func makeRevertVersionEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, err
 		}
 
-		return revertVersionResponse{"success"}, nil
+		return RevertVersionResponse{s.Config.Config().ModelList[0].TableName}, nil
 	}
 }

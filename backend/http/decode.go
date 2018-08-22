@@ -55,3 +55,12 @@ func decodeDBDeleteRequest(ctx context.Context, r *http.Request) (interface{}, e
 
 	return req, err
 }
+
+func decodeRevertVersion(ctx context.Context, r *http.Request) (interface{}, error) {
+	var req endpoints.RevertVersionResquest
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	defer r.Body.Close()
+
+	return req, err
+}

@@ -57,6 +57,12 @@ func (b BoltReaderWriterQuerierImpl) Write(cfg *Config) error {
 
 	err = b.db.Update(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(b.bucket))
+		if bucket == nil {
+			bucket, err = tx.CreateBucket([]byte(b.bucket))
+			if err != nil {
+				return err
+			}
+		}
 		return bucket.Put([]byte(cfg.Version), buff)
 	})
 	return err

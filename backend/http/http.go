@@ -98,7 +98,7 @@ func NewHTTPHandler(endpoints endpoints.Endpoints,
 
 	r.Post("/revert-config-version", httptransport.NewServer(
 		endpoints.RevertVersion,
-		httptransport.NopRequestDecoder,
+		decodeRevertVersion,
 		httptransport.EncodeJSONResponse,
 		options...,
 	).ServeHTTP)

@@ -38,3 +38,14 @@ func (errorMissingAuth) Error() string {
 func (errorMissingAuth) StatusCode() int {
 	return http.StatusUnauthorized
 }
+
+type errorLoginFail struct{}
+
+func (errorLoginFail) Error() string {
+	return "login fail"
+}
+
+// StatusCode implement status code for error missing auth
+func (errorLoginFail) StatusCode() int {
+	return http.StatusInternalServerError
+}

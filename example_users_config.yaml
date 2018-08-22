@@ -1,0 +1,10 @@
+secret_key: lalala
+users:
+  aaa:
+    password: "abc"
+    role: "admin"
+    acl: "cru"
+  bbb:
+    password: "abc"
+    role: "user"
+    acl: "crud"

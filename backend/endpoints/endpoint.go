@@ -16,6 +16,7 @@ type Endpoints struct {
 	DBDelete        endpoint.Endpoint
 	ListVersion     endpoint.Endpoint
 	RevertVersion   endpoint.Endpoint
+	Login           endpoint.Endpoint
 }
 
 // MakeServerEndpoints returns an Endpoints struct
@@ -29,5 +30,6 @@ func MakeServerEndpoints(s service.Service) Endpoints {
 		AvailableModels: makeAvailableModelsEndpoint(s),
 		ListVersion:     makeListVersionEndpoint(s),
 		RevertVersion:   makeRevertVersionEndpoint(s),
+		Login:           makeLoginEndpoint(s),
 	}
 }

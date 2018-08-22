@@ -39,3 +39,16 @@ func (c yamlReaderImpl) Read() (*Config, error) {
 
 	return res, nil
 }
+func (c yamlReaderImpl) ReadToken() (*TokenInfo, error) {
+	res := &TokenInfo{}
+	buf, err := ioutil.ReadFile(c.file)
+	if err != nil {
+		return nil, err
+	}
+	err = yaml.Unmarshal(buf, res)
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}

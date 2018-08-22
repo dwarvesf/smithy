@@ -23,6 +23,10 @@ var (
 
 func main() {
 	cfg, err := backend.NewConfig(backendConfig.ReadYAML("example_dashboard_config.yaml"))
+	var tokenInfo *backendConfig.TokenInfo
+	tokenInfo, err = backend.NewTokenInfo(backendConfig.ReadYAML("example_users_config.yaml"))
+	cfg.AddTokenInfoToConfig(tokenInfo)
+
 	if err != nil {
 		panic(err)
 	}
@@ -47,6 +51,7 @@ func main() {
 			endpoints.MakeServerEndpoints(s),
 			logger,
 			os.Getenv("ENV") == "local",
+			cfg.TokenInfo.SerectKey,
 		)
 	}
 

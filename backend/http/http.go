@@ -89,8 +89,7 @@ func NewHTTPHandler(endpoints endpoints.Endpoints,
 		options...,
 	).ServeHTTP)
 
-	// public route, only use for login
-	r.Group(func(r chi.Router) {
+	r.Route("/auth", func(r chi.Router) {
 		r.Post("/login", httptransport.NewServer(
 			endpoints.Login,
 			decodeLoginRequest,

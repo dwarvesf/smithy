@@ -1,4 +1,4 @@
-package jwt
+package auth
 
 import (
 	"net/http"
@@ -7,17 +7,17 @@ import (
 	"github.com/k0kubun/pp"
 )
 
-//JWT for authentication
+//JWT for user authenticaion
 type JWT struct {
 	Username  string
 	Rule      string
 	TokenAuth *jwtauth.JWTAuth
 }
 
-func (JWT) New(secretKey string) *JWT {
+func New(secretKey string, username string, rule string) *JWT {
 	jwt := &JWT{
-		Username:  "username",
-		Rule:      "rule",
+		Username:  username,
+		Rule:      rule,
 		TokenAuth: jwtauth.New("HS256", []byte(secretKey), nil),
 	}
 

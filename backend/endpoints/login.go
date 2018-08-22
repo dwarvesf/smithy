@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 
-	"github.com/go-kit/kit/endpoint"
-	"github.com/k0kubun/pp"
+	"github.com/dwarvesf/smithy/backend"
 
-	"github.com/dwarvesf/smithy/backend/jwt"
+	"github.com/go-kit/kit/endpoint"
+
 	"github.com/dwarvesf/smithy/backend/service"
 )
 
@@ -24,8 +24,6 @@ type LoginResponse struct {
 
 func makeLoginEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		loginAuth := jwt.JWT{}.New(s.SecretKey)
-
 		req, ok := request.(LoginRequest)
 
 		if !ok {
@@ -39,9 +37,8 @@ func makeLoginEndpoint(s service.Service) endpoint.Endpoint {
 		// dummy rule
 		rule := "admin"
 
-		// two line code below to debug
-		pp.Println(req.Username)
-		pp.Println(req.Password)
+		// create user authentication
+		loginAuth := backend.NewAuthenticate(s.Config.Config(), req.Username, rule)
 
 		// if login fail
 		if !login(req.Username, req.Password) {

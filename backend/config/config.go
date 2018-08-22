@@ -1,6 +1,7 @@
 package config
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -9,6 +10,7 @@ import (
 	"github.com/boltdb/bolt"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
+	yaml "gopkg.in/yaml.v2"
 
 	agentConfig "github.com/dwarvesf/smithy/agent/config"
 	"github.com/dwarvesf/smithy/common/database"
@@ -30,6 +32,7 @@ type Config struct {
 	PersistenceDB           *bolt.DB
 	database.ConnectionInfo `yaml:"-"`
 	ModelList               []database.Model `yaml:"-"`
+	Version                 string           `yaml:"-" json:"-"`
 	db                      *gorm.DB
 
 	sync.Mutex
@@ -57,11 +60,20 @@ func (c *Config) DB() *gorm.DB {
 	return c.db
 }
 
+// CheckSum to checksum sha256 when agent-sync check version
+func (c *Config) CheckSum() (string, error) {
+	buff, err := yaml.Marshal(c)
+	if err != nil {
+		return "", err
+	}
+	sum := sha256.Sum256(buff)
+	fmt.Printf("%x", sum)
+	return string(sum[:]), nil
+}
+
 // UpdateConfigFromAgent update configuration from agent
 func (c *Config) UpdateConfigFromAgent() error {
 	// check config was enable
-	c.Lock()
-	defer c.Unlock()
 
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", c.AgentURL, nil)
@@ -82,16 +94,36 @@ func (c *Config) UpdateConfigFromAgent() error {
 		return err
 	}
 
+	tempCfg := *c
+	checksum, err := tempCfg.CheckSum()
+	if checksum == c.Version {
+		return nil
+	}
+
+	c.Lock()
+	defer c.Unlock()
+
 	c.ConnectionInfo = agentCfg.ConnectionInfo
 	c.DBUsername = c.UserWithACL.Username
 	c.DBPassword = c.UserWithACL.Password
 	c.ModelList = agentCfg.ModelList
+	c.Version = checksum
 	err = c.UpdateDB()
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+// UpdateConfig update configuration
+func (c *Config) UpdateConfig(cfg *Config) error {
+	// check config was enable
+	c.Lock()
+	defer c.Unlock()
+
+	c = cfg
+	return c.UpdateDB()
 }
 
 // UpdateDB update db connection

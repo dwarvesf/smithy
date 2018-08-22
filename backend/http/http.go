@@ -89,5 +89,19 @@ func NewHTTPHandler(endpoints endpoints.Endpoints,
 		options...,
 	).ServeHTTP)
 
+	r.Get("/list-config-version", httptransport.NewServer(
+		endpoints.ListVersion,
+		httptransport.NopRequestDecoder,
+		httptransport.EncodeJSONResponse,
+		options...,
+	).ServeHTTP)
+
+	r.Post("/revert-config-version", httptransport.NewServer(
+		endpoints.RevertVersion,
+		httptransport.NopRequestDecoder,
+		httptransport.EncodeJSONResponse,
+		options...,
+	).ServeHTTP)
+
 	return r
 }

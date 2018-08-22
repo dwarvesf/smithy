@@ -17,7 +17,7 @@ type RevertVersionResquest struct {
 
 // RevertVersionResponse response for revert version
 type RevertVersionResponse struct {
-	Status string `json:"status"`
+	Version config.Version `json:"version"`
 }
 
 func makeRevertVersionEndpoint(s service.Service) endpoint.Endpoint {
@@ -39,6 +39,6 @@ func makeRevertVersionEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, err
 		}
 
-		return RevertVersionResponse{s.Config.Config().ModelList[0].TableName}, nil
+		return RevertVersionResponse{s.Config.Config().Version}, nil
 	}
 }

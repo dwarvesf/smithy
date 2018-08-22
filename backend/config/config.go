@@ -4,6 +4,7 @@ import (
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"sync"
 	"time"
@@ -140,6 +141,7 @@ func (c *Config) UpdateConfigFromAgent() error {
 
 	err = c.UpdateConfig(&tempCfg)
 	if err != nil {
+		log.Fatalln(err)
 		return err
 	}
 

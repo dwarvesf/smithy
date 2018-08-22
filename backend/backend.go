@@ -3,6 +3,7 @@ package backend
 import (
 	"errors"
 
+	jwtAuth "github.com/dwarvesf/smithy/backend/auth"
 	backendConfig "github.com/dwarvesf/smithy/backend/config"
 	"github.com/dwarvesf/smithy/backend/sqlmapper"
 	sqlmapperDrv "github.com/dwarvesf/smithy/backend/sqlmapper/drivers"
@@ -37,4 +38,12 @@ func NewSQLMapper(c *backendConfig.Config, tableName string, columns []database.
 	default:
 		return nil, errors.New("Uknown DB Driver")
 	}
+}
+
+//NewAuthenticate New JWT Authenticain
+func NewAuthenticate(c *backendConfig.Config, username string, rule string) *jwtAuth.JWT {
+	var jwt *jwtAuth.JWT
+	//dummy data is meocon, after load secret key to config, be must c.Config.JWTSecrectKey
+	jwt = jwtAuth.New("meocon", username, rule)
+	return jwt
 }

@@ -2,127 +2,218 @@
 
 
 [[projects]]
+  digest = "1:0f98f59e9a2f4070d66f0c9c39561f68fcd1dc837b22a852d28d0003aebd1b1e"
   name = "github.com/boltdb/bolt"
   packages = ["."]
+  pruneopts = "UT"
   revision = "2f1ce7a837dcb8da3ec595b1dac9d0632f0f99e8"
   version = "v1.3.1"
 
 [[projects]]
+  digest = "1:76dc72490af7174349349838f2fe118996381b31ea83243812a97e5a0fd5ed55"
+  name = "github.com/dgrijalva/jwt-go"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "06ea1031745cb8b3dab3f6a236daf2b0aa468b7e"
+  version = "v3.2.0"
+
+[[projects]]
+  digest = "1:66ddebb274faa160a4a23394a17ad3c8e15fee9bf5408d13f77d22b61bc7f072"
   name = "github.com/go-chi/chi"
   packages = ["."]
+  pruneopts = "UT"
   revision = "e83ac2304db3c50cf03d96a2fcd39009d458bc35"
   version = "v3.3.2"
 
 [[projects]]
+  digest = "1:dfa416a1bb8139f30832543340f972f65c0db9932034cb6a1b42c5ac615a3fb8"
   name = "github.com/go-chi/cors"
   packages = ["."]
+  pruneopts = "UT"
   revision = "dba6525398619dead495962a916728e7ee2ca322"
   version = "v1.0.0"
 
 [[projects]]
+  digest = "1:e3382cdfb292def1e15dfe7863d6015e35eb85c979ed1ca887613d8981af75d1"
+  name = "github.com/go-chi/jwtauth"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "53a0a4877a0ead48e149be6b4ec9dd1b3c075eba"
+  version = "v3.3.0"
+
+[[projects]]
+  digest = "1:44c19b0501d2ae50d64ed0e4ac587c27084bd9f6d591c8fd4695f1f1339e5538"
   name = "github.com/go-kit/kit"
   packages = [
     "endpoint",
     "log",
-    "transport/http"
+    "transport/http",
   ]
+  pruneopts = "UT"
   revision = "ca4112baa34cb55091301bdc13b1420a122b1b9e"
   version = "v0.7.0"
 
 [[projects]]
+  digest = "1:31a18dae27a29aa074515e43a443abfd2ba6deb6d69309d8d7ce789c45f34659"
   name = "github.com/go-logfmt/logfmt"
   packages = ["."]
+  pruneopts = "UT"
   revision = "390ab7935ee28ec6b286364bba9b4dd6410cb3d5"
   version = "v0.3.0"
 
 [[projects]]
+  digest = "1:c4a2528ccbcabf90f9f3c464a5fc9e302d592861bbfd0b7135a7de8a943d0406"
   name = "github.com/go-stack/stack"
   packages = ["."]
+  pruneopts = "UT"
   revision = "259ab82a6cad3992b4e21ff5cac294ccb06474bc"
   version = "v1.7.0"
 
 [[projects]]
+  digest = "1:f7463b67871bf7fe475e2c69fb0d21ead07de5188b8d7f8abf8fc961965ed841"
   name = "github.com/gorilla/schema"
   packages = ["."]
+  pruneopts = "UT"
   revision = "d0e4c24cff97ae983e9847e0ed5a02dc10013d41"
   version = "v1.0.2"
 
 [[projects]]
+  digest = "1:870d441fe217b8e689d7949fef6e43efbc787e50f200cb1e70dbca9204a1d6be"
   name = "github.com/inconshreveable/mousetrap"
   packages = ["."]
+  pruneopts = "UT"
   revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
   version = "v1.0"
 
 [[projects]]
+  digest = "1:6895fbe5a10c5aebd1965cac6f6905dcdb21bee01e08912d3ba6a805c2485f6a"
   name = "github.com/jinzhu/gorm"
   packages = [
     ".",
-    "dialects/postgres"
+    "dialects/postgres",
   ]
+  pruneopts = "UT"
   revision = "6ed508ec6a4ecb3531899a69cbc746ccf65a4166"
   version = "v1.9.1"
 
 [[projects]]
   branch = "master"
+  digest = "1:fd97437fbb6b7dce04132cf06775bd258cce305c44add58eb55ca86c6c325160"
   name = "github.com/jinzhu/inflection"
   packages = ["."]
+  pruneopts = "UT"
   revision = "04140366298a54a039076d798123ffa108fff46c"
 
 [[projects]]
+  digest = "1:16dd6b893b78a50564cdde1d9f7ea67224dece11bb0886bd882f1dc3dc1d440d"
+  name = "github.com/k0kubun/pp"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "027a6d1765d673d337e687394dbe780dd64e2a1e"
+  version = "v2.3.0"
+
+[[projects]]
   branch = "master"
+  digest = "1:a64e323dc06b73892e5bb5d040ced475c4645d456038333883f58934abbf6f72"
   name = "github.com/kr/logfmt"
   packages = ["."]
+  pruneopts = "UT"
   revision = "b84e30acd515aadc4b783ad4ff83aff3299bdfe0"
 
 [[projects]]
   branch = "master"
+  digest = "1:2d370ad7a48d3523291ad53a04b9b1510c182880927f800b46221cc465427800"
   name = "github.com/lib/pq"
   packages = [
     ".",
     "hstore",
-    "oid"
+    "oid",
   ]
+  pruneopts = "UT"
   revision = "90697d60dd844d5ef6ff15135d0203f65d2f53b8"
 
 [[projects]]
+  digest = "1:c658e84ad3916da105a761660dcaeb01e63416c8ec7bc62256a9b411a05fcd67"
+  name = "github.com/mattn/go-colorable"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "167de6bfdfba052fa6b2d3664c8f5272e23c9072"
+  version = "v0.0.9"
+
+[[projects]]
+  digest = "1:d4d17353dbd05cb52a2a52b7fe1771883b682806f68db442b436294926bbfafb"
+  name = "github.com/mattn/go-isatty"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "0360b2af4f38e8d38c7fce2a9f4e702702d73a39"
+  version = "v0.0.3"
+
+[[projects]]
+  digest = "1:645cabccbb4fa8aab25a956cbcbdf6a6845ca736b2c64e197ca7cbb9d210b939"
   name = "github.com/spf13/cobra"
   packages = ["."]
+  pruneopts = "UT"
   revision = "ef82de70bb3f60c65fb8eebacbb2d122ef517385"
   version = "v0.0.3"
 
 [[projects]]
+  digest = "1:9424f440bba8f7508b69414634aef3b2b3a877e522d8a4624692412805407bb7"
   name = "github.com/spf13/pflag"
   packages = ["."]
+  pruneopts = "UT"
   revision = "583c0c0531f06d5278b7d917446061adc344b5cd"
   version = "v1.0.1"
 
 [[projects]]
   branch = "master"
+  digest = "1:dd70bca92c5f88f5d6a098eaa570f604d52a460d82b81e1418c9559f6a742612"
   name = "github.com/volatiletech/inflect"
   packages = ["."]
+  pruneopts = "UT"
   revision = "e7201282ae8da26cd97aed2e516f75c0bd91bb93"
 
 [[projects]]
+  digest = "1:85a04073f26ea6c8b0a53330275d3301c58e11fe16fa2ebd57696709eac6f98d"
   name = "github.com/volatiletech/sqlboiler"
   packages = ["strmangle"]
+  pruneopts = "UT"
   revision = "d4bc831c7df09032b8290a3ddfb7bb41a0866934"
   version = "v2.7.3"
 
 [[projects]]
   branch = "master"
+  digest = "1:4d7a8265af700258feaff86722049eb5b787240d66dfaf45ff4962f09de6e0be"
   name = "golang.org/x/sys"
   packages = ["unix"]
+  pruneopts = "UT"
   revision = "acbc56fc7007d2a01796d5bde54f39e3b3e95945"
 
 [[projects]]
+  digest = "1:342378ac4dcb378a5448dd723f0784ae519383532f5e70ade24132c4c8693202"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
+  pruneopts = "UT"
   revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
   version = "v2.2.1"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "7a8be88919c00d0659312489f3866112eba23e4a97b9c0fefea8b8e102e482b8"
+  input-imports = [
+    "github.com/boltdb/bolt",
+    "github.com/go-chi/chi",
+    "github.com/go-chi/cors",
+    "github.com/go-chi/jwtauth",
+    "github.com/go-kit/kit/endpoint",
+    "github.com/go-kit/kit/log",
+    "github.com/go-kit/kit/transport/http",
+    "github.com/gorilla/schema",
+    "github.com/jinzhu/gorm",
+    "github.com/jinzhu/gorm/dialects/postgres",
+    "github.com/k0kubun/pp",
+    "github.com/spf13/cobra",
+    "github.com/volatiletech/sqlboiler/strmangle",
+    "gopkg.in/yaml.v2",
+  ]
   solver-name = "gps-cdcl"
   solver-version = 1

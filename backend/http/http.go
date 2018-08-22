@@ -89,5 +89,14 @@ func NewHTTPHandler(endpoints endpoints.Endpoints,
 		options...,
 	).ServeHTTP)
 
+	r.Route("/auth", func(r chi.Router) {
+		r.Post("/login", httptransport.NewServer(
+			endpoints.Login,
+			decodeLoginRequest,
+			httptransport.EncodeJSONResponse,
+			options...,
+		).ServeHTTP)
+	})
+
 	return r
 }

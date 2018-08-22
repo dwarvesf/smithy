@@ -21,6 +21,16 @@ type Reader interface {
 	Read() (*Config, error)
 }
 
+// Reader interface for reading config for agent
+type Writer interface {
+	Write(cfg *Config) error
+}
+
+// Querier interface for reading config for agent
+type Querier interface {
+	ListVersion() []string
+}
+
 // Config contain config for dashboard
 type Config struct {
 	SerectKey           string `yaml:"agent_serect_key"`

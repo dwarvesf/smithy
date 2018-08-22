@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 
-	"github.com/dwarvesf/smithy/backend/config/persistence"
+	"github.com/dwarvesf/smithy/backend/config"
 	"github.com/dwarvesf/smithy/backend/service"
 )
 
@@ -26,8 +26,8 @@ func makeRevertVersionEndpoint(s service.Service) endpoint.Endpoint {
 		}
 
 		cfg := s.Config.Config()
-		pio := persistence.NewBoltPersistence(cfg.PersistenceFileName, cfg.PersistenceDB)
-		vCfg, err := pio.Read(req.Version)
+		reader := config.NewBoltReader(req.Version, cfg.PersistenceDB)
+		vCfg, err := reader.Read()
 
 		if err != nil {
 			return nil, err

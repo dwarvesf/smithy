@@ -3,10 +3,9 @@ package endpoints
 import (
 	"context"
 
-	"github.com/go-kit/kit/endpoint"
-
-	"github.com/dwarvesf/smithy/backend/config/persistence"
+	"github.com/dwarvesf/smithy/backend/config"
 	"github.com/dwarvesf/smithy/backend/service"
+	"github.com/go-kit/kit/endpoint"
 )
 
 type listVersionResponse struct {
@@ -17,8 +16,8 @@ func makeListVersionEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		cfg := s.Config.Config()
 
-		pio := persistence.NewBoltPersistence(cfg.PersistenceFileName, cfg.PersistenceDB)
-		versions := pio.ListVersion()
+		querier := config.NewBoltQuerier(cfg.PersistenceDB)
+		versions := querier.ListVersion()
 
 		return listVersionResponse{versions}, nil
 	}

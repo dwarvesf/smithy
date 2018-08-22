@@ -1,31 +1,44 @@
-package persistence
+package config
 
 import (
 	"encoding/json"
 
 	"github.com/boltdb/bolt"
-	"github.com/dwarvesf/smithy/backend/config"
 )
 
-type boltPersistence struct {
-	bucket string
-	file   string
-	db     *bolt.DB
+type BoltReaderWriterQuerierImpl struct {
+	bucket  string
+	version string
+	db      *bolt.DB
 }
 
-func NewBoltPersistence(file string, db *bolt.DB) Persistence {
-	return boltPersistence{
+func NewBoltReader(version string, db *bolt.DB) Reader {
+	return BoltReaderWriterQuerierImpl{
+		bucket:  "ConfigVersion",
+		version: version,
+		db:      db,
+	}
+}
+
+func NewBoltQuerier(db *bolt.DB) Querier {
+	return BoltReaderWriterQuerierImpl{
 		bucket: "ConfigVersion",
-		file:   file,
 		db:     db,
 	}
 }
 
-func (b boltPersistence) Read(version string) (*config.Config, error) {
-	cfg := &config.Config{}
+func NewBoltWriter(db *bolt.DB) Writer {
+	return BoltReaderWriterQuerierImpl{
+		bucket: "ConfigVersion",
+		db:     db,
+	}
+}
+
+func (b BoltReaderWriterQuerierImpl) Read() (*Config, error) {
+	cfg := &Config{}
 	err := b.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(b.bucket))
-		v := bucket.Get([]byte(version))
+		v := bucket.Get([]byte(b.version))
 		return json.Unmarshal(v, cfg)
 	})
 
@@ -36,7 +49,7 @@ func (b boltPersistence) Read(version string) (*config.Config, error) {
 	return cfg, nil
 }
 
-func (b boltPersistence) Write(cfg *config.Config) error {
+func (b BoltReaderWriterQuerierImpl) Write(cfg *Config) error {
 	buff, err := json.Marshal(cfg)
 	if err != nil {
 		return err
@@ -49,7 +62,7 @@ func (b boltPersistence) Write(cfg *config.Config) error {
 	return err
 }
 
-func (b boltPersistence) ListVersion() []string {
+func (b BoltReaderWriterQuerierImpl) ListVersion() []string {
 	versions := make([]string, 0)
 	b.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(b.bucket))

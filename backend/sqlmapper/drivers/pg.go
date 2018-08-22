@@ -44,7 +44,13 @@ func (s *pgStore) FindAll(offset int, limit int) ([]sqlmapper.RowData, error) {
 		rows, err = db.Limit(limit).Rows()
 	}
 
-	defer rows.Close()
+	defer func() {
+		if err != nil {
+			return
+		}
+		rows.Close()
+	}()
+
 	if err != nil {
 		return nil, err
 	}
@@ -193,6 +199,13 @@ func (s *pgStore) FindByColumnName(columnName string, value string, offset int, 
 	} else {
 		rows, err = db.Limit(limit).Rows()
 	}
+
+	defer func() {
+		if err != nil {
+			return
+		}
+		rows.Close()
+	}()
 
 	if err != nil {
 		return nil, err

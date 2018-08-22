@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"sync"
 
@@ -21,7 +22,7 @@ type Reader interface {
 	Read() (*Config, error)
 }
 
-// Reader interface for reading config for agent
+// Writer interface for reading config for agent
 type Writer interface {
 	Write(cfg *Config) error
 }
@@ -104,22 +105,35 @@ func (c *Config) UpdateConfigFromAgent() error {
 		return err
 	}
 
+	// Copy config file into tempCfg
+	c.Lock()
 	tempCfg := *c
+	c.Unlock()
+
+	tempCfg.ConnectionInfo = agentCfg.ConnectionInfo
+	tempCfg.DBUsername = c.UserWithACL.Username
+	tempCfg.DBPassword = c.UserWithACL.Password
+	tempCfg.ModelList = agentCfg.ModelList
+
+	// If available new version, update config then save it into persistence
 	checksum, err := tempCfg.CheckSum()
+	if err != nil {
+		return err
+	}
 	if checksum == c.Version {
 		return nil
 	}
+	tempCfg.Version = checksum
 
-	c.Lock()
-	defer c.Unlock()
-
-	c.ConnectionInfo = agentCfg.ConnectionInfo
-	c.DBUsername = c.UserWithACL.Username
-	c.DBPassword = c.UserWithACL.Password
-	c.ModelList = agentCfg.ModelList
-	c.Version = checksum
-	err = c.UpdateDB()
+	err = c.UpdateConfig(&tempCfg)
 	if err != nil {
+		return err
+	}
+
+	wr := NewBoltWriter(c.PersistenceDB)
+	err = wr.Write(c)
+	if err != nil {
+		log.Fatalln(err)
 		return err
 	}
 

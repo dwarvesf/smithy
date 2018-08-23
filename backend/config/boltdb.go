@@ -9,11 +9,12 @@ import (
 
 type boltImpl struct {
 	bucket  string
-	version int
+	version int64
 	db      *bolt.DB
 }
 
-func NewBoltIO(db *bolt.DB, version int) ReaderWriterQuerier {
+// NewBoltPersistent Peristent Bolt
+func NewBoltPersistent(db *bolt.DB, version int64) ReaderWriterQuerier {
 	return boltImpl{
 		bucket:  "ConfigVersion",
 		version: version,
@@ -25,7 +26,7 @@ func (b boltImpl) Read() (*Config, error) {
 	cfg := &Config{}
 	err := b.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(b.bucket))
-		v := bucket.Get([]byte(strconv.Itoa(b.version)))
+		v := bucket.Get([]byte(strconv.FormatInt(b.version, 10)))
 		return json.Unmarshal(v, cfg)
 	})
 
@@ -50,14 +51,14 @@ func (b boltImpl) Write(cfg *Config) error {
 				return err
 			}
 		}
-		return bucket.Put([]byte(strconv.Itoa(cfg.Version.VersionNumber)), buff)
+		return bucket.Put([]byte(strconv.FormatInt(cfg.Version.VersionNumber, 10)), buff)
 	})
 	return err
 }
 
-func (b boltImpl) ListVersion() []Version {
+func (b boltImpl) ListVersion() ([]Version, error) {
 	versions := make([]Version, 0)
-	b.db.View(func(tx *bolt.Tx) error {
+	err := b.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(b.bucket))
 
 		if bucket == nil {
@@ -79,7 +80,11 @@ func (b boltImpl) ListVersion() []Version {
 		return nil
 	})
 
-	return versions
+	if err != nil {
+		return nil, err
+	}
+
+	return versions, nil
 }
 
 func (b boltImpl) LastestVersion() (*Config, error) {

@@ -10,10 +10,12 @@ import (
 	"github.com/dwarvesf/smithy/backend/service"
 )
 
+// RevertVersionResquest request for revert version
 type RevertVersionResquest struct {
-	VersionNumber int `json:"version"`
+	VersionNumber int64 `json:"version"`
 }
 
+// RevertVersionResponse response for revert version
 type RevertVersionResponse struct {
 	Status string `json:"status"`
 }
@@ -26,7 +28,7 @@ func makeRevertVersionEndpoint(s service.Service) endpoint.Endpoint {
 		}
 
 		cfg := s.Config.Config()
-		reader := config.NewBoltIO(cfg.PersistenceDB, req.VersionNumber)
+		reader := config.NewBoltPersistent(cfg.PersistenceDB, req.VersionNumber)
 		vCfg, err := reader.Read()
 
 		if err != nil {

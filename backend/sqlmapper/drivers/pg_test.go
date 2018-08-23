@@ -151,7 +151,7 @@ func Test_pgStore_FindAll(t *testing.T) {
 				name := iName.(string)
 
 				if len(got) != len(tt.want) ||
-					id != tt.want[i].Id ||
+					id != tt.want[i].ID ||
 					name != tt.want[i].Name {
 					t.Errorf("pgStore.FindByColumnName() = %v, want %v", got, tt.want)
 				}
@@ -302,7 +302,7 @@ func Test_pgStore_FindByColumnName(t *testing.T) {
 				name := iName.(string)
 
 				if len(got) != len(tt.want) ||
-					id != tt.want[i].Id ||
+					id != tt.want[i].ID ||
 					name != tt.want[i].Name {
 					t.Errorf("pgStore.FindByColumnName() = %v, want %v", got, tt.want)
 				}
@@ -413,7 +413,7 @@ func Test_pgStore_FindByID(t *testing.T) {
 			}
 			name := iName.(string)
 
-			if id != tt.want.Id ||
+			if id != tt.want.ID ||
 				name != tt.want.Name {
 				t.Errorf("pgStore.FindByID() = %v, want %v", got, tt.want)
 			}
@@ -620,7 +620,7 @@ func Test_pgStore_Update(t *testing.T) {
 						Data: "demo",
 					},
 				},
-				id: users[0].Id,
+				id: users[0].ID,
 			},
 			want: sqlmapper.RowData{
 				"name": sqlmapper.ColData{
@@ -654,7 +654,7 @@ func Test_pgStore_Update(t *testing.T) {
 						Data: "1",
 					},
 				},
-				id: users[0].Id,
+				id: users[0].ID,
 			},
 			want: sqlmapper.RowData{
 				"name": sqlmapper.ColData{
@@ -667,7 +667,7 @@ func Test_pgStore_Update(t *testing.T) {
 			name:      "rowData is empty",
 			tableName: "users",
 			args: args{
-				id: users[0].Id,
+				id: users[0].ID,
 			},
 			wantErr: true,
 		},
@@ -680,7 +680,7 @@ func Test_pgStore_Update(t *testing.T) {
 						Data: "anmt",
 					},
 				},
-				id: users[0].Id,
+				id: users[0].ID,
 			},
 			wantErr: true,
 		},

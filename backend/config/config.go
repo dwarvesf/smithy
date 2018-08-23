@@ -11,7 +11,6 @@ import (
 
 	"github.com/boltdb/bolt"
 	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/postgres"
 
 	agentConfig "github.com/dwarvesf/smithy/agent/config"
 	"github.com/dwarvesf/smithy/common/database"
@@ -29,10 +28,11 @@ type Writer interface {
 
 // Querier interface for reading config for agent
 type Querier interface {
-	ListVersion() []Version
+	ListVersion() ([]Version, error)
 	LastestVersion() (*Config, error)
 }
 
+// ReaderWriterQuerier compose interface for read/write/query config for agent
 type ReaderWriterQuerier interface {
 	Reader
 	Writer
@@ -56,9 +56,10 @@ type Config struct {
 	sync.Mutex
 }
 
+// Version version of backend config
 type Version struct {
 	Checksum      string    `json:"checksum"`
-	VersionNumber int       `json:"version_number"`
+	VersionNumber int64     `json:"version_number"`
 	SyncAt        time.Time `json:"sync_at"`
 }
 
@@ -99,7 +100,6 @@ func (c *Config) CheckSum() (string, error) {
 // UpdateConfigFromAgent update configuration from agent
 func (c *Config) UpdateConfigFromAgent() error {
 	// check config was enable
-
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", c.AgentURL, nil)
 	if err != nil {
@@ -120,7 +120,7 @@ func (c *Config) UpdateConfigFromAgent() error {
 	}
 
 	// Copy config file into tempCfg
-	tempCfg := *c
+	tempCfg := Config{}
 
 	tempCfg.ConnectionInfo = agentCfg.ConnectionInfo
 	tempCfg.DBUsername = agentCfg.UserWithACL.Username
@@ -146,9 +146,9 @@ func (c *Config) UpdateConfigFromAgent() error {
 
 	c.Version.Checksum = checksum
 	c.Version.SyncAt = time.Now()
-	c.Version.VersionNumber++
+	c.Version.VersionNumber = c.Version.SyncAt.Unix()
 
-	wr := NewBoltIO(c.PersistenceDB, 0)
+	wr := NewBoltPersistent(c.PersistenceDB, 0)
 	return wr.Write(c)
 }
 

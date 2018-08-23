@@ -42,7 +42,7 @@ func NewSQLMapper(c *backendConfig.Config, tableName string, columns []database.
 func SyncPersistent(c *backendConfig.Config) error {
 	switch c.PersistenceSupport {
 	case "boltdb":
-		boltIO := backendConfig.NewBoltIO(c.PersistenceDB, 0)
+		boltIO := backendConfig.NewBoltPersistent(c.PersistenceDB, 0)
 		lastCfg, err := boltIO.LastestVersion()
 		if err != nil {
 			return err

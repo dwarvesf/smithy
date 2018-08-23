@@ -29,12 +29,13 @@ func MigrateTables(db *gorm.DB) error {
 	  ) WITH (oids = false);`).Error
 }
 
+// CreateUserSampleData sample data for test
 func CreateUserSampleData(db *gorm.DB) ([]utilDB.User, error) {
 	users := make([]utilDB.User, 0)
 
 	for i := 0; i < 15; i++ {
 		user := utilDB.User{
-			Id:   i + 1,
+			ID:   i + 1,
 			Name: "hieudeptrai" + strconv.Itoa(i),
 		}
 		err := db.Create(&user).Error
@@ -49,6 +50,7 @@ func CreateUserSampleData(db *gorm.DB) ([]utilDB.User, error) {
 	return users, nil
 }
 
+// CreateModelList fake model list from agent
 func CreateModelList() []database.Model {
 	dm := []database.Model{
 		{
@@ -86,6 +88,7 @@ func CreateModelList() []database.Model {
 	return dm
 }
 
+// CreateConfig fake config for test
 func CreateConfig(t *testing.T) (*backendConfig.Config, func()) {
 	cfg := &backendConfig.Config{
 		ModelList: CreateModelList(),

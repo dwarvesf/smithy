@@ -6,9 +6,12 @@ import (
 	"testing"
 	"time"
 
+	_ "github.com/jinzhu/gorm/dialects/postgres"
+
 	backendConfig "github.com/dwarvesf/smithy/backend/config"
 )
 
+// CreateDatabase create pg db for test
 func CreateDatabase(t *testing.T, cfg *backendConfig.Config) func() {
 	rand.Seed(time.Now().UnixNano())
 	schemaName := "test" + strconv.FormatInt(rand.Int63(), 10)
@@ -35,7 +38,8 @@ func CreateDatabase(t *testing.T, cfg *backendConfig.Config) func() {
 	}
 }
 
+// User struct for test
 type User struct {
-	Id   int `sql:"primary_key"`
+	ID   int `sql:"primary_key"`
 	Name string
 }

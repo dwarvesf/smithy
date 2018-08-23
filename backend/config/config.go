@@ -1,14 +1,16 @@
 package config
 
 import (
+	"crypto/md5"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/boltdb/bolt"
 	"github.com/jinzhu/gorm"
-	_ "github.com/jinzhu/gorm/dialects/postgres"
 
 	agentConfig "github.com/dwarvesf/smithy/agent/config"
 	"github.com/dwarvesf/smithy/common/database"
@@ -17,6 +19,24 @@ import (
 // Reader interface for reading config for agent
 type Reader interface {
 	Read() (*Config, error)
+}
+
+// Writer interface for reading config for agent
+type Writer interface {
+	Write(cfg *Config) error
+}
+
+// Querier interface for reading config for agent
+type Querier interface {
+	ListVersion() ([]Version, error)
+	LastestVersion() (*Config, error)
+}
+
+// ReaderWriterQuerier compose interface for read/write/query config for agent
+type ReaderWriterQuerier interface {
+	Reader
+	Writer
+	Querier
 }
 
 // Config contain config for dashboard
@@ -30,9 +50,17 @@ type Config struct {
 	PersistenceDB           *bolt.DB
 	database.ConnectionInfo `yaml:"-"`
 	ModelList               []database.Model `yaml:"-"`
+	Version                 Version          `yaml:"-" json:"version"`
 	db                      *gorm.DB
 
 	sync.Mutex
+}
+
+// Version version of backend config
+type Version struct {
+	Checksum      string    `json:"checksum"`
+	VersionNumber int64     `json:"version_number"`
+	SyncAt        time.Time `json:"sync_at"`
 }
 
 // Wrapper use to hide detail of a config
@@ -57,12 +85,21 @@ func (c *Config) DB() *gorm.DB {
 	return c.db
 }
 
+// CheckSum to checksum sha256 when agent-sync check version
+func (c *Config) CheckSum() (string, error) {
+	buff, err := json.Marshal(c)
+	if err != nil {
+		return "", err
+	}
+
+	h := md5.New()
+	io.WriteString(h, string(buff))
+	return fmt.Sprintf("%x", h.Sum(nil)), nil
+}
+
 // UpdateConfigFromAgent update configuration from agent
 func (c *Config) UpdateConfigFromAgent() error {
 	// check config was enable
-	c.Lock()
-	defer c.Unlock()
-
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", c.AgentURL, nil)
 	if err != nil {
@@ -82,16 +119,52 @@ func (c *Config) UpdateConfigFromAgent() error {
 		return err
 	}
 
-	c.ConnectionInfo = agentCfg.ConnectionInfo
-	c.DBUsername = c.UserWithACL.Username
-	c.DBPassword = c.UserWithACL.Password
-	c.ModelList = agentCfg.ModelList
-	err = c.UpdateDB()
+	// Copy config file into tempCfg
+	tempCfg := Config{}
+
+	tempCfg.ConnectionInfo = agentCfg.ConnectionInfo
+	tempCfg.DBUsername = agentCfg.UserWithACL.Username
+	tempCfg.DBPassword = agentCfg.UserWithACL.Password
+	tempCfg.ModelList = agentCfg.ModelList
+
+	// If available new version, update config then save it into persistence
+	tmpVer := tempCfg.Version
+	tempCfg.Version = Version{}
+	checksum, err := tempCfg.CheckSum()
+	if err != nil {
+		return err
+	}
+	if checksum == c.Version.Checksum {
+		return nil
+	}
+	tempCfg.Version = tmpVer
+
+	err = c.UpdateConfig(&tempCfg)
 	if err != nil {
 		return err
 	}
 
-	return nil
+	c.Version.Checksum = checksum
+	c.Version.SyncAt = time.Now()
+	c.Version.VersionNumber = c.Version.SyncAt.Unix()
+
+	wr := NewBoltPersistent(c.PersistenceDB, 0)
+	return wr.Write(c)
+}
+
+// UpdateConfig update configuration
+func (c *Config) UpdateConfig(cfg *Config) error {
+	// check config was enable
+	c.Lock()
+	defer c.Unlock()
+
+	c.ConnectionInfo = cfg.ConnectionInfo
+	c.DBUsername = cfg.DBUsername
+	c.DBPassword = cfg.DBPassword
+	c.ModelList = cfg.ModelList
+	c.Version = cfg.Version
+
+	return c.UpdateDB()
 }
 
 // UpdateDB update db connection

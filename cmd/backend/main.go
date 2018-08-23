@@ -27,6 +27,11 @@ func main() {
 		panic(err)
 	}
 
+	err = backend.SyncPersistent(cfg)
+	if err != nil {
+		panic(err)
+	}
+
 	var logger log.Logger
 	{
 		logger = log.NewLogfmtLogger(log.NewSyncWriter(os.Stdout))

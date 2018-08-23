@@ -1,11 +1,13 @@
 package config
 
 import (
-	"crypto/sha256"
+	"crypto/md5"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/boltdb/bolt"
 	"github.com/jinzhu/gorm"
@@ -27,7 +29,13 @@ type Writer interface {
 
 // Querier interface for reading config for agent
 type Querier interface {
-	ListVersion() []string
+	ListVersion() []Version
+}
+
+type ReaderWriterQuerier interface {
+	Reader
+	Writer
+	Querier
 }
 
 // Config contain config for dashboard
@@ -41,10 +49,16 @@ type Config struct {
 	PersistenceDB           *bolt.DB
 	database.ConnectionInfo `yaml:"-"`
 	ModelList               []database.Model `yaml:"-"`
-	Version                 string           `yaml:"-" json:"-"`
+	Version                 Version          `yaml:"-" json:"version"`
 	db                      *gorm.DB
 
 	sync.Mutex
+}
+
+type Version struct {
+	Checksum      string    `json:"checksum"`
+	VersionNumber int       `json:"version_number"`
+	SyncAt        time.Time `json:"sync_at"`
 }
 
 // Wrapper use to hide detail of a config
@@ -75,8 +89,10 @@ func (c *Config) CheckSum() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	sum := sha256.Sum256(buff)
-	return fmt.Sprintf("%x", sum), nil
+
+	h := md5.New()
+	io.WriteString(h, string(buff))
+	return fmt.Sprintf("%x", h.Sum(nil)), nil
 }
 
 // UpdateConfigFromAgent update configuration from agent
@@ -115,18 +131,19 @@ func (c *Config) UpdateConfigFromAgent() error {
 	if err != nil {
 		return err
 	}
-	if checksum == c.Version {
+	if checksum == c.Version.Checksum {
 		return nil
 	}
-	tempCfg.Version = checksum
-	tempCfg.Lock()
+	tempCfg.Version.Checksum = checksum
+	tempCfg.Version.SyncAt = time.Now()
+	tempCfg.Version.VersionNumber++
 
 	err = c.UpdateConfig(&tempCfg)
 	if err != nil {
 		return err
 	}
 
-	wr := NewBoltWriter(c.PersistenceDB)
+	wr := NewBoltIO(c.PersistenceDB, 0)
 	err = wr.Write(c)
 	if err != nil {
 		return err

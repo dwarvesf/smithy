@@ -11,7 +11,7 @@ import (
 )
 
 type RevertVersionResquest struct {
-	Version string `json:"version"`
+	VersionNumber int `json:"version"`
 }
 
 type RevertVersionResponse struct {
@@ -26,11 +26,8 @@ func makeRevertVersionEndpoint(s service.Service) endpoint.Endpoint {
 		}
 
 		cfg := s.Config.Config()
-		reader := config.NewBoltReader(req.Version, cfg.PersistenceDB)
+		reader := config.NewBoltIO(cfg.PersistenceDB, req.VersionNumber)
 		vCfg, err := reader.Read()
-		if vCfg != nil {
-			vCfg.Lock()
-		}
 
 		if err != nil {
 			return nil, err

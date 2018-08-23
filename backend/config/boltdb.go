@@ -2,43 +2,30 @@ package config
 
 import (
 	"encoding/json"
+	"strconv"
 
 	"github.com/boltdb/bolt"
 )
 
-type BoltReaderWriterQuerierImpl struct {
+type boltImpl struct {
 	bucket  string
-	version string
+	version int
 	db      *bolt.DB
 }
 
-func NewBoltReader(version string, db *bolt.DB) Reader {
-	return BoltReaderWriterQuerierImpl{
+func NewBoltIO(db *bolt.DB, version int) ReaderWriterQuerier {
+	return boltImpl{
 		bucket:  "ConfigVersion",
 		version: version,
 		db:      db,
 	}
 }
 
-func NewBoltQuerier(db *bolt.DB) Querier {
-	return BoltReaderWriterQuerierImpl{
-		bucket: "ConfigVersion",
-		db:     db,
-	}
-}
-
-func NewBoltWriter(db *bolt.DB) Writer {
-	return BoltReaderWriterQuerierImpl{
-		bucket: "ConfigVersion",
-		db:     db,
-	}
-}
-
-func (b BoltReaderWriterQuerierImpl) Read() (*Config, error) {
+func (b boltImpl) Read() (*Config, error) {
 	cfg := &Config{}
 	err := b.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(b.bucket))
-		v := bucket.Get([]byte(b.version))
+		v := bucket.Get([]byte(strconv.Itoa(b.version)))
 		return json.Unmarshal(v, cfg)
 	})
 
@@ -49,7 +36,7 @@ func (b BoltReaderWriterQuerierImpl) Read() (*Config, error) {
 	return cfg, nil
 }
 
-func (b BoltReaderWriterQuerierImpl) Write(cfg *Config) error {
+func (b boltImpl) Write(cfg *Config) error {
 	buff, err := json.Marshal(cfg)
 	if err != nil {
 		return err
@@ -63,13 +50,13 @@ func (b BoltReaderWriterQuerierImpl) Write(cfg *Config) error {
 				return err
 			}
 		}
-		return bucket.Put([]byte(cfg.Version), buff)
+		return bucket.Put([]byte(strconv.Itoa(cfg.Version.VersionNumber)), buff)
 	})
 	return err
 }
 
-func (b BoltReaderWriterQuerierImpl) ListVersion() []string {
-	versions := make([]string, 0)
+func (b boltImpl) ListVersion() []Version {
+	versions := make([]Version, 0)
 	b.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(b.bucket))
 
@@ -79,8 +66,14 @@ func (b BoltReaderWriterQuerierImpl) ListVersion() []string {
 
 		c := bucket.Cursor()
 
-		for k, _ := c.First(); k != nil; k, _ = c.Next() {
-			versions = append(versions, string(k))
+		for k, v := c.First(); k != nil; k, v = c.Next() {
+			cfg := &Config{}
+			err := json.Unmarshal(v, cfg)
+			if err != nil {
+				return err
+			}
+
+			versions = append(versions, cfg.Version)
 		}
 
 		return nil

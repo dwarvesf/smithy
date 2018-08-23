@@ -11,7 +11,7 @@ type Reader interface {
 	Read() (*Config, error)
 }
 
-// Reader interface for reading config for agent
+// Writer interface for reading config for agent
 type Writer interface {
 	Write(res *Config) error
 }
@@ -82,7 +82,7 @@ func (cols ColumnSchemas) GroupByColumnName() map[string][]ColumnSchema {
 func (c *ColumnSchema) UpdateByColumnDefinition(col database.Column) {
 	c.ColumnName = col.Name
 	c.IsNullable = "YES"
-	if col.IsNullable == false {
+	if !col.IsNullable {
 		c.IsNullable = "NO"
 	}
 	switch col.Type {

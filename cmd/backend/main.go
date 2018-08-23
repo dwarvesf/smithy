@@ -52,7 +52,7 @@ func main() {
 
 	errs := make(chan error)
 	go func() {
-		c := make(chan os.Signal)
+		c := make(chan os.Signal, 1)
 		signal.Notify(c, syscall.SIGINT, syscall.SIGTERM)
 		errs <- fmt.Errorf("%s", <-c)
 	}()
@@ -61,5 +61,5 @@ func main() {
 		errs <- http.ListenAndServe(httpAddr, h)
 	}()
 
-	logger.Log("errors:", <-errs)
+	_ = logger.Log("errors:", <-errs)
 }

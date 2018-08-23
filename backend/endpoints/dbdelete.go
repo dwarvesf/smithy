@@ -29,7 +29,7 @@ func (r *DBDeleteRequest) getResourceID() (int, error) {
 
 func makeDBDeleteEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(DBUpdateRequest)
+		req, ok := request.(DBDeleteRequest)
 		if !ok {
 			return nil, errors.New("failed to make type assertion")
 		}

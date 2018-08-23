@@ -131,5 +131,8 @@ func main() {
 	cmdGenerateUser.Flags().BoolVarP(&forceCreate, "force-create", "f", false, "put your name of config file here, with extension")
 	cmdPSK.Flags().StringVarP(&configFilePath, "config-file", "c", "", "put your name of config file here, with extension")
 
-	rootCmd.Execute()
+	err := rootCmd.Execute()
+	if err != nil {
+		log.Fatal(err)
+	}
 }

@@ -24,6 +24,11 @@ var (
 func main() {
 	cfg, err := backend.NewConfig(backendConfig.ReadYAML("example_dashboard_config.yaml"))
 	var userConfig *backendConfig.UserConfig
+
+	if err != nil {
+		panic(err)
+	}
+
 	userConfig, err = backend.NewUserConfig(backendConfig.ReadUserConfigYAML("example_users_config.yaml"))
 	cfg.AddUserConfigToConfig(userConfig)
 

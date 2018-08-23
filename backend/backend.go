@@ -60,10 +60,7 @@ func SyncPersistent(c *backendConfig.Config) error {
 
 //NewAuthenticate New JWT Authenticain
 func NewAuthenticate(c *backendConfig.Config, username string, rule string) *jwtAuth.JWT {
-	var jwt *jwtAuth.JWT
-	//dummy data is meocon, after load secret key to config, be must c.Config.JWTSecrectKey
-	jwt = jwtAuth.New(c.UserConfig.SerectKey, username, rule)
-	return jwt
+	return jwtAuth.New(c.UserConfig.SerectKey, username, rule)
 }
 
 // NewUserConfig check dashboard config is correct

@@ -1,4 +1,6 @@
-.PHONY: build up-agent up-dashboard local-db unit-test integration-test test
+.PHONY: build up-agent up-dashboard local-db unit-test integration-test lint-test test
+
+LINT := $(shell command -v golangci-lint 2> /dev/null)
 
 build:
 	go build -o bin/agent ./cmd/agent
@@ -23,4 +25,10 @@ integration-test:
 unit-test:
 	go test ./... -tags=unit -count=1
 
-test: unit-test integration-test
+lint-test:
+ifndef LINT
+		go install ./vendor/github.com/golangci/golangci-lint/cmd/golangci-lint
+endif
+		golangci-lint run
+
+test: lint-test unit-test integration-test

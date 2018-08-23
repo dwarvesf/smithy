@@ -24,7 +24,7 @@ func EncodeJSONError(err error, w http.ResponseWriter) {
 	}
 	w.WriteHeader(code)
 	// enforce json response
-	json.NewEncoder(w).Encode(map[string]interface{}{
+	_ = json.NewEncoder(w).Encode(map[string]interface{}{
 		"error": err.Error(),
 	})
 }

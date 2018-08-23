@@ -102,7 +102,10 @@ func CreateConfig(t *testing.T) (*backendConfig.Config, func()) {
 			DBSSLModeOption: "false",
 		},
 	}
-	cfg.UpdateDB()
+	err := cfg.UpdateDB()
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	clearDB := utilDB.CreateDatabase(t, cfg)
 

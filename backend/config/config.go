@@ -4,7 +4,6 @@ import (
 	"crypto/md5"
 	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"sync"
 	"time"
@@ -85,7 +84,7 @@ func (c *Config) DB() *gorm.DB {
 	return c.db
 }
 
-// CheckSum to checksum sha256 when agent-sync check version
+// CheckSum to checksum md5 when agent-sync check version
 func (c *Config) CheckSum() (string, error) {
 	buff, err := json.Marshal(c)
 	if err != nil {
@@ -93,8 +92,7 @@ func (c *Config) CheckSum() (string, error) {
 	}
 
 	h := md5.New()
-	io.WriteString(h, string(buff))
-	return fmt.Sprintf("%x", h.Sum(nil)), nil
+	return fmt.Sprintf("%x", h.Sum(buff)), nil
 }
 
 // UpdateConfigFromAgent update configuration from agent

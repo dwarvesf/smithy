@@ -126,25 +126,7 @@ func (c *Config) UpdateConfigFromAgent() error {
 	tempCfg.DBPassword = agentCfg.UserWithACL.Password
 	tempCfg.ModelList = agentCfg.ModelList
 
-	// If available new version, update config then save it into persistence
-	checksum, err := tempCfg.CheckSum()
-	if err != nil {
-		return err
-	}
-	if checksum == c.Version.Checksum {
-		return nil
-	}
-	tempCfg.Version.Checksum = checksum
-	tempCfg.Version.SyncAt = time.Now()
-	tempCfg.Version.VersionNumber++
-
 	err = c.UpdateConfig(&tempCfg)
-	if err != nil {
-		return err
-	}
-
-	wr := NewBoltIO(c.PersistenceDB, 0)
-	err = wr.Write(c)
 	if err != nil {
 		return err
 	}
@@ -158,13 +140,31 @@ func (c *Config) UpdateConfig(cfg *Config) error {
 	c.Lock()
 	defer c.Unlock()
 
+	// If available new version, update config then save it into persistence
+	cfg.Version = Version{}
+	checksum, err := cfg.CheckSum()
+	if err != nil {
+		return err
+	}
+	if checksum == c.Version.Checksum {
+		return nil
+	}
+
 	c.ConnectionInfo = cfg.ConnectionInfo
 	c.DBUsername = cfg.DBUsername
 	c.DBPassword = cfg.DBPassword
 	c.ModelList = cfg.ModelList
-	c.Version = cfg.Version
+	c.Version.Checksum = checksum
+	c.Version.SyncAt = time.Now()
+	c.Version.VersionNumber++
 
-	return c.UpdateDB()
+	err = c.UpdateDB()
+	if err != nil {
+		return err
+	}
+
+	wr := NewBoltIO(c.PersistenceDB, 0)
+	return wr.Write(c)
 }
 
 // UpdateDB update db connection

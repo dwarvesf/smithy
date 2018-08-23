@@ -39,8 +39,18 @@ func (c yamlReaderImpl) Read() (*Config, error) {
 
 	return res, nil
 }
-func (c yamlReaderImpl) ReadToken() (*TokenInfo, error) {
-	res := &TokenInfo{}
+
+type yamlReaderUserConfig struct {
+	file string
+}
+
+// ReadYAML reader dashboard config from front-end
+func ReadUserConfigYAML(file string) UserConfigReader {
+	return yamlReaderUserConfig{file}
+}
+
+func (c yamlReaderUserConfig) Read() (*UserConfig, error) {
+	res := &UserConfig{}
 	buf, err := ioutil.ReadFile(c.file)
 	if err != nil {
 		return nil, err

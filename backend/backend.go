@@ -62,13 +62,13 @@ func SyncPersistent(c *backendConfig.Config) error {
 func NewAuthenticate(c *backendConfig.Config, username string, rule string) *jwtAuth.JWT {
 	var jwt *jwtAuth.JWT
 	//dummy data is meocon, after load secret key to config, be must c.Config.JWTSecrectKey
-	jwt = jwtAuth.New(c.TokenInfo.SerectKey, username, rule)
+	jwt = jwtAuth.New(c.UserConfig.SerectKey, username, rule)
 	return jwt
 }
 
-// NewTokenInfo check dashboard config is correct
-func NewTokenInfo(r backendConfig.Reader) (*backendConfig.TokenInfo, error) {
-	cfg, err := r.ReadToken()
+// NewUserConfig check dashboard config is correct
+func NewUserConfig(r backendConfig.UserConfigReader) (*backendConfig.UserConfig, error) {
+	cfg, err := r.Read()
 	if err != nil {
 		return nil, err
 	}

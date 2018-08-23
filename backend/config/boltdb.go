@@ -81,3 +81,22 @@ func (b boltImpl) ListVersion() []Version {
 
 	return versions
 }
+
+func (b boltImpl) LastestVersion() (*Config, error) {
+	cfg := &Config{}
+	err := b.db.View(func(tx *bolt.Tx) error {
+		bucket := tx.Bucket([]byte(b.bucket))
+
+		if bucket == nil {
+			cfg = nil
+			return nil
+		}
+
+		c := bucket.Cursor()
+		_, v := c.Last()
+
+		return json.Unmarshal(v, cfg)
+	})
+
+	return cfg, err
+}

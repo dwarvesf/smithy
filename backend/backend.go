@@ -38,3 +38,21 @@ func NewSQLMapper(c *backendConfig.Config, tableName string, columns []database.
 		return nil, errors.New("Uknown DB Driver")
 	}
 }
+
+func SyncPersistent(c *backendConfig.Config) error {
+	switch c.PersistenceSupport {
+	case "boltdb":
+		boltIO := backendConfig.NewBoltIO(c.PersistenceDB, 0)
+		lastCfg, err := boltIO.LastestVersion()
+		if err != nil {
+			return err
+		}
+
+		if lastCfg == nil {
+			return nil
+		}
+		return c.UpdateConfig(lastCfg)
+	default:
+		return errors.New("Uknown Persistent DB")
+	}
+}

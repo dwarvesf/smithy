@@ -30,6 +30,7 @@ type Writer interface {
 // Querier interface for reading config for agent
 type Querier interface {
 	ListVersion() []Version
+	LastestVersion() (*Config, error)
 }
 
 type ReaderWriterQuerier interface {
@@ -126,12 +127,29 @@ func (c *Config) UpdateConfigFromAgent() error {
 	tempCfg.DBPassword = agentCfg.UserWithACL.Password
 	tempCfg.ModelList = agentCfg.ModelList
 
+	// If available new version, update config then save it into persistence
+	tmpVer := tempCfg.Version
+	tempCfg.Version = Version{}
+	checksum, err := tempCfg.CheckSum()
+	if err != nil {
+		return err
+	}
+	if checksum == c.Version.Checksum {
+		return nil
+	}
+	tempCfg.Version = tmpVer
+
 	err = c.UpdateConfig(&tempCfg)
 	if err != nil {
 		return err
 	}
 
-	return nil
+	c.Version.Checksum = checksum
+	c.Version.SyncAt = time.Now()
+	c.Version.VersionNumber++
+
+	wr := NewBoltIO(c.PersistenceDB, 0)
+	return wr.Write(c)
 }
 
 // UpdateConfig update configuration
@@ -140,31 +158,13 @@ func (c *Config) UpdateConfig(cfg *Config) error {
 	c.Lock()
 	defer c.Unlock()
 
-	// If available new version, update config then save it into persistence
-	cfg.Version = Version{}
-	checksum, err := cfg.CheckSum()
-	if err != nil {
-		return err
-	}
-	if checksum == c.Version.Checksum {
-		return nil
-	}
-
 	c.ConnectionInfo = cfg.ConnectionInfo
 	c.DBUsername = cfg.DBUsername
 	c.DBPassword = cfg.DBPassword
 	c.ModelList = cfg.ModelList
-	c.Version.Checksum = checksum
-	c.Version.SyncAt = time.Now()
-	c.Version.VersionNumber++
+	c.Version = cfg.Version
 
-	err = c.UpdateDB()
-	if err != nil {
-		return err
-	}
-
-	wr := NewBoltIO(c.PersistenceDB, 0)
-	return wr.Write(c)
+	return c.UpdateDB()
 }
 
 // UpdateDB update db connection

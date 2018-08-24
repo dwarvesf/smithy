@@ -47,6 +47,7 @@ func main() {
 			endpoints.MakeServerEndpoints(s),
 			logger,
 			os.Getenv("ENV") == "local",
+			cfg.Authentication.SerectKey,
 		)
 	}
 

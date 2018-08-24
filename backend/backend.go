@@ -3,6 +3,7 @@ package backend
 import (
 	"errors"
 
+	jwtAuth "github.com/dwarvesf/smithy/backend/auth"
 	backendConfig "github.com/dwarvesf/smithy/backend/config"
 	"github.com/dwarvesf/smithy/backend/sqlmapper"
 	sqlmapperDrv "github.com/dwarvesf/smithy/backend/sqlmapper/drivers"
@@ -55,4 +56,9 @@ func SyncPersistent(c *backendConfig.Config) error {
 	default:
 		return errors.New("Uknown Persistent DB")
 	}
+}
+
+//NewAuthenticate New JWT Authenticain
+func NewAuthenticate(c *backendConfig.Config, username string, rule string) *jwtAuth.JWT {
+	return jwtAuth.New(c.Authentication.SerectKey, username, rule)
 }

@@ -31,6 +31,12 @@
   source = "github.com/golangci/misspell"
 
 [[projects]]
+  name = "github.com/dgrijalva/jwt-go"
+  packages = ["."]
+  revision = "06ea1031745cb8b3dab3f6a236daf2b0aa468b7e"
+  version = "v3.2.0"
+
+[[projects]]
   name = "github.com/fatih/color"
   packages = ["."]
   revision = "5b77d2a35fb0ede96d138fc9a99f5c9b6aef11b4"
@@ -53,6 +59,12 @@
   packages = ["."]
   revision = "dba6525398619dead495962a916728e7ee2ca322"
   version = "v1.0.0"
+
+[[projects]]
+  name = "github.com/go-chi/jwtauth"
+  packages = ["."]
+  revision = "53a0a4877a0ead48e149be6b4ec9dd1b3c075eba"
+  version = "v3.3.0"
 
 [[projects]]
   name = "github.com/go-kit/kit"
@@ -274,14 +286,14 @@
   revision = "b84e30acd515aadc4b783ad4ff83aff3299bdfe0"
 
 [[projects]]
-  branch = "master"
   name = "github.com/lib/pq"
   packages = [
     ".",
     "hstore",
     "oid"
   ]
-  revision = "90697d60dd844d5ef6ff15135d0203f65d2f53b8"
+  revision = "4ded0e9383f75c197b3a2aaa6d590ac52df6fd79"
+  version = "v1.0.0"
 
 [[projects]]
   name = "github.com/magiconair/properties"
@@ -316,10 +328,10 @@
   source = "github.com/golangci/dupl"
 
 [[projects]]
-  branch = "master"
   name = "github.com/mitchellh/mapstructure"
   packages = ["."]
-  revision = "f15292f7a699fcc1a38a80977f80a046874ba8ac"
+  revision = "fa473d140ef3c6adf42d6b391fe76707f1f243c8"
+  version = "v1.0.0"
 
 [[projects]]
   name = "github.com/nbutton23/zxcvbn-go"
@@ -379,8 +391,8 @@
 [[projects]]
   name = "github.com/spf13/pflag"
   packages = ["."]
-  revision = "583c0c0531f06d5278b7d917446061adc344b5cd"
-  version = "v1.0.1"
+  revision = "9a97c102cda95a86cec2345a6f09f55a939babf5"
+  version = "v1.0.2"
 
 [[projects]]
   name = "github.com/spf13/viper"
@@ -397,8 +409,8 @@
 [[projects]]
   name = "github.com/volatiletech/sqlboiler"
   packages = ["strmangle"]
-  revision = "d4bc831c7df09032b8290a3ddfb7bb41a0866934"
-  version = "v2.7.3"
+  revision = "7d3d954a4be10dc06b9464fb3e6d74836274c467"
+  version = "v3.0.0"
 
 [[projects]]
   branch = "master"
@@ -413,7 +425,7 @@
     "unix",
     "windows"
   ]
-  revision = "acbc56fc7007d2a01796d5bde54f39e3b3e95945"
+  revision = "11551d06cbcc94edc80a0facaccbda56473c19c1"
 
 [[projects]]
   name = "golang.org/x/text"
@@ -509,6 +521,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "31f66b9202960b044ddaaae0fef9b84487f2b1f5a3e3c70ed2ca3247a251aef5"
+  inputs-digest = "73c3b8814c58e8696e44ef83ccba6fbcd13811747b7fd79b5e78a0330bf6daff"
   solver-name = "gps-cdcl"
   solver-version = 1

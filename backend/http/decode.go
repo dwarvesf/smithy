@@ -64,3 +64,12 @@ func decodeRevertVersion(ctx context.Context, r *http.Request) (interface{}, err
 
 	return req, err
 }
+
+func decodeLoginRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	req := endpoints.LoginRequest{}
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	defer r.Body.Close()
+
+	return req, err
+}

@@ -2,3 +2,12 @@ agent_serect_key: fb0bc76a-dbb1-4944-bcf7-aaef0d9d6e95
 agent_url: "http://localhost:3000/agent"
 persistence_support: "boltdb"
 persistence_file_name: "persistent.db"
+authentication:
+  secret_key: lalala
+  users:
+    - username: "aaa"
+      password: "abc"      
+      role: "admin"
+    - username: "bbb"
+      password: "abc"      
+      role: "admin"

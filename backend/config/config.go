@@ -16,11 +16,6 @@ import (
 )
 
 // Reader interface for reading config for agent
-type UserConfigReader interface {
-	Read() (*UserConfig, error)
-}
-
-// Reader interface for reading config for agent
 type Reader interface {
 	Read() (*Config, error)
 }
@@ -56,7 +51,7 @@ type Config struct {
 	ModelList               []database.Model `yaml:"-"`
 	Version                 Version          `yaml:"-" json:"version"`
 	db                      *gorm.DB
-	UserConfig              *UserConfig
+	Authentication          *Authentication `yaml:"authentication" json:"authentication"`
 
 	sync.Mutex
 }
@@ -203,12 +198,12 @@ func (c *Config) openNewDBConnection() (*gorm.DB, error) {
 }
 
 // add user config
-func (c *Config) AddUserConfigToConfig(userConfig *UserConfig) *Config {
-	c.UserConfig = userConfig
+func (c *Config) AddAuthenticationToConfig(authentication *Authentication) *Config {
+	c.Authentication = authentication
 	return c
 }
 
-type UserConfig struct {
+type Authentication struct {
 	SerectKey string          `yaml:"secret_key" json:"secret_key"`
 	Users     map[string]User `yaml:"users" json:"users"`
 }
@@ -216,5 +211,4 @@ type UserConfig struct {
 type User struct {
 	Password string `yaml:"password" json:"password"`
 	Role     string `yaml:"role" json:"role"`
-	Acl      string `yaml:"acl" json:"acl"`
 }

@@ -1,0 +1,132 @@
+version: 2
+jobs:
+  build:
+    working_directory: /root
+    docker:
+      - image: aarondl0/sqlboiler-test:v3
+
+      - image: postgres:9.6
+        environment:
+          POSTGRES_PASSWORD: psqlpassword
+
+      - image: mysql:5.7
+        environment:
+          MYSQL_ROOT_PASSWORD: mysqlpassword
+
+      - image: microsoft/mssql-server-linux:2017-GDR
+        environment:
+          ACCEPT_EULA: 'Y'
+          SA_PASSWORD: 'Sqlboiler@1234'
+
+    environment:
+      GOPATH: /go
+      ROOTPATH: /go/src/github.com/volatiletech/sqlboiler
+
+    steps:
+      - run:
+          name: 'Make GOPATH'
+          command: mkdir -p $ROOTPATH
+
+      - checkout:
+          name: 'Checkout'
+          path: /go/src/github.com/volatiletech/sqlboiler
+
+      # Workaround to allow the use of the circleci local cli.
+      - run:
+          name: 'Checkout (local)'
+          command: |
+            if [ ! -z "$ROOTPATH" ]; then rmdir $ROOTPATH; ln -s /root $ROOTPATH; fi
+
+      - run:
+          name: 'Add PSQL Credentials'
+          command: |
+            echo "*:*:*:*:psqlpassword" > /root/.pgpass
+            chmod 600 /root/.pgpass
+
+      - run:
+          name: 'Add MySQL Credentials'
+          command: |
+            echo -e "[client]\nuser = root\npassword = mysqlpassword\nhost = localhost\nprotocol = tcp" > /root/.my.cnf
+            chmod 600 /root/.my.cnf
+
+      - run:
+          name: 'Wait for PSQL'
+          command: >
+            c=0;
+            for i in `seq 30`; do
+              echo "Waiting for psql"
+              psql --host localhost --username postgres --dbname template1 -c 'select * from information_schema.tables;' > /dev/null && c=0 && break || c=$? && sleep 1
+            done;
+            exit $c
+
+      - run:
+          name: 'Wait for MySQL'
+          command: >
+            c=0;
+            for i in `seq 30`; do
+              echo "Waiting for mysql"
+              mysql --execute 'select * from information_schema.tables;' > /dev/null > /dev/null && c=0 && break || c=$? && sleep 1
+            done;
+            exit $c
+
+      - run:
+          name: Wait for MSSQL
+          command: >
+            c=0;
+            for i in `seq 30`; do
+              echo "Waiting for mssql"
+              sqlcmd -H localhost -U sa -P Sqlboiler@1234 -Q "select * from information_schema.tables;" > /dev/null > /dev/null && c=0 && break || c=$? && sleep 1
+            done;
+            exit $c
+
+      - run:
+          name: 'Download dependencies (core, driver, test, generated)'
+          command: |
+            cd $ROOTPATH; go get -v -t ./...
+
+      - run:
+          name: 'Build SQLBoiler core and drivers'
+          command: |
+            cd $ROOTPATH; make build
+            cd $ROOTPATH; make build-{psql,mysql,mssql}
+
+      - run:
+          name: 'Prepare for tests'
+          command: |
+            mkdir -p $HOME/test_results
+
+      - run:
+          name: 'Tests: All (except drivers,vendor)'
+          command: |
+            cd $ROOTPATH
+            make test | tee $HOME/test_results/results.txt
+            for engine in psql mysql mssql; do
+              make test-user-${engine}
+              make test-db-${engine}
+              make test-generate-${engine}
+              # workaround to fix failing tests due to the absence of 'table_schema.sql'
+              if [ "${engine}" != "mssql" ]; then
+                make test-${engine} | tee $HOME/test_results/results.${engine}.txt
+              fi
+            done
+
+      - run:
+          name: 'Tests: Drivers'
+          command: |
+            cd $ROOTPATH
+            for engine in psql mysql mssql; do
+              make driver-db-${engine}
+              make driver-user-${engine}
+              make driver-test-${engine} | tee $HOME/test_results/results.driver-${engine}.txt
+            done
+
+      - run:
+          name: 'Tests: Convert from plain to JUnit'
+          command: |
+            for file in $HOME/test_results/*.txt; do
+              cat ${file} | go-junit-report > "${file%.txt}.xml"
+            done
+
+      - store_test_results:
+          name: 'Store test results'
+          path: test_results

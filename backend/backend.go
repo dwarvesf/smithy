@@ -60,14 +60,5 @@ func SyncPersistent(c *backendConfig.Config) error {
 
 //NewAuthenticate New JWT Authenticain
 func NewAuthenticate(c *backendConfig.Config, username string, rule string) *jwtAuth.JWT {
-	return jwtAuth.New(c.UserConfig.SerectKey, username, rule)
-}
-
-// NewUserConfig check dashboard config is correct
-func NewUserConfig(r backendConfig.UserConfigReader) (*backendConfig.UserConfig, error) {
-	cfg, err := r.Read()
-	if err != nil {
-		return nil, err
-	}
-	return cfg, nil
+	return jwtAuth.New(c.Authentication.SerectKey, username, rule)
 }

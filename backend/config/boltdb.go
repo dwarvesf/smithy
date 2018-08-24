@@ -26,6 +26,10 @@ func (b boltImpl) Read() (*Config, error) {
 	cfg := &Config{}
 	err := b.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(b.bucket))
+		if bucket == nil {
+			cfg = nil
+			return nil
+		}
 		v := bucket.Get([]byte(strconv.FormatInt(b.version, 10)))
 		return json.Unmarshal(v, cfg)
 	})

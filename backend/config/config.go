@@ -93,8 +93,7 @@ func (c *Config) CheckSum() (string, error) {
 		return "", err
 	}
 
-	h := md5.New()
-	return fmt.Sprintf("%x", h.Sum(buff)), nil
+	return fmt.Sprintf("%x", md5.Sum(buff)), nil
 }
 
 // UpdateConfigFromAgent update configuration from agent
@@ -113,12 +112,17 @@ func (c *Config) UpdateConfigFromAgent() error {
 	}
 	defer res.Body.Close()
 
-	agentCfg := agentConfig.Config{}
-	err = json.NewDecoder(res.Body).Decode(&agentCfg)
+	agentCfg := &agentConfig.Config{}
+	err = json.NewDecoder(res.Body).Decode(agentCfg)
 	if err != nil {
 		return err
 	}
 
+	return c.UpdateConfigFromAgentConfig(agentCfg)
+}
+
+// UpdateConfigFromAgentConfig update config from AgentConfig
+func (c *Config) UpdateConfigFromAgentConfig(agentCfg *agentConfig.Config) error {
 	// Copy config file into tempCfg
 	tempCfg := Config{}
 
@@ -134,6 +138,7 @@ func (c *Config) UpdateConfigFromAgent() error {
 	if err != nil {
 		return err
 	}
+	log.Println(checksum)
 	if checksum == c.Version.Checksum {
 		return nil
 	}
@@ -147,7 +152,7 @@ func (c *Config) UpdateConfigFromAgent() error {
 
 	c.Version.Checksum = checksum
 	c.Version.SyncAt = time.Now()
-	c.Version.VersionNumber = c.Version.SyncAt.Unix()
+	c.Version.VersionNumber = c.Version.SyncAt.UnixNano()
 
 	wr := NewBoltPersistent(c.PersistenceDB, 0)
 	return wr.Write(c)

@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/davecgh/go-spew/spew"
-	"github.com/volatiletech/sqlboiler/drivers"
 )
 
 var writeGoldenFiles = flag.Bool(
@@ -98,8 +97,8 @@ func TestBuildQuery(t *testing.T) {
 
 	for i, test := range tests {
 		filename := filepath.Join("_fixtures", fmt.Sprintf("%02d.sql", i))
-		test.q.dialect = &drivers.Dialect{LQ: '"', RQ: '"', UseIndexPlaceholders: true}
-		out, args := BuildQuery(test.q)
+		test.q.dialect = &Dialect{LQ: '"', RQ: '"', IndexPlaceholders: true}
+		out, args := buildQuery(test.q)
 
 		if *writeGoldenFiles {
 			err := ioutil.WriteFile(filename, []byte(out), 0664)
@@ -151,7 +150,7 @@ func TestWriteStars(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		test.In.dialect = &drivers.Dialect{LQ: '"', RQ: '"', UseIndexPlaceholders: true}
+		test.In.dialect = &Dialect{LQ: '"', RQ: '"', IndexPlaceholders: true}
 		selects := writeStars(&test.In)
 		if !reflect.DeepEqual(selects, test.Out) {
 			t.Errorf("writeStar test fail %d\nwant: %v\ngot:  %v", i, test.Out, selects)
@@ -278,7 +277,7 @@ func TestWhereClause(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		test.q.dialect = &drivers.Dialect{LQ: '"', RQ: '"', UseIndexPlaceholders: true}
+		test.q.dialect = &Dialect{LQ: '"', RQ: '"', IndexPlaceholders: true}
 		result, _ := whereClause(&test.q, 1)
 		if result != test.expect {
 			t.Errorf("%d) Mismatch between expect and result:\n%s\n%s\n", i, test.expect, result)
@@ -411,7 +410,7 @@ func TestInClause(t *testing.T) {
 	}
 
 	for i, test := range tests {
-		test.q.dialect = &drivers.Dialect{LQ: '"', RQ: '"', UseIndexPlaceholders: true}
+		test.q.dialect = &Dialect{LQ: '"', RQ: '"', IndexPlaceholders: true}
 		result, args := inClause(&test.q, 1)
 		if result != test.expect {
 			t.Errorf("%d) Mismatch between expect and result:\n%s\n%s\n", i, test.expect, result)
@@ -525,7 +524,7 @@ func TestWriteAsStatements(t *testing.T) {
 			`a.clown.run`,
 			`COUNT(a)`,
 		},
-		dialect: &drivers.Dialect{LQ: '"', RQ: '"', UseIndexPlaceholders: true},
+		dialect: &Dialect{LQ: '"', RQ: '"', IndexPlaceholders: true},
 	}
 
 	expect := []string{

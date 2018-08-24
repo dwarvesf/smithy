@@ -85,8 +85,8 @@ func init() {
 // for Postgres: "schema_name"."table_name",
 // for MS SQL: [schema_name].[table_name], versus
 // simply "table_name" for MySQL (because it does not support real schemas)
-func SchemaTable(lq, rq string, useSchema bool, schema string, table string) string {
-	if useSchema {
+func SchemaTable(lq, rq string, driver string, schema string, table string) string {
+	if (driver == "postgres" && schema != "public") || driver == "mssql" {
 		return fmt.Sprintf(`%s%s%s.%s%s%s`, lq, schema, rq, lq, table, rq)
 	}
 
@@ -94,7 +94,7 @@ func SchemaTable(lq, rq string, useSchema bool, schema string, table string) str
 }
 
 // IdentQuote attempts to quote simple identifiers in SQL statements
-func IdentQuote(lq rune, rq rune, s string) string {
+func IdentQuote(lq byte, rq byte, s string) string {
 	if strings.ToLower(s) == "null" || s == "?" {
 		return s
 	}
@@ -112,21 +112,21 @@ func IdentQuote(lq rune, rq rune, s string) string {
 			buf.WriteByte('.')
 		}
 
-		if rune(split[0]) == lq || rune(split[len(split)-1]) == rq || split == "*" {
+		if split[0] == lq || split[len(split)-1] == rq || split == "*" {
 			buf.WriteString(split)
 			continue
 		}
 
-		buf.WriteRune(lq)
+		buf.WriteByte(lq)
 		buf.WriteString(split)
-		buf.WriteRune(rq)
+		buf.WriteByte(rq)
 	}
 
 	return buf.String()
 }
 
 // IdentQuoteSlice applies IdentQuote to a slice.
-func IdentQuoteSlice(lq rune, rq rune, s []string) []string {
+func IdentQuoteSlice(lq byte, rq byte, s []string) []string {
 	if len(s) == 0 {
 		return s
 	}
@@ -167,7 +167,7 @@ func Identifier(in int) string {
 
 // QuoteCharacter returns a string that allows the quote character
 // to be embedded into a Go string that uses double quotes:
-func QuoteCharacter(q rune) string {
+func QuoteCharacter(q byte) string {
 	if q == '"' {
 		return `\"`
 	}
@@ -317,13 +317,11 @@ func TitleCase(n string) string {
 // CamelCase takes a variable name in the format of "var_name" and converts
 // it into a go styled variable name of "varName".
 // camelCase also fully uppercases "ID" components of names, for example
-// "var_name_id" to "varNameID". It will also lowercase the first letter
-// of the name in the case where it's fed something that starts with uppercase.
+// "var_name_id" to "varNameID".
 func CamelCase(name string) string {
 	buf := GetBuffer()
 	defer PutBuffer(buf)
 
-	// Discard all leading '_'
 	index := -1
 	for i := 0; i < len(name); i++ {
 		if name[i] != '_' {
@@ -347,16 +345,10 @@ func CamelCase(name string) string {
 	}
 
 	if index == -1 {
-		buf.WriteString(strings.ToLower(string(name[0])))
-		if len(name) > 1 {
-			buf.WriteString(name[1:])
-		}
+		buf.WriteString(name)
 	} else {
-		buf.WriteString(strings.ToLower(string(name[0])))
-		if len(name) > 1 {
-			buf.WriteString(name[1:index])
-			buf.WriteString(TitleCase(name[index+1:]))
-		}
+		buf.WriteString(name[:index])
+		buf.WriteString(TitleCase(name[index+1:]))
 	}
 
 	return buf.String()
@@ -453,8 +445,8 @@ func PrefixStringSlice(str string, strs []string) []string {
 // Placeholders generates the SQL statement placeholders for in queries.
 // For example, ($1,$2,$3),($4,$5,$6) etc.
 // It will start counting placeholders at "start".
-// If useIndexPlaceholders is false, it will convert to ? instead of $1 etc.
-func Placeholders(useIndexPlaceholders bool, count int, start int, group int) string {
+// If indexPlaceholders is false, it will convert to ? instead of $1 etc.
+func Placeholders(indexPlaceholders bool, count int, start int, group int) string {
 	buf := GetBuffer()
 	defer PutBuffer(buf)
 
@@ -473,7 +465,7 @@ func Placeholders(useIndexPlaceholders bool, count int, start int, group int) st
 				buf.WriteByte(',')
 			}
 		}
-		if useIndexPlaceholders {
+		if indexPlaceholders {
 			buf.WriteString(fmt.Sprintf("$%d", start+i))
 		} else {
 			buf.WriteByte('?')
@@ -699,27 +691,4 @@ func ReplaceReservedWords(word string) string {
 		return word + "_"
 	}
 	return word
-}
-
-// RemoveDuplicates from a string slice
-func RemoveDuplicates(dedup []string) []string {
-	if len(dedup) <= 1 {
-		return dedup
-	}
-
-	for i := 0; i < len(dedup)-1; i++ {
-		for j := i + 1; j < len(dedup); j++ {
-			if dedup[i] != dedup[j] {
-				continue
-			}
-
-			if j != len(dedup)-1 {
-				dedup[j] = dedup[len(dedup)-1]
-				j--
-			}
-			dedup = dedup[:len(dedup)-1]
-		}
-	}
-
-	return dedup
 }

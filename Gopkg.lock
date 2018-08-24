@@ -221,10 +221,10 @@
   revision = "b84e30acd515aadc4b783ad4ff83aff3299bdfe0"
 
 [[projects]]
+  branch = "master"
   name = "github.com/lib/pq"
   packages = [".","hstore","oid"]
-  revision = "4ded0e9383f75c197b3a2aaa6d590ac52df6fd79"
-  version = "v1.0.0"
+  revision = "90697d60dd844d5ef6ff15135d0203f65d2f53b8"
 
 [[projects]]
   name = "github.com/magiconair/properties"
@@ -252,10 +252,10 @@
   source = "github.com/golangci/dupl"
 
 [[projects]]
+  branch = "master"
   name = "github.com/mitchellh/mapstructure"
   packages = ["."]
-  revision = "fa473d140ef3c6adf42d6b391fe76707f1f243c8"
-  version = "v1.0.0"
+  revision = "f15292f7a699fcc1a38a80977f80a046874ba8ac"
 
 [[projects]]
   name = "github.com/nbutton23/zxcvbn-go"
@@ -302,8 +302,8 @@
 [[projects]]
   name = "github.com/spf13/pflag"
   packages = ["."]
-  revision = "9a97c102cda95a86cec2345a6f09f55a939babf5"
-  version = "v1.0.2"
+  revision = "583c0c0531f06d5278b7d917446061adc344b5cd"
+  version = "v1.0.1"
 
 [[projects]]
   name = "github.com/spf13/viper"
@@ -320,8 +320,8 @@
 [[projects]]
   name = "github.com/volatiletech/sqlboiler"
   packages = ["strmangle"]
-  revision = "7d3d954a4be10dc06b9464fb3e6d74836274c467"
-  version = "v3.0.0"
+  revision = "d4bc831c7df09032b8290a3ddfb7bb41a0866934"
+  version = "v2.7.3"
 
 [[projects]]
   branch = "master"
@@ -333,7 +333,7 @@
   branch = "master"
   name = "golang.org/x/sys"
   packages = ["unix","windows"]
-  revision = "11551d06cbcc94edc80a0facaccbda56473c19c1"
+  revision = "acbc56fc7007d2a01796d5bde54f39e3b3e95945"
 
 [[projects]]
   name = "golang.org/x/text"

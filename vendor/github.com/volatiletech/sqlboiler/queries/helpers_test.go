@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/volatiletech/null"
+	null "gopkg.in/volatiletech/null.v6"
 )
 
 type testObj struct {
@@ -18,10 +18,10 @@ func TestNonZeroDefaultSet(t *testing.T) {
 	t.Parallel()
 
 	type Anything struct {
-		ID        int        `boil:"id"`
-		Name      string     `boil:"name"`
-		CreatedAt *time.Time `boil:"created_at"`
-		UpdatedAt null.Time  `boil:"updated_at"`
+		ID        int
+		Name      string
+		CreatedAt *time.Time
+		UpdatedAt null.Time
 	}
 
 	now := time.Now()

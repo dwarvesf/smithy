@@ -65,7 +65,6 @@ includes_DragonFly='
 #include <sys/event.h>
 #include <sys/socket.h>
 #include <sys/sockio.h>
-#include <sys/stat.h>
 #include <sys/sysctl.h>
 #include <sys/mman.h>
 #include <sys/wait.h>
@@ -87,7 +86,6 @@ includes_FreeBSD='
 #include <sys/event.h>
 #include <sys/socket.h>
 #include <sys/sockio.h>
-#include <sys/stat.h>
 #include <sys/sysctl.h>
 #include <sys/mman.h>
 #include <sys/mount.h>
@@ -193,6 +191,7 @@ struct ltchars {
 #include <linux/vm_sockets.h>
 #include <linux/taskstats.h>
 #include <linux/genetlink.h>
+#include <linux/stat.h>
 #include <linux/watchdog.h>
 #include <linux/hdreg.h>
 #include <linux/rtc.h>
@@ -231,7 +230,6 @@ includes_NetBSD='
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/event.h>
-#include <sys/extattr.h>
 #include <sys/mman.h>
 #include <sys/socket.h>
 #include <sys/sockio.h>
@@ -260,7 +258,6 @@ includes_OpenBSD='
 #include <sys/mman.h>
 #include <sys/socket.h>
 #include <sys/sockio.h>
-#include <sys/stat.h>
 #include <sys/sysctl.h>
 #include <sys/termios.h>
 #include <sys/ttycom.h>
@@ -296,7 +293,6 @@ includes_SunOS='
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <sys/sockio.h>
-#include <sys/stat.h>
 #include <sys/mman.h>
 #include <sys/wait.h>
 #include <sys/ioctl.h>
@@ -438,7 +434,7 @@ ccflags="$@"
 		$2 ~ /^SECCOMP_MODE_/ ||
 		$2 ~ /^SPLICE_/ ||
 		$2 !~ /^AUDIT_RECORD_MAGIC/ &&
-		$2 ~ /^[A-Z][A-Z0-9_]+_MAGIC2?$/ ||
+		$2 ~ /^[A-Z0-9_]+_MAGIC2?$/ ||
 		$2 ~ /^(VM|VMADDR)_/ ||
 		$2 ~ /^IOCTL_VM_SOCKETS_/ ||
 		$2 ~ /^(TASKSTATS|TS)_/ ||

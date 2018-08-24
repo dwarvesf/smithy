@@ -1,6 +1,7 @@
 package queries
 
 import (
+	"database/sql"
 	"reflect"
 	"testing"
 )
@@ -55,23 +56,7 @@ func TestSetLoad(t *testing.T) {
 	}
 
 	if q.load[0] != "one" || q.load[1] != "two" {
-		t.Errorf("Was not expected string, got %v", q.load)
-	}
-}
-
-type apple struct{}
-
-func (apple) Apply(*Query) {}
-
-func TestSetLoadMods(t *testing.T) {
-	t.Parallel()
-
-	q := &Query{}
-	SetLoadMods(q, "a", apple{})
-	SetLoadMods(q, "b", apple{})
-
-	if len(q.loadMods) != 2 {
-		t.Errorf("Expected len 2, got %d", len(q.loadMods))
+		t.Errorf("Was not expected string, got %s", q.load)
 	}
 }
 
@@ -349,15 +334,15 @@ func TestSetDelete(t *testing.T) {
 	}
 }
 
-func TestSetArgs(t *testing.T) {
+func TestSetExecutor(t *testing.T) {
 	t.Parallel()
 
-	args := []interface{}{2}
-	q := &Query{rawSQL: rawSQL{}}
-	SetArgs(q, args...)
+	q := &Query{}
+	d := &sql.DB{}
+	SetExecutor(q, d)
 
-	if q.rawSQL.args[0].(int) != 2 {
-		t.Errorf("Expected args to get set")
+	if q.executor != d {
+		t.Errorf("Expected executor to get set to d, but was: %#v", q.executor)
 	}
 }
 
@@ -388,7 +373,7 @@ func TestAppendSelect(t *testing.T) {
 func TestSQL(t *testing.T) {
 	t.Parallel()
 
-	q := Raw("thing", 5)
+	q := Raw(&sql.DB{}, "thing", 5)
 	if q.rawSQL.sql != "thing" {
 		t.Errorf("Expected %q, got %s", "thing", q.rawSQL.sql)
 	}

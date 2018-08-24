@@ -4,17 +4,9 @@ import (
 	"reflect"
 	"testing"
 	"time"
+
+	null "gopkg.in/volatiletech/null.v6"
 )
-
-type MagicType struct {
-	Value      int
-	Randomized bool
-}
-
-func (m *MagicType) Randomize(nextInt func() int64, fieldType string, shouldBeNull bool) {
-	m.Value = int(nextInt())
-	m.Randomized = true
-}
 
 func TestRandomizeStruct(t *testing.T) {
 	t.Parallel()
@@ -31,22 +23,32 @@ func TestRandomizeStruct(t *testing.T) {
 		ByteSlice []byte
 		Interval  string
 
-		Magic MagicType
-
 		Ignore int
+
+		NullInt      null.Int
+		NullFloat64  null.Float64
+		NullBool     null.Bool
+		NullString   null.String
+		NullTime     null.Time
+		NullInterval null.String
 	}{}
 
 	fieldTypes := map[string]string{
-		"Int":       "integer",
-		"Int64":     "bigint",
-		"Float64":   "decimal",
-		"Bool":      "boolean",
-		"Time":      "date",
-		"String":    "character varying",
-		"ByteSlice": "bytea",
-		"Interval":  "interval",
-		"Magic":     "magic_type",
-		"Ignore":    "integer",
+		"Int":          "integer",
+		"Int64":        "bigint",
+		"Float64":      "decimal",
+		"Bool":         "boolean",
+		"Time":         "date",
+		"String":       "character varying",
+		"ByteSlice":    "bytea",
+		"Interval":     "interval",
+		"Ignore":       "integer",
+		"NullInt":      "integer",
+		"NullFloat64":  "numeric",
+		"NullBool":     "boolean",
+		"NullString":   "character",
+		"NullTime":     "time",
+		"NullInterval": "interval",
 	}
 
 	err := Struct(s, &testStruct, fieldTypes, true, "Ignore")
@@ -65,13 +67,17 @@ func TestRandomizeStruct(t *testing.T) {
 		testStruct.Time.IsZero() &&
 		testStruct.String == "" &&
 		testStruct.Interval == "" &&
-		testStruct.Magic.Value == 0 &&
 		testStruct.ByteSlice == nil {
 		t.Errorf("the regular values are not being randomized: %#v", testStruct)
 	}
 
-	if !testStruct.Magic.Randomized {
-		t.Error("The randomize interface should have been used")
+	if testStruct.NullInt.Valid == false &&
+		testStruct.NullFloat64.Valid == false &&
+		testStruct.NullBool.Valid == false &&
+		testStruct.NullString.Valid == false &&
+		testStruct.NullInterval.Valid == false &&
+		testStruct.NullTime.Valid == false {
+		t.Errorf("the null values are not being randomized: %#v", testStruct)
 	}
 }
 
@@ -86,6 +92,22 @@ func TestRandomizeField(t *testing.T) {
 
 	s := NewSeed()
 	inputs := []RandomizeTest{
+		{In: &null.Bool{}, Out: null.Bool{}, Typs: []string{"boolean"}},
+		{In: &null.String{}, Out: null.String{}, Typs: []string{"character", "uuid", "interval"}},
+		{In: &null.Time{}, Out: null.Time{}, Typs: []string{"time"}},
+		{In: &null.Float32{}, Out: null.Float32{}, Typs: []string{"real"}},
+		{In: &null.Float64{}, Out: null.Float64{}, Typs: []string{"decimal"}},
+		{In: &null.Int{}, Out: null.Int{}, Typs: []string{"integer"}},
+		{In: &null.Int8{}, Out: null.Int8{}, Typs: []string{"integer"}},
+		{In: &null.Int16{}, Out: null.Int16{}, Typs: []string{"smallint"}},
+		{In: &null.Int32{}, Out: null.Int32{}, Typs: []string{"integer"}},
+		{In: &null.Int64{}, Out: null.Int64{}, Typs: []string{"bigint"}},
+		{In: &null.Uint{}, Out: null.Uint{}, Typs: []string{"integer"}},
+		{In: &null.Uint8{}, Out: null.Uint8{}, Typs: []string{"integer"}},
+		{In: &null.Uint16{}, Out: null.Uint16{}, Typs: []string{"integer"}},
+		{In: &null.Uint32{}, Out: null.Uint32{}, Typs: []string{"integer"}},
+		{In: &null.Uint64{}, Out: null.Uint64{}, Typs: []string{"integer"}},
+
 		{In: new(float32), Out: float32(0), Typs: []string{"real"}},
 		{In: new(float64), Out: float64(0), Typs: []string{"numeric"}},
 		{In: new(int), Out: int(0), Typs: []string{"integer"}},
@@ -123,7 +145,7 @@ func TestRandomizeField(t *testing.T) {
 	}
 }
 
-func TestEnumValue(t *testing.T) {
+func TestRandEnumValue(t *testing.T) {
 	t.Parallel()
 
 	s := NewSeed()
@@ -132,7 +154,7 @@ func TestEnumValue(t *testing.T) {
 	enum2 := "enum('monday','tuesday')"
 	enum3 := "enum('monday')"
 
-	r1, err := EnumValue(s.NextInt, enum1)
+	r1, err := randEnumValue(s, enum1)
 	if err != nil {
 		t.Error(err)
 	}
@@ -141,7 +163,7 @@ func TestEnumValue(t *testing.T) {
 		t.Errorf("Expected monday or tuesday, got: %q", r1)
 	}
 
-	r2, err := EnumValue(s.NextInt, enum2)
+	r2, err := randEnumValue(s, enum2)
 	if err != nil {
 		t.Error(err)
 	}
@@ -150,7 +172,7 @@ func TestEnumValue(t *testing.T) {
 		t.Errorf("Expected monday or tuesday, got: %q", r2)
 	}
 
-	r3, err := EnumValue(s.NextInt, enum3)
+	r3, err := randEnumValue(s, enum3)
 	if err != nil {
 		t.Error(err)
 	}

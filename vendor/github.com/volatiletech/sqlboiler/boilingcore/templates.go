@@ -1,9 +1,6 @@
 package boilingcore
 
 import (
-	"crypto/sha256"
-	"encoding"
-	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"path/filepath"
@@ -12,39 +9,29 @@ import (
 	"text/template"
 
 	"github.com/pkg/errors"
-	"github.com/volatiletech/sqlboiler/drivers"
+	"github.com/volatiletech/sqlboiler/bdb"
+	"github.com/volatiletech/sqlboiler/queries"
 	"github.com/volatiletech/sqlboiler/strmangle"
-	"github.com/volatiletech/sqlboiler/templatebin"
 )
 
 // templateData for sqlboiler templates
 type templateData struct {
-	Tables  []drivers.Table
-	Table   drivers.Table
-	Aliases Aliases
+	Tables []bdb.Table
+	Table  bdb.Table
 
 	// Controls what names are output
 	PkgName string
 	Schema  string
 
-	// Helps tune the output
-	DriverName string
-	Dialect    drivers.Dialect
+	// Controls which code is output (mysql vs postgres ...)
+	DriverName      string
+	UseLastInsertID bool
 
-	// LQ and RQ contain a quoted quote that allows us to write
-	// the templates more easily.
-	LQ string
-	RQ string
-
-	// Control various generation features
-	AddGlobal        bool
-	AddPanic         bool
-	NoContext        bool
+	// Turn off auto timestamps or hook generation
 	NoHooks          bool
 	NoAutoTimestamps bool
-	NoRowsAffected   bool
 
-	// Tags control which tags are added to the struct
+	// Tags control which
 	Tags []string
 
 	// Generate struct tags as camelCase or snake_case
@@ -52,6 +39,11 @@ type templateData struct {
 
 	// StringFuncs are usable in templates with stringMap
 	StringFuncs map[string]func(string) string
+
+	// Dialect controls quoting
+	Dialect queries.Dialect
+	LQ      string
+	RQ      string
 }
 
 func (t templateData) Quotes(s string) string {
@@ -59,7 +51,7 @@ func (t templateData) Quotes(s string) string {
 }
 
 func (t templateData) SchemaTable(table string) string {
-	return strmangle.SchemaTable(t.LQ, t.RQ, t.Dialect.UseSchema, t.Schema, table)
+	return strmangle.SchemaTable(t.LQ, t.RQ, t.DriverName, t.Schema, table)
 }
 
 type templateList struct {
@@ -110,94 +102,47 @@ func (t templateList) Templates() []string {
 	return ret
 }
 
-func loadTemplates(lazyTemplates []lazyTemplate, testTemplates bool) (*templateList, error) {
-	tpl := template.New("")
+// loadTemplates loads all of the template files in the specified directory.
+func loadTemplates(dir string) (*templateList, error) {
+	pattern := filepath.Join(dir, "*.tpl")
+	tpl, err := template.New("").Funcs(templateFunctions).ParseGlob(pattern)
 
-	for _, t := range lazyTemplates {
-		firstDir := strings.Split(t.Name, string(filepath.Separator))[0]
-		isTest := strings.HasSuffix(firstDir, "_test")
-		if testTemplates && !isTest || !testTemplates && isTest {
-			continue
-		}
-
-		byt, err := t.Loader.Load()
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to load template: %s", t.Name)
-		}
-
-		_, err = tpl.New(t.Name).Funcs(templateFunctions).Parse(string(byt))
-		if err != nil {
-			return nil, errors.Wrapf(err, "failed to parse template: %s", t.Name)
-		}
-	}
-
-	return &templateList{Template: tpl}, nil
-}
-
-type lazyTemplate struct {
-	Name   string         `json:"name"`
-	Loader templateLoader `json:"loader"`
-}
-
-type templateLoader interface {
-	encoding.TextMarshaler
-	Load() ([]byte, error)
-}
-
-type fileLoader string
-
-func (f fileLoader) Load() ([]byte, error) {
-	fname := string(f)
-	b, err := ioutil.ReadFile(fname)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to load template: %s", fname)
+		return nil, err
 	}
-	return b, nil
+
+	return &templateList{Template: tpl}, err
 }
 
-func (f fileLoader) MarshalText() ([]byte, error) {
-	return []byte(f.String()), nil
-}
+// loadTemplate loads a single template file
+func loadTemplate(dir string, filename string) (*template.Template, error) {
+	pattern := filepath.Join(dir, filename)
+	tpl, err := template.New("").Funcs(templateFunctions).ParseFiles(pattern)
 
-func (f fileLoader) String() string {
-	return "file:" + string(f)
-}
-
-type base64Loader string
-
-func (b base64Loader) Load() ([]byte, error) {
-	byt, err := base64.StdEncoding.DecodeString(string(b))
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode driver's template, should be base64)")
+		return nil, err
 	}
-	return byt, nil
+
+	return tpl.Lookup(filename), err
 }
 
-func (b base64Loader) MarshalText() ([]byte, error) {
-	return []byte(b.String()), nil
-}
+// replaceTemplate finds the template matching with name and replaces its
+// contents with the contents of the template located at filename
+func replaceTemplate(tpl *template.Template, name, filename string) error {
+	if tpl == nil {
+		return fmt.Errorf("template for %s is nil", name)
+	}
 
-func (b base64Loader) String() string {
-	byt, err := base64.StdEncoding.DecodeString(string(b))
+	b, err := ioutil.ReadFile(filename)
 	if err != nil {
-		panic("trying to debug output base64 loader, but was not proper base64!")
+		return errors.Wrapf(err, "failed reading template file: %s", filename)
 	}
-	sha := sha256.Sum256(byt)
-	return fmt.Sprintf("base64:(sha256 of content): %x", sha)
-}
 
-type assetLoader string
+	if tpl, err = tpl.New(name).Funcs(templateFunctions).Parse(string(b)); err != nil {
+		return errors.Wrapf(err, "failed to parse template file: %s", filename)
+	}
 
-func (a assetLoader) Load() ([]byte, error) {
-	return templatebin.Asset(string(a))
-}
-
-func (a assetLoader) MarshalText() ([]byte, error) {
-	return []byte(a.String()), nil
-}
-
-func (a assetLoader) String() string {
-	return "asset:" + string(a)
+	return nil
 }
 
 // set is to stop duplication from named enums, allowing a template loop
@@ -277,16 +222,17 @@ var templateFunctions = template.FuncMap{
 	// Database related mangling
 	"whereClause": strmangle.WhereClause,
 
-	// Alias and text helping
-	"aliasCols":      func(ta TableAlias) func(string) string { return func(s string) string { return ta.Column(s) } },
-	"usesPrimitives": usesPrimitives,
+	// Relationship text helpers
+	"txtsFromFKey":     txtsFromFKey,
+	"txtsFromOneToOne": txtsFromOneToOne,
+	"txtsFromToMany":   txtsFromToMany,
 
 	// dbdrivers ops
-	"filterColumnsByAuto":    drivers.FilterColumnsByAuto,
-	"filterColumnsByDefault": drivers.FilterColumnsByDefault,
-	"filterColumnsByEnum":    drivers.FilterColumnsByEnum,
-	"sqlColDefinitions":      drivers.SQLColDefinitions,
-	"columnNames":            drivers.ColumnNames,
-	"columnDBTypes":          drivers.ColumnDBTypes,
-	"getTable":               drivers.GetTable,
+	"filterColumnsByAuto":    bdb.FilterColumnsByAuto,
+	"filterColumnsByDefault": bdb.FilterColumnsByDefault,
+	"filterColumnsByEnum":    bdb.FilterColumnsByEnum,
+	"sqlColDefinitions":      bdb.SQLColDefinitions,
+	"columnNames":            bdb.ColumnNames,
+	"columnDBTypes":          bdb.ColumnDBTypes,
+	"getTable":               bdb.GetTable,
 }

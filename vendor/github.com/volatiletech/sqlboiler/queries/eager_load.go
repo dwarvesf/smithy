@@ -1,7 +1,6 @@
 package queries
 
 import (
-	"context"
 	"database/sql"
 	"reflect"
 	"strings"
@@ -12,11 +11,9 @@ import (
 )
 
 type loadRelationshipState struct {
-	ctx    context.Context
 	exec   boil.Executor
 	loaded map[string]struct{}
 	toLoad []string
-	mods   map[string]Applicator
 }
 
 func (l loadRelationshipState) hasLoaded(depth int) bool {
@@ -50,12 +47,10 @@ func (l loadRelationshipState) buildKey(depth int) string {
 // obj should be one of:
 // *[]*struct or *struct
 // bkind should reflect what kind of thing it is above
-func eagerLoad(ctx context.Context, exec boil.Executor, toLoad []string, mods map[string]Applicator, obj interface{}, bkind bindKind) error {
+func eagerLoad(exec boil.Executor, toLoad []string, obj interface{}, bkind bindKind) error {
 	state := loadRelationshipState{
-		ctx:    ctx, // defiant to the end, I know this is frowned upon
 		exec:   exec,
 		loaded: map[string]struct{}{},
-		mods:   mods,
 	}
 	for _, toLoad := range toLoad {
 		state.toLoad = strings.Split(toLoad, ".")
@@ -160,7 +155,6 @@ func (l loadRelationshipState) callLoadFunction(depth int, loadingFrom reflect.V
 		return errors.Errorf("could not find %s%s method for eager loading", loadMethodPrefix, current)
 	}
 
-	ctxArg := reflect.ValueOf(l.ctx)
 	// Hack to allow nil executors
 	execArg := reflect.ValueOf(l.exec)
 	if !execArg.IsValid() {
@@ -180,16 +174,11 @@ func (l loadRelationshipState) callLoadFunction(depth int, loadingFrom reflect.V
 		val = reflect.Indirect(val)
 	}
 
-	methodArgs := make([]reflect.Value, 0, 5)
-	methodArgs = append(methodArgs, val.FieldByName(loaderStructName))
-	if ctxArg.IsValid() {
-		methodArgs = append(methodArgs, ctxArg)
-	}
-	methodArgs = append(methodArgs, execArg, reflect.ValueOf(bkind == kindStruct), loadingFrom)
-	if mods, ok := l.mods[l.buildKey(depth)]; ok {
-		methodArgs = append(methodArgs, reflect.ValueOf(mods))
-	} else {
-		methodArgs = append(methodArgs, applicatorSentinelVal)
+	methodArgs := []reflect.Value{
+		val.FieldByName(loaderStructName),
+		execArg,
+		reflect.ValueOf(bkind == kindStruct),
+		loadingFrom,
 	}
 
 	ret := loadMethod.Func.Call(methodArgs)
@@ -302,8 +291,3 @@ func findRelationshipStruct(obj reflect.Value) (reflect.Value, error) {
 
 	return relationshipStruct, nil
 }
-
-var (
-	applicatorSentinel    Applicator
-	applicatorSentinelVal = reflect.ValueOf(&applicatorSentinel).Elem()
-)

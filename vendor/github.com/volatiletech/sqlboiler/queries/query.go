@@ -1,12 +1,10 @@
 package queries
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
 
 	"github.com/volatiletech/sqlboiler/boil"
-	"github.com/volatiletech/sqlboiler/drivers"
 )
 
 // joinKind is the type of join
@@ -22,12 +20,10 @@ const (
 
 // Query holds the state for the built up query
 type Query struct {
-	dialect *drivers.Dialect
-	rawSQL  rawSQL
-
-	load     []string
-	loadMods map[string]Applicator
-
+	executor   boil.Executor
+	dialect    *Dialect
+	rawSQL     rawSQL
+	load       []string
 	delete     bool
 	update     map[string]interface{}
 	selectCols []string
@@ -44,11 +40,21 @@ type Query struct {
 	forlock    string
 }
 
-// Applicator exists only to allow
-// query mods into the query struct around
-// eager loaded relationships.
-type Applicator interface {
-	Apply(*Query)
+// Dialect holds values that direct the query builder
+// how to build compatible queries for each database.
+// Each database driver needs to implement functions
+// that provide these values.
+type Dialect struct {
+	// The left quote character for SQL identifiers
+	LQ byte
+	// The right quote character for SQL identifiers
+	RQ byte
+	// Bool flag indicating whether indexed
+	// placeholders ($1) are used, or ? placeholders.
+	IndexPlaceholders bool
+	// Bool flag indicating whether "TOP" or "LIMIT" clause
+	// must be used for rows limitation
+	UseTopClause bool
 }
 
 type where struct {
@@ -80,8 +86,9 @@ type join struct {
 }
 
 // Raw makes a raw query, usually for use with bind
-func Raw(query string, args ...interface{}) *Query {
+func Raw(exec boil.Executor, query string, args ...interface{}) *Query {
 	return &Query{
+		executor: exec,
 		rawSQL: rawSQL{
 			sql:  query,
 			args: args,
@@ -91,73 +98,43 @@ func Raw(query string, args ...interface{}) *Query {
 
 // RawG makes a raw query using the global boil.Executor, usually for use with bind
 func RawG(query string, args ...interface{}) *Query {
-	return Raw(query, args...)
+	return Raw(boil.GetDB(), query, args...)
 }
 
 // Exec executes a query that does not need a row returned
-func (q *Query) Exec(exec boil.Executor) (sql.Result, error) {
-	qs, args := BuildQuery(q)
+func (q *Query) Exec() (sql.Result, error) {
+	qs, args := buildQuery(q)
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, qs)
 		fmt.Fprintln(boil.DebugWriter, args)
 	}
-	return exec.Exec(qs, args...)
+	return q.executor.Exec(qs, args...)
 }
 
 // QueryRow executes the query for the One finisher and returns a row
-func (q *Query) QueryRow(exec boil.Executor) *sql.Row {
-	qs, args := BuildQuery(q)
+func (q *Query) QueryRow() *sql.Row {
+	qs, args := buildQuery(q)
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, qs)
 		fmt.Fprintln(boil.DebugWriter, args)
 	}
-	return exec.QueryRow(qs, args...)
+	return q.executor.QueryRow(qs, args...)
 }
 
 // Query executes the query for the All finisher and returns multiple rows
-func (q *Query) Query(exec boil.Executor) (*sql.Rows, error) {
-	qs, args := BuildQuery(q)
+func (q *Query) Query() (*sql.Rows, error) {
+	qs, args := buildQuery(q)
 	if boil.DebugMode {
 		fmt.Fprintln(boil.DebugWriter, qs)
 		fmt.Fprintln(boil.DebugWriter, args)
 	}
-	return exec.Query(qs, args...)
-}
-
-// ExecContext executes a query that does not need a row returned
-func (q *Query) ExecContext(ctx context.Context, exec boil.ContextExecutor) (sql.Result, error) {
-	qs, args := BuildQuery(q)
-	if boil.DebugMode {
-		fmt.Fprintln(boil.DebugWriter, qs)
-		fmt.Fprintln(boil.DebugWriter, args)
-	}
-	return exec.ExecContext(ctx, qs, args...)
-}
-
-// QueryRowContext executes the query for the One finisher and returns a row
-func (q *Query) QueryRowContext(ctx context.Context, exec boil.ContextExecutor) *sql.Row {
-	qs, args := BuildQuery(q)
-	if boil.DebugMode {
-		fmt.Fprintln(boil.DebugWriter, qs)
-		fmt.Fprintln(boil.DebugWriter, args)
-	}
-	return exec.QueryRowContext(ctx, qs, args...)
-}
-
-// QueryContext executes the query for the All finisher and returns multiple rows
-func (q *Query) QueryContext(ctx context.Context, exec boil.ContextExecutor) (*sql.Rows, error) {
-	qs, args := BuildQuery(q)
-	if boil.DebugMode {
-		fmt.Fprintln(boil.DebugWriter, qs)
-		fmt.Fprintln(boil.DebugWriter, args)
-	}
-	return exec.QueryContext(ctx, qs, args...)
+	return q.executor.Query(qs, args...)
 }
 
 // ExecP executes a query that does not need a row returned
 // It will panic on error
-func (q *Query) ExecP(exec boil.Executor) sql.Result {
-	res, err := q.Exec(exec)
+func (q *Query) ExecP() sql.Result {
+	res, err := q.Exec()
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -167,8 +144,8 @@ func (q *Query) ExecP(exec boil.Executor) sql.Result {
 
 // QueryP executes the query for the All finisher and returns multiple rows
 // It will panic on error
-func (q *Query) QueryP(exec boil.Executor) *sql.Rows {
-	rows, err := q.Query(exec)
+func (q *Query) QueryP() *sql.Rows {
+	rows, err := q.Query()
 	if err != nil {
 		panic(boil.WrapErr(err))
 	}
@@ -176,8 +153,18 @@ func (q *Query) QueryP(exec boil.Executor) *sql.Rows {
 	return rows
 }
 
+// SetExecutor on the query.
+func SetExecutor(q *Query, exec boil.Executor) {
+	q.executor = exec
+}
+
+// GetExecutor on the query.
+func GetExecutor(q *Query) boil.Executor {
+	return q.executor
+}
+
 // SetDialect on the query.
-func SetDialect(q *Query, dialect *drivers.Dialect) {
+func SetDialect(q *Query, dialect *Dialect) {
 	q.dialect = dialect
 }
 
@@ -186,31 +173,14 @@ func SetSQL(q *Query, sql string, args ...interface{}) {
 	q.rawSQL = rawSQL{sql: sql, args: args}
 }
 
-// SetArgs is primarily for re-use of a query so that the
-// query text does not need to be re-generated, useful
-// if you're performing the same query with different arguments
-// over and over.
-func SetArgs(q *Query, args ...interface{}) {
-	q.rawSQL.args = args
-}
-
 // SetLoad on the query.
 func SetLoad(q *Query, relationships ...string) {
 	q.load = append([]string(nil), relationships...)
 }
 
 // AppendLoad on the query.
-func AppendLoad(q *Query, relationships string) {
-	q.load = append(q.load, relationships)
-}
-
-// SetLoadMods on the query.
-func SetLoadMods(q *Query, rel string, appl Applicator) {
-	if q.loadMods == nil {
-		q.loadMods = make(map[string]Applicator)
-	}
-
-	q.loadMods[rel] = appl
+func AppendLoad(q *Query, relationships ...string) {
+	q.load = append(q.load, relationships...)
 }
 
 // SetSelect on the query.

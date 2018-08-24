@@ -64,11 +64,70 @@ func TestStoreConfigInPersistent_2(t *testing.T) {
 		// read the lastest config from persistent
 		sCfg_2, err := backendConfig.NewBoltPersistent(bCfg.PersistenceDB, 0).LastestVersion()
 		if err != nil {
-			t.Fatalf("Fail to read config from persistent error = %v", err)
+			t.Fatalf("Fail to read lastest config from persistent error = %v", err)
 		}
 
 		if v1.Checksum != sCfg_1.Version.Checksum ||
 			v2.Checksum != sCfg_2.Version.Checksum {
+			t.Errorf("Config.UpdateConfigFromAgentConfig() error = %v", err)
+		}
+	})
+}
+
+func TestRevertConfig(t *testing.T) {
+	bCfg, clearDB := CreateBackendConfig(t)
+	defer clearDB()
+
+	agentCfg_1 := CreateAgentConfig(t)
+	agentCfg_2 := CreateAgentConfig(t)
+	agentCfg_3 := CreateAgentConfig(t)
+
+	t.Run("Revert config", func(t *testing.T) {
+		// update config 1
+		err := bCfg.UpdateConfigFromAgentConfig(agentCfg_1)
+		if err != nil {
+			t.Fatalf("Fail to update agent config error = %v", err)
+		}
+		v1 := bCfg.Version
+
+		// update config 2
+		err = bCfg.UpdateConfigFromAgentConfig(agentCfg_2)
+		if err != nil {
+			t.Fatalf("Fail to update agent config error = %v", err)
+		}
+		v2 := bCfg.Version
+
+		// change version
+		err = bCfg.ChangeVersion(v1.VersionNumber)
+		if err != nil {
+			t.Fatalf("Fail to change version of config error = %v", err)
+		}
+
+		if v1.Checksum != bCfg.Version.Checksum {
+			t.Errorf("Config.UpdateConfigFromAgentConfig() error = %v", err)
+		}
+
+		// update config 3 => check if after revert version, adding new config
+		err = bCfg.UpdateConfigFromAgentConfig(agentCfg_3)
+		if err != nil {
+			t.Fatalf("Fail to update agent config error = %v", err)
+		}
+
+		// get the lastest version config
+		lastVerConfig, err := backendConfig.NewBoltPersistent(bCfg.PersistenceDB, 0).LastestVersion()
+		if err != nil {
+			t.Fatalf("Fail to read lastest config from persistent error = %v", err)
+		}
+
+		//get 2th config
+		v2Config, err := backendConfig.NewBoltPersistent(bCfg.PersistenceDB, v2.VersionNumber).Read()
+		if err != nil {
+			t.Fatalf("Fail to read lastest config from persistent error = %v", err)
+		}
+
+		if v2Config == nil ||
+			v2Config.Version.Checksum != v2.Checksum ||
+			lastVerConfig.Version.Checksum != bCfg.Version.Checksum {
 			t.Errorf("Config.UpdateConfigFromAgentConfig() error = %v", err)
 		}
 	})

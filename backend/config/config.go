@@ -138,7 +138,6 @@ func (c *Config) UpdateConfigFromAgentConfig(agentCfg *agentConfig.Config) error
 	if err != nil {
 		return err
 	}
-	log.Println(checksum)
 	if checksum == c.Version.Checksum {
 		return nil
 	}
@@ -171,6 +170,17 @@ func (c *Config) UpdateConfig(cfg *Config) error {
 	c.Version = cfg.Version
 
 	return c.UpdateDB()
+}
+
+// ChangeVersion get config in persistent by version number
+func (c *Config) ChangeVersion(versionNumber int64) error {
+	reader := NewBoltPersistent(c.PersistenceDB, versionNumber)
+	vCfg, err := reader.Read()
+	if err != nil {
+		return err
+	}
+
+	return c.UpdateConfig(vCfg)
 }
 
 // UpdateDB update db connection

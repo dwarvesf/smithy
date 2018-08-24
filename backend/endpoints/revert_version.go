@@ -27,15 +27,7 @@ func makeRevertVersionEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, errors.New("failed to make type assertion")
 		}
 
-		cfg := s.Config.Config()
-		reader := config.NewBoltPersistent(cfg.PersistenceDB, req.VersionNumber)
-		vCfg, err := reader.Read()
-
-		if err != nil {
-			return nil, err
-		}
-
-		if err := s.Config.Config().UpdateConfig(vCfg); err != nil {
+		if err := s.Config.Config().ChangeVersion(req.VersionNumber); err != nil {
 			return nil, err
 		}
 

@@ -4,7 +4,10 @@
 [[projects]]
   branch = "master"
   name = "github.com/GoASTScanner/gas"
-  packages = [".","rules"]
+  packages = [
+    ".",
+    "rules"
+  ]
   revision = "a9de4d6c1589158e002cc336c495bf11fbf3ea06"
   source = "github.com/golangci/gas"
 
@@ -65,7 +68,11 @@
 
 [[projects]]
   name = "github.com/go-kit/kit"
-  packages = ["endpoint","log","transport/http"]
+  packages = [
+    "endpoint",
+    "log",
+    "transport/http"
+  ]
   revision = "ca4112baa34cb55091301bdc13b1420a122b1b9e"
   version = "v0.7.0"
 
@@ -83,7 +90,16 @@
 
 [[projects]]
   name = "github.com/gobwas/glob"
-  packages = [".","compiler","match","syntax","syntax/ast","syntax/lexer","util/runes","util/strings"]
+  packages = [
+    ".",
+    "compiler",
+    "match",
+    "syntax",
+    "syntax/ast",
+    "syntax/lexer",
+    "util/runes",
+    "util/strings"
+  ]
   revision = "5ccd90ef52e1e632236f7326478d4faa74f99438"
   version = "v0.2.3"
 
@@ -96,7 +112,10 @@
 [[projects]]
   branch = "master"
   name = "github.com/golangci/check"
-  packages = ["cmd/structcheck","cmd/varcheck"]
+  packages = [
+    "cmd/structcheck",
+    "cmd/varcheck"
+  ]
   revision = "cfe4005ccda277a820149d44d6ededc400cc99a2"
 
 [[projects]]
@@ -120,19 +139,45 @@
 [[projects]]
   branch = "master"
   name = "github.com/golangci/gofmt"
-  packages = ["gofmt","goimports"]
+  packages = [
+    "gofmt",
+    "goimports"
+  ]
   revision = "2076e05ced53480baa8ba14a05b80a415bec9377"
 
 [[projects]]
   name = "github.com/golangci/golangci-lint"
-  packages = ["cmd/golangci-lint","pkg/commands","pkg/config","pkg/exitcodes","pkg/fsutils","pkg/golinters","pkg/goutils","pkg/lint","pkg/lint/astcache","pkg/lint/linter","pkg/lint/lintersdb","pkg/logutils","pkg/packages","pkg/printers","pkg/report","pkg/result","pkg/result/processors","pkg/timeutils"]
+  packages = [
+    "cmd/golangci-lint",
+    "pkg/commands",
+    "pkg/config",
+    "pkg/exitcodes",
+    "pkg/fsutils",
+    "pkg/golinters",
+    "pkg/goutils",
+    "pkg/lint",
+    "pkg/lint/astcache",
+    "pkg/lint/linter",
+    "pkg/lint/lintersdb",
+    "pkg/logutils",
+    "pkg/packages",
+    "pkg/printers",
+    "pkg/report",
+    "pkg/result",
+    "pkg/result/processors",
+    "pkg/timeutils"
+  ]
   revision = "a2b901227c37337bce9860499a413db2b464481b"
   version = "v1.10"
 
 [[projects]]
   branch = "master"
   name = "github.com/golangci/govet"
-  packages = [".","lib/cfg","lib/whitelist"]
+  packages = [
+    ".",
+    "lib/cfg",
+    "lib/whitelist"
+  ]
   revision = "44ddbe260190d79165f4150b828650780405d801"
 
 [[projects]]
@@ -180,7 +225,18 @@
 [[projects]]
   branch = "master"
   name = "github.com/hashicorp/hcl"
-  packages = [".","hcl/ast","hcl/parser","hcl/printer","hcl/scanner","hcl/strconv","hcl/token","json/parser","json/scanner","json/token"]
+  packages = [
+    ".",
+    "hcl/ast",
+    "hcl/parser",
+    "hcl/printer",
+    "hcl/scanner",
+    "hcl/strconv",
+    "hcl/token",
+    "json/parser",
+    "json/scanner",
+    "json/token"
+  ]
   revision = "ef8a98b0bbce4a65b5aa4c368430a80ddc533168"
 
 [[projects]]
@@ -191,7 +247,10 @@
 
 [[projects]]
   name = "github.com/jinzhu/gorm"
-  packages = [".","dialects/postgres"]
+  packages = [
+    ".",
+    "dialects/postgres"
+  ]
   revision = "6ed508ec6a4ecb3531899a69cbc746ccf65a4166"
   version = "v1.9.1"
 
@@ -204,13 +263,19 @@
 [[projects]]
   branch = "master"
   name = "github.com/kisielk/errcheck"
-  packages = ["golangci","internal/errcheck"]
+  packages = [
+    "golangci",
+    "internal/errcheck"
+  ]
   revision = "46cecd339393da3e3742fc0045eb5e5ec0dd6563"
   source = "github.com/golangci/errcheck"
 
 [[projects]]
   name = "github.com/kisielk/gotool"
-  packages = [".","internal/load"]
+  packages = [
+    ".",
+    "internal/load"
+  ]
   revision = "80517062f582ea3340cd4baf70e86d539ae7d84d"
   version = "v1.0.0"
 
@@ -221,10 +286,14 @@
   revision = "b84e30acd515aadc4b783ad4ff83aff3299bdfe0"
 
 [[projects]]
-  branch = "master"
   name = "github.com/lib/pq"
-  packages = [".","hstore","oid"]
-  revision = "90697d60dd844d5ef6ff15135d0203f65d2f53b8"
+  packages = [
+    ".",
+    "hstore",
+    "oid"
+  ]
+  revision = "4ded0e9383f75c197b3a2aaa6d590ac52df6fd79"
+  version = "v1.0.0"
 
 [[projects]]
   name = "github.com/magiconair/properties"
@@ -247,19 +316,36 @@
 [[projects]]
   branch = "master"
   name = "github.com/mibk/dupl"
-  packages = [".","job","printer","suffixtree","syntax","syntax/golang"]
+  packages = [
+    ".",
+    "job",
+    "printer",
+    "suffixtree",
+    "syntax",
+    "syntax/golang"
+  ]
   revision = "53b9af5a45362a6f2896cfa39cc17d17ba9667ea"
   source = "github.com/golangci/dupl"
 
 [[projects]]
-  branch = "master"
   name = "github.com/mitchellh/mapstructure"
   packages = ["."]
-  revision = "f15292f7a699fcc1a38a80977f80a046874ba8ac"
+  revision = "fa473d140ef3c6adf42d6b391fe76707f1f243c8"
+  version = "v1.0.0"
 
 [[projects]]
   name = "github.com/nbutton23/zxcvbn-go"
-  packages = [".","adjacency","data","entropy","frequency","match","matching","scoring","utils/math"]
+  packages = [
+    ".",
+    "adjacency",
+    "data",
+    "entropy",
+    "frequency",
+    "match",
+    "matching",
+    "scoring",
+    "utils/math"
+  ]
   revision = "eafdab6b0663b4b528c35975c8b0e78be6e25261"
   version = "v0.1"
 
@@ -277,7 +363,10 @@
 
 [[projects]]
   name = "github.com/spf13/afero"
-  packages = [".","mem"]
+  packages = [
+    ".",
+    "mem"
+  ]
   revision = "787d034dfe70e44075ccc060d346146ef53270ad"
   version = "v1.1.1"
 
@@ -302,8 +391,8 @@
 [[projects]]
   name = "github.com/spf13/pflag"
   packages = ["."]
-  revision = "583c0c0531f06d5278b7d917446061adc344b5cd"
-  version = "v1.0.1"
+  revision = "9a97c102cda95a86cec2345a6f09f55a939babf5"
+  version = "v1.0.2"
 
 [[projects]]
   name = "github.com/spf13/viper"
@@ -320,8 +409,8 @@
 [[projects]]
   name = "github.com/volatiletech/sqlboiler"
   packages = ["strmangle"]
-  revision = "d4bc831c7df09032b8290a3ddfb7bb41a0866934"
-  version = "v2.7.3"
+  revision = "7d3d954a4be10dc06b9464fb3e6d74836274c467"
+  version = "v3.0.0"
 
 [[projects]]
   branch = "master"
@@ -332,19 +421,45 @@
 [[projects]]
   branch = "master"
   name = "golang.org/x/sys"
-  packages = ["unix","windows"]
-  revision = "acbc56fc7007d2a01796d5bde54f39e3b3e95945"
+  packages = [
+    "unix",
+    "windows"
+  ]
+  revision = "11551d06cbcc94edc80a0facaccbda56473c19c1"
 
 [[projects]]
   name = "golang.org/x/text"
-  packages = ["internal/gen","internal/triegen","internal/ucd","transform","unicode/cldr","unicode/norm","width"]
+  packages = [
+    "internal/gen",
+    "internal/triegen",
+    "internal/ucd",
+    "transform",
+    "unicode/cldr",
+    "unicode/norm",
+    "width"
+  ]
   revision = "f21a4dfb5e38f5895301dc265a8def02365cc3d0"
   version = "v0.3.0"
 
 [[projects]]
   branch = "master"
   name = "golang.org/x/tools"
-  packages = ["go/ast/astutil","go/buildutil","go/callgraph","go/callgraph/cha","go/callgraph/rta","go/callgraph/static","go/gcexportdata","go/internal/gcimporter","go/loader","go/ssa","go/ssa/ssautil","go/types/typeutil","imports","internal/fastwalk"]
+  packages = [
+    "go/ast/astutil",
+    "go/buildutil",
+    "go/callgraph",
+    "go/callgraph/cha",
+    "go/callgraph/rta",
+    "go/callgraph/static",
+    "go/gcexportdata",
+    "go/internal/gcimporter",
+    "go/loader",
+    "go/ssa",
+    "go/ssa/ssautil",
+    "go/types/typeutil",
+    "imports",
+    "internal/fastwalk"
+  ]
   revision = "1b5a18146dea803d40d194b191359600da91665a"
   source = "github.com/golangci/tools"
 
@@ -357,7 +472,18 @@
 [[projects]]
   branch = "master"
   name = "honnef.co/go/tools"
-  packages = ["deprecated","functions","internal/sharedcheck","lint","lint/lintutil","simple","staticcheck","staticcheck/vrp","unused","version"]
+  packages = [
+    "deprecated",
+    "functions",
+    "internal/sharedcheck",
+    "lint",
+    "lint/lintutil",
+    "simple",
+    "staticcheck",
+    "staticcheck/vrp",
+    "unused",
+    "version"
+  ]
   revision = "986cd2acf8dbf500b75aef5636a8107de6044e63"
   source = "github.com/golangci/go-tools"
 

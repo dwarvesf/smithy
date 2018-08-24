@@ -23,7 +23,6 @@ var (
 
 func main() {
 	cfg, err := backend.NewConfig(backendConfig.ReadYAML("example_dashboard_config.yaml"))
-
 	if err != nil {
 		panic(err)
 	}

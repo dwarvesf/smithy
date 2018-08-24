@@ -5,9 +5,9 @@ persistence_file_name: "persistent.db"
 authentication:
   secret_key: lalala
   users:
-    aaa:
-      password: "abc"
+    - username: "aaa"
+      password: "abc"      
       role: "admin"
-    bbb:
-      password: "abc"
-      role: "user"
+    - username: "bbb"
+      password: "abc"      
+      role: "admin"

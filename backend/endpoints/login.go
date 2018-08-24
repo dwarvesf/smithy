@@ -36,7 +36,7 @@ func makeLoginEndpoint(s service.Service) endpoint.Endpoint {
 		// otherwise return login fail
 
 		// if login fail
-		ok, rule := login(req.Username, req.Password, s.Config.Config().Authentication.Users)
+		ok, rule := login(req.Username, req.Password, s.Config.Config().ConvertUserListToMap())
 
 		if !ok {
 			return nil, jwtAuth.ErrLogin

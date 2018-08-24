@@ -197,18 +197,23 @@ func (c *Config) openNewDBConnection() (*gorm.DB, error) {
 	return gorm.Open("postgres", dbstring)
 }
 
-// add user config
-func (c *Config) AddAuthenticationToConfig(authentication *Authentication) *Config {
-	c.Authentication = authentication
-	return c
+// convert user list to user map
+func (c *Config) ConvertUserListToMap() map[string]User {
+	userMap := make(map[string]User)
+
+	for _, user := range c.Authentication.UserList {
+		userMap[user.Username] = user
+	}
+	return userMap
 }
 
 type Authentication struct {
-	SerectKey string          `yaml:"secret_key" json:"secret_key"`
-	Users     map[string]User `yaml:"users" json:"users"`
+	SerectKey string `yaml:"secret_key" json:"secret_key"`
+	UserList  []User `yaml:"users" json:"users"`
 }
 
 type User struct {
+	Username string `yaml:"username" json:"username"`
 	Password string `yaml:"password" json:"password"`
 	Role     string `yaml:"role" json:"role"`
 }

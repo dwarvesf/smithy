@@ -2,6 +2,7 @@ package auth
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/go-chi/jwtauth"
 )
@@ -52,12 +53,15 @@ func (jwt *JWT) VerifierHandler() func(http.Handler) http.Handler {
 
 func Authorization(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-
 		_, claims, _ := jwtauth.FromContext(r.Context())
 
-		uri := r.RequestURI[:6]
+		methods := strings.Split(r.RequestURI, "?")
+		if len(methods) <= 0 {
+			http.Error(w, http.StatusText(401), 401)
+			return
+		}
 
-		if uri == "/query" {
+		if methods[0] == "/query" {
 			if claims["role"] != Admin && claims["role"] != User {
 				http.Error(w, http.StatusText(401), 401)
 				return

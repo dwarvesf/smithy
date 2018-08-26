@@ -1,16 +1,19 @@
 package auth
 
 import (
+	"encoding/json"
+	"log"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/go-chi/jwtauth"
 )
 
 const (
-	// admin will be able to do everything (get, post, put, delete, ..)
+	//Admin will be able to do everything (get, post, put, delete, ..)
 	Admin string = "admin"
-	// user can only get data
+	//User can only get data
 	User string = "user"
 )
 
@@ -37,7 +40,7 @@ func (jwt *JWT) Encode() string {
 	_, tokenString, err := jwt.TokenAuth.Encode(jwtauth.Claims{
 		"username": jwt.Username,
 		"role":     jwt.Role,
-	})
+	}.SetExpiryIn(time.Second * 3600 * 100))
 
 	if err != nil {
 		return ""
@@ -46,29 +49,37 @@ func (jwt *JWT) Encode() string {
 	return tokenString
 }
 
-// Verifier use for verify jwt
+//VerifierHandler use for verify jwt
 func (jwt *JWT) VerifierHandler() func(http.Handler) http.Handler {
 	return jwtauth.Verifier(jwt.TokenAuth)
 }
 
+//Authorization return json in middleware authorization
 func Authorization(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		_, claims, _ := jwtauth.FromContext(r.Context())
 
 		methods := strings.Split(r.RequestURI, "?")
+
+		var err error
 		if len(methods) <= 0 {
-			http.Error(w, http.StatusText(401), 401)
+			if err = writeToResponse(w, r, "Methods is empty"); err != nil {
+				log.Println("Respone authorized error")
+			}
 			return
 		}
-
 		if methods[0] == "/query" {
 			if claims["role"] != Admin && claims["role"] != User {
-				http.Error(w, http.StatusText(401), 401)
+				if err = writeToResponse(w, r, "Client isn't user or admin"); err != nil {
+					log.Println("Respone authorized error")
+				}
 				return
 			}
 		} else {
 			if claims["role"] != Admin {
-				http.Error(w, http.StatusText(401), 401)
+				if err = writeToResponse(w, r, "Client isn't admin"); err != nil {
+					log.Println("Respone authorized error")
+				}
 				return
 			}
 		}
@@ -76,4 +87,35 @@ func Authorization(next http.Handler) http.Handler {
 		// Token is authenticated, pass it through
 		next.ServeHTTP(w, r)
 	})
+}
+
+//Authenticator use for authentication user
+func Authenticator(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		token, _, err := jwtauth.FromContext(r.Context())
+
+		if err != nil {
+			if err = writeToResponse(w, r, err.Error()); err != nil {
+				log.Println("Respone authorized error")
+			}
+			return
+		}
+
+		if token == nil || !token.Valid {
+			if err = writeToResponse(w, r, err.Error()); err != nil {
+				log.Println("Respone authorized error")
+			}
+			return
+		}
+
+		// Token is authenticated, pass it through
+		next.ServeHTTP(w, r)
+	})
+}
+
+func writeToResponse(w http.ResponseWriter, r *http.Request, errStr string) error {
+	w.WriteHeader(http.StatusUnauthorized)
+	js, _ := json.Marshal(ErrAuthentication{errStr})
+	_, err := w.Write(js)
+	return err
 }

@@ -47,7 +47,7 @@ func NewHTTPHandler(endpoints endpoints.Endpoints,
 	// admin group
 	r.Group(func(r chi.Router) {
 		r.Use(jwtauth.Verifier(tokenAuth))
-		r.Use(jwtauth.Authenticator)
+		r.Use(auth.Authenticator)
 		r.Use(auth.Authorization)
 
 		r.Get("/agent-sync", httptransport.NewServer(

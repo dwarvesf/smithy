@@ -10,4 +10,4 @@ authentication:
       role: "admin"
     - username: "bbb"
       password: "abc"      
-      role: "admin"
+      role: "user"

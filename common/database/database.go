@@ -23,6 +23,23 @@ type Model struct {
 	AutoMigration     bool      `yaml:"auto_migration" json:"auto_migration"` // auto_migration if table not exist or misisng column
 	DisplayName       string    `yaml:"display_name" json:"display_name"`
 	NameDisplayColumn string    `yaml:"name_display_column" json:"name_display_column"`
+	Hooks             Hooks     `yaml:"hooks" json:"hooks"`
+}
+
+// Hooks hook declaration for a model
+type Hooks struct {
+	BeforeCreate Hook `yaml:"before_create" json:"before_create"`
+	AfterCreate  Hook `yaml:"after_create" json:"after_create"`
+	BeforeUpdate Hook `yaml:"before_update" json:"before_update"`
+	AfterUpdate  Hook `yaml:"after_update" json:"after_update"`
+	BeforeDelete Hook `yaml:"before_delete" json:"before_delete"`
+	AfterDelete  Hook `yaml:"after_delete" json:"after_delete"`
+}
+
+// Hook define a
+type Hook struct {
+	Enable  bool // Is model enable a hook
+	Content string
 }
 
 // User detail of a user in database
@@ -70,6 +87,16 @@ func (ms Models) ColumnsByTableName() map[string][]Column {
 		} else {
 			res[m.TableName] = m.Columns
 		}
+	}
+
+	return res
+}
+
+// ModelByTableName create map model by table name
+func (ms Models) ModelByTableName() map[string]Model {
+	res := make(map[string]Model)
+	for _, m := range ms {
+		res[m.TableName] = m
 	}
 
 	return res

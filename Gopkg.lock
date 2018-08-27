@@ -302,6 +302,17 @@
   version = "v1.8.0"
 
 [[projects]]
+  name = "github.com/mattn/anko"
+  packages = [
+    "ast",
+    "internal/corelib",
+    "parser",
+    "vm"
+  ]
+  revision = "cdc3b7317d35b9d24257e5f5079b3bac4d52705a"
+  version = "v0.0.6"
+
+[[projects]]
   name = "github.com/mattn/go-colorable"
   packages = ["."]
   revision = "167de6bfdfba052fa6b2d3664c8f5272e23c9072"
@@ -521,6 +532,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "73c3b8814c58e8696e44ef83ccba6fbcd13811747b7fd79b5e78a0330bf6daff"
+  inputs-digest = "8fdcd2131619216b543814b92c10f6c02649578ba91f57c40a24d977f3cc2fa9"
   solver-name = "gps-cdcl"
   solver-version = 1

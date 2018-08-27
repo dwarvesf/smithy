@@ -28,6 +28,6 @@ func NewAnkoScriptEngine() ScriptEngine {
 
 func (e *ankoScriptEngine) Exec(content string) error {
 	// TODO: implement string processor
-	e.engine.Execute(content)
-	return nil
+	_, err := e.engine.Execute(content)
+	return err
 }

@@ -1,24 +1,25 @@
 package drivers
 
-import "github.com/dwarvesf/smithy/backend/sqlmapper"
+import (
+	"github.com/dwarvesf/smithy/backend/hook"
+	"github.com/dwarvesf/smithy/backend/sqlmapper"
+)
 
 type pgHookStore struct {
-	BeforeHook func() error
 	pgStore    sqlmapper.Mapper
-	AfterHook  func() error
+	hookEngine hook.ScriptEngine
 }
 
 // NewPGHookStore new pg implement for hook
 func NewPGHookStore(store sqlmapper.Mapper) sqlmapper.Mapper {
 	return &pgHookStore{
-		BeforeHook: func() error { return nil },
-		AfterHook:  func() error { return nil },
 		pgStore:    store,
+		hookEngine: hook.NewAnkoScriptEngine(),
 	}
 }
 
 func (s *pgHookStore) Create(d sqlmapper.RowData) (sqlmapper.RowData, error) {
-	err := s.BeforeHook()
+	err := s.hookEngine.Exec(`println("before create hook")`)
 	if err != nil {
 		return nil, err
 	}
@@ -28,7 +29,7 @@ func (s *pgHookStore) Create(d sqlmapper.RowData) (sqlmapper.RowData, error) {
 		return nil, err
 	}
 
-	err = s.AfterHook()
+	err = s.hookEngine.Exec(`println("after create hook")`)
 	if err != nil {
 		return nil, err
 	}
@@ -37,14 +38,14 @@ func (s *pgHookStore) Create(d sqlmapper.RowData) (sqlmapper.RowData, error) {
 }
 
 func (s *pgHookStore) Delete(id int) error {
-	err := s.BeforeHook()
+	err := s.hookEngine.Exec(`println("before delete hook")`)
 	if err != nil {
 		return err
 	}
 
 	res := s.pgStore.Delete(id)
 
-	err = s.AfterHook()
+	err = s.hookEngine.Exec(`println("after delete hook")`)
 	if err != nil {
 		return err
 	}
@@ -57,7 +58,7 @@ func (s *pgHookStore) FindByID(id int) (sqlmapper.RowData, error) {
 }
 
 func (s *pgHookStore) Update(d sqlmapper.RowData, id int) (sqlmapper.RowData, error) {
-	err := s.BeforeHook()
+	err := s.hookEngine.Exec(`println("before update hook")`)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +68,7 @@ func (s *pgHookStore) Update(d sqlmapper.RowData, id int) (sqlmapper.RowData, er
 		return nil, err
 	}
 
-	err = s.AfterHook()
+	err = s.hookEngine.Exec(`println("after update hook")`)
 	if err != nil {
 		return nil, err
 	}

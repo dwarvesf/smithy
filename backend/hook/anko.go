@@ -9,7 +9,7 @@ import (
 
 // ScriptEngine interface for running script
 type ScriptEngine interface {
-	Exec(content string) error
+	Eval(content string) error
 }
 
 type ankoScriptEngine struct {
@@ -26,7 +26,7 @@ func NewAnkoScriptEngine() ScriptEngine {
 	return &ankoScriptEngine{engine: env}
 }
 
-func (e *ankoScriptEngine) Exec(content string) error {
+func (e *ankoScriptEngine) Eval(content string) error {
 	// TODO: implement string processor
 	_, err := e.engine.Execute(content)
 	return err

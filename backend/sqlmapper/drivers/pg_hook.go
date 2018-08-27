@@ -19,7 +19,7 @@ func NewPGHookStore(store sqlmapper.Mapper) sqlmapper.Mapper {
 }
 
 func (s *pgHookStore) Create(d sqlmapper.RowData) (sqlmapper.RowData, error) {
-	err := s.hookEngine.Exec(`println("before create hook")`)
+	err := s.hookEngine.Eval(`println("before create hook")`)
 	if err != nil {
 		return nil, err
 	}
@@ -29,7 +29,7 @@ func (s *pgHookStore) Create(d sqlmapper.RowData) (sqlmapper.RowData, error) {
 		return nil, err
 	}
 
-	err = s.hookEngine.Exec(`println("after create hook")`)
+	err = s.hookEngine.Eval(`println("after create hook")`)
 	if err != nil {
 		return nil, err
 	}
@@ -38,14 +38,14 @@ func (s *pgHookStore) Create(d sqlmapper.RowData) (sqlmapper.RowData, error) {
 }
 
 func (s *pgHookStore) Delete(id int) error {
-	err := s.hookEngine.Exec(`println("before delete hook")`)
+	err := s.hookEngine.Eval(`println("before delete hook")`)
 	if err != nil {
 		return err
 	}
 
 	res := s.pgStore.Delete(id)
 
-	err = s.hookEngine.Exec(`println("after delete hook")`)
+	err = s.hookEngine.Eval(`println("after delete hook")`)
 	if err != nil {
 		return err
 	}
@@ -58,7 +58,7 @@ func (s *pgHookStore) FindByID(id int) (sqlmapper.RowData, error) {
 }
 
 func (s *pgHookStore) Update(d sqlmapper.RowData, id int) (sqlmapper.RowData, error) {
-	err := s.hookEngine.Exec(`println("before update hook")`)
+	err := s.hookEngine.Eval(`println("before update hook")`)
 	if err != nil {
 		return nil, err
 	}
@@ -68,7 +68,7 @@ func (s *pgHookStore) Update(d sqlmapper.RowData, id int) (sqlmapper.RowData, er
 		return nil, err
 	}
 
-	err = s.hookEngine.Exec(`println("after update hook")`)
+	err = s.hookEngine.Eval(`println("after update hook")`)
 	if err != nil {
 		return nil, err
 	}

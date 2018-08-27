@@ -17,23 +17,23 @@ func (s *pgHookStore) isBeforeCreateEnable() bool {
 }
 
 func (s *pgHookStore) isAfterCreateEnable() bool {
-	return s.model.Hooks.BeforeCreate.Enable
+	return s.model.Hooks.AfterCreate.Enable
 }
 
 func (s *pgHookStore) isBeforeUpdateEnable() bool {
-	return s.model.Hooks.BeforeCreate.Enable
+	return s.model.Hooks.BeforeUpdate.Enable
 }
 
 func (s *pgHookStore) isAfterUpdateEnable() bool {
-	return s.model.Hooks.BeforeCreate.Enable
+	return s.model.Hooks.AfterUpdate.Enable
 }
 
 func (s *pgHookStore) isBeforeDeleteEnable() bool {
-	return s.model.Hooks.BeforeCreate.Enable
+	return s.model.Hooks.BeforeDelete.Enable
 }
 
 func (s *pgHookStore) isAfterDeleteEnable() bool {
-	return s.model.Hooks.BeforeCreate.Enable
+	return s.model.Hooks.AfterDelete.Enable
 }
 
 // NewPGHookStore new pg implement for hook

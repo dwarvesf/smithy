@@ -19,6 +19,20 @@ model_list:
     name_display_column: "name"
     acl: "crud"
     auto_migration: true
+    hooks:
+      enable: true
+      before_create:
+        enable: true
+        content: "println(\"it run on before create config\")"
+      after_create:
+        enable: false
+        content: "println(\"it run on after create config\")"
+      before_update:
+        enable: false
+        content: "println(\"it run on before update config\")"
+      after_update:
+        enable: false
+        content: "println(\"it run on after update config\")"
     columns:
       - name: id
         type: int

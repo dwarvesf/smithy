@@ -28,7 +28,6 @@ type Model struct {
 
 // Hooks hook declaration for a model
 type Hooks struct {
-	Enable       bool `yaml:"enable" json:"enable"` // Is model enable a Hook?
 	BeforeCreate Hook `yaml:"before_create" json:"before_create"`
 	AfterCreate  Hook `yaml:"after_create" json:"after_create"`
 	BeforeUpdate Hook `yaml:"before_update" json:"before_update"`
@@ -88,6 +87,16 @@ func (ms Models) ColumnsByTableName() map[string][]Column {
 		} else {
 			res[m.TableName] = m.Columns
 		}
+	}
+
+	return res
+}
+
+// ModelByTableName create map model by table name
+func (ms Models) ModelByTableName() map[string]Model {
+	res := make(map[string]Model)
+	for _, m := range ms {
+		res[m.TableName] = m
 	}
 
 	return res

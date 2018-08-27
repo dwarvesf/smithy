@@ -36,6 +36,7 @@ func NewSQLMapper(c *backendConfig.Config, tableName string, columns []database.
 	case "postgres":
 		return sqlmapperDrv.NewPGHookStore(
 			sqlmapperDrv.NewPGStore(c.DB(), tableName, columns, c.ModelList),
+			database.Models(c.ModelList).ModelByTableName()[tableName],
 		), nil
 	default:
 		return nil, errors.New("Uknown DB Driver")

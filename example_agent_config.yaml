@@ -20,7 +20,6 @@ model_list:
     acl: "crud"
     auto_migration: true
     hooks:
-      enable: true
       before_create:
         enable: true
         content: "println(\"it run on before create config\")"

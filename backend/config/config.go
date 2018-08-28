@@ -9,7 +9,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/boltdb/bolt"
 	"github.com/jinzhu/gorm"
 
 	agentConfig "github.com/dwarvesf/smithy/agent/config"
@@ -46,8 +45,6 @@ type Config struct {
 	PersistenceSupport  string `yaml:"persistence_support"`
 	PersistenceFileName string `yaml:"persistence_file_name"`
 
-	// TODO: extend for using mutiple persistence DB
-	PersistenceDB           *bolt.DB
 	database.ConnectionInfo `yaml:"-"`
 	ModelList               []database.Model `yaml:"-"`
 	Version                 Version          `yaml:"-" json:"version"`

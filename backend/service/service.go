@@ -6,7 +6,7 @@ import (
 
 // Service ...
 type Service struct {
-	Config *backendConfig.Wrapper
+	*backendConfig.Wrapper
 }
 
 // NewService new dashboard handler

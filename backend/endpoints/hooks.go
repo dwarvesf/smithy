@@ -29,7 +29,7 @@ func makeAddHookEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, errors.New("failed to make type assertion")
 		}
 
-		cfg := s.Config.Config()
+		cfg := s.SyncConfig()
 
 		err := cfg.AddHook(req.TableName, req.HookType, req.HookContent)
 		if err != nil {

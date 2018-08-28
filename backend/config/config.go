@@ -71,8 +71,8 @@ func NewWrapper(cfg *Config) *Wrapper {
 	return &Wrapper{cfg}
 }
 
-// Config get sync config from wrapper
-func (w *Wrapper) Config() *Config {
+// SyncConfig get synchronized config from wrapper
+func (w *Wrapper) SyncConfig() *Config {
 	w.cfg.Lock()
 	defer w.cfg.Unlock()
 	return w.cfg

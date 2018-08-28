@@ -31,7 +31,7 @@ func makeDBCreateEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, errors.New("failed to make type assertion")
 		}
 
-		sqlmp, err := backend.NewSQLMapper(s.Config.Config(), req.TableName, []database.Column{})
+		sqlmp, err := backend.NewSQLMapper(s.SyncConfig(), req.TableName, []database.Column{})
 		if err != nil {
 			return nil, err
 		}

@@ -70,7 +70,7 @@ func makeDBQueryEndpoint(s service.Service) endpoint.Endpoint {
 		if !ok {
 			return nil, errors.New("failed to make type assertion")
 		}
-		sqlmp, err := backend.NewSQLMapper(s.Config.Config(), req.TableName, req.Columns)
+		sqlmp, err := backend.NewSQLMapper(s.SyncConfig(), req.TableName, req.Columns)
 		if err != nil {
 			return nil, err
 		}

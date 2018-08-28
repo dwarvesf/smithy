@@ -14,7 +14,7 @@ type agentSyncResponse struct {
 
 func makeAgentSyncEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		cfg := s.Config.Config()
+		cfg := s.SyncConfig()
 		err := cfg.UpdateConfigFromAgent()
 		if err != nil {
 			return nil, err

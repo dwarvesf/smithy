@@ -9,7 +9,6 @@ import (
 	"github.com/dwarvesf/smithy/backend"
 	"github.com/dwarvesf/smithy/backend/service"
 	"github.com/dwarvesf/smithy/backend/sqlmapper"
-	"github.com/dwarvesf/smithy/common/database"
 )
 
 // DBCreateRequest request for db create data
@@ -31,7 +30,7 @@ func makeDBCreateEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, errors.New("failed to make type assertion")
 		}
 
-		sqlmp, err := backend.NewSQLMapper(s.SyncConfig(), req.TableName, []database.Column{})
+		sqlmp, err := backend.NewSQLMapper(s.SyncConfig())
 		if err != nil {
 			return nil, err
 		}

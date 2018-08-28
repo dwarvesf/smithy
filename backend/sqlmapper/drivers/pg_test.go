@@ -122,9 +122,9 @@ func Test_pgStore_FindAll(t *testing.T) {
 				if err != nil {
 					t.Fatalf("Failed to migrate table by error %v", err)
 				}
-				s = NewPGStore(cfgEmpty.DB(), tt.tableName, cols, cfgEmpty.ModelList)
+				s = NewPGStore(cfgEmpty.DB(), cfgEmpty.ModelList)
 			} else {
-				s = NewPGStore(cfg.DB(), tt.tableName, cols, cfg.ModelList)
+				s = NewPGStore(cfg.DB(), cfg.ModelList)
 			}
 
 			got, err := s.FindAll(sqlmapper.Query{
@@ -278,9 +278,9 @@ func Test_pgStore_FindByColumnName(t *testing.T) {
 				if err != nil {
 					t.Fatalf("Failed to migrate table by error %v", err)
 				}
-				s = NewPGStore(cfgEmpty.DB(), tt.tableName, cols, cfgEmpty.ModelList)
+				s = NewPGStore(cfgEmpty.DB(), cfgEmpty.ModelList)
 			} else {
-				s = NewPGStore(cfg.DB(), tt.tableName, cols, cfg.ModelList)
+				s = NewPGStore(cfg.DB(), cfg.ModelList)
 			}
 
 			got, err := s.FindByColumnName(
@@ -403,9 +403,9 @@ func Test_pgStore_FindByID(t *testing.T) {
 				if err != nil {
 					t.Fatalf("Failed to migrate table by error %v", err)
 				}
-				s = NewPGStore(cfgEmpty.DB(), tt.tableName, cols, cfgEmpty.ModelList)
+				s = NewPGStore(cfgEmpty.DB(), cfgEmpty.ModelList)
 			} else {
-				s = NewPGStore(cfg.DB(), tt.tableName, cols, cfg.ModelList)
+				s = NewPGStore(cfg.DB(), cfg.ModelList)
 			}
 
 			got, err := s.FindByID(sqlmapper.Query{
@@ -458,17 +458,6 @@ func Test_pgStore_Delete(t *testing.T) {
 		t.Fatalf("Failed to create sample data by error %v", err)
 	}
 
-	cols := []database.Column{
-		{
-			Name: "id",
-			Type: "int",
-		},
-		{
-			Name: "name",
-			Type: "string",
-		},
-	}
-
 	type args struct {
 		id int
 	}
@@ -515,9 +504,9 @@ func Test_pgStore_Delete(t *testing.T) {
 				if err != nil {
 					t.Fatalf("Failed to migrate table by error %v", err)
 				}
-				s = NewPGStore(cfgEmpty.DB(), tt.tableName, cols, cfgEmpty.ModelList)
+				s = NewPGStore(cfgEmpty.DB(), cfgEmpty.ModelList)
 			} else {
-				s = NewPGStore(cfg.DB(), tt.tableName, cols, cfg.ModelList)
+				s = NewPGStore(cfg.DB(), cfg.ModelList)
 			}
 
 			err := s.Delete(tt.tableName, tt.args.id)
@@ -592,7 +581,7 @@ func Test_pgStore_Create(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := NewPGStore(cfg.DB(), tt.tableName, []database.Column{}, cfg.ModelList)
+			s := NewPGStore(cfg.DB(), cfg.ModelList)
 			got, err := s.Create(tt.tableName, tt.args.data)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("pgStore.Create() error = %v, wantErr %v", err, tt.wantErr)
@@ -707,7 +696,7 @@ func Test_pgStore_Update(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := NewPGStore(cfg.DB(), tt.tableName, []database.Column{}, cfg.ModelList)
+			s := NewPGStore(cfg.DB(), cfg.ModelList)
 			got, err := s.Update(tt.tableName, tt.args.d, tt.args.id)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("pgStore.Update() error = %v, wantErr %v", err, tt.wantErr)

@@ -9,7 +9,6 @@ import (
 
 	"github.com/dwarvesf/smithy/backend"
 	"github.com/dwarvesf/smithy/backend/service"
-	"github.com/dwarvesf/smithy/common/database"
 )
 
 // DBDeleteRequest request for db delete data by id
@@ -34,7 +33,7 @@ func makeDBDeleteEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, errors.New("failed to make type assertion")
 		}
 
-		sqlmp, err := backend.NewSQLMapper(s.SyncConfig(), req.TableName, []database.Column{})
+		sqlmp, err := backend.NewSQLMapper(s.SyncConfig())
 		if err != nil {
 			return nil, err
 		}

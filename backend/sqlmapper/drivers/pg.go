@@ -15,14 +15,12 @@ import (
 
 type pgStore struct {
 	db        *gorm.DB
-	TableName string
-	Columns   []database.Column
 	ModelList []database.Model
 }
 
 // NewPGStore .
-func NewPGStore(db *gorm.DB, tableName string, cols []database.Column, modelList []database.Model) sqlmapper.Mapper {
-	return &pgStore{db, tableName, cols, modelList}
+func NewPGStore(db *gorm.DB, modelList []database.Model) sqlmapper.Mapper {
+	return &pgStore{db, modelList}
 }
 
 func (s *pgStore) Query(q sqlmapper.Query) ([]interface{}, error) {
@@ -54,12 +52,12 @@ func (s *pgStore) FindAll(q sqlmapper.Query) ([]sqlmapper.RowData, error) {
 	if err != nil {
 		return nil, err
 	}
-	return sqlmapper.RowsToQueryResults(rows, s.Columns)
+	return sqlmapper.RowsToQueryResults(rows, q.Fields)
 }
 
 func (s *pgStore) FindByID(q sqlmapper.Query) (sqlmapper.RowData, error) {
 	row := s.db.Table(q.SourceTable).Select(q.ColumnNames()).Where("id = ?", q.Filter.Value).Row()
-	res, err := sqlmapper.RowToQueryResult(row, s.Columns)
+	res, err := sqlmapper.RowToQueryResult(row, q.Fields)
 	if err != nil {
 		return nil, err
 	}
@@ -211,7 +209,7 @@ func (s *pgStore) FindByColumnName(q sqlmapper.Query) ([]sqlmapper.RowData, erro
 		return nil, err
 	}
 
-	return sqlmapper.RowsToQueryResults(rows, s.Columns)
+	return sqlmapper.RowsToQueryResults(rows, q.Fields)
 }
 
 func (s *pgStore) Update(tableName string, d sqlmapper.RowData, id int) (sqlmapper.RowData, error) {

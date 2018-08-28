@@ -1,5 +1,11 @@
 package database
 
+import (
+	"errors"
+
+	"github.com/dwarvesf/smithy/backend/hook"
+)
+
 // ConnectionInfo store information to connect to a database
 type ConnectionInfo struct {
 	DBType          string `yaml:"db_type" json:"db_type"`
@@ -26,6 +32,31 @@ type Model struct {
 	Hooks             Hooks     `yaml:"hooks" json:"hooks"`
 }
 
+// AddHook add hook to model base on hookType
+func (m *Model) AddHook(hookType, content string) error {
+	h := Hook{Enable: true, Content: content} // TODO: add check hook content
+
+	switch hookType {
+	case hook.BeforeCreate:
+		m.Hooks.BeforeCreate = h
+	case hook.AfterCreate:
+		m.Hooks.AfterCreate = h
+	case hook.BeforeUpdate:
+		m.Hooks.BeforeUpdate = h
+	case hook.AfterUpdate:
+		m.Hooks.AfterUpdate = h
+	case hook.BeforeDelete:
+		m.Hooks.BeforeDelete = h
+	case hook.AfterDelete:
+		m.Hooks.AfterDelete = h
+	default:
+		return errors.New("hook_type is not exist")
+
+	}
+
+	return nil
+}
+
 // Hooks hook declaration for a model
 type Hooks struct {
 	BeforeCreate Hook `yaml:"before_create" json:"before_create"`
@@ -38,8 +69,8 @@ type Hooks struct {
 
 // Hook define a
 type Hook struct {
-	Enable  bool // Is model enable a hook
-	Content string
+	Enable  bool   `yaml:"enable" json:"enable"` // Is model enable a hook
+	Content string `yaml:"content" json:"content"`
 }
 
 // User detail of a user in database

@@ -10,6 +10,7 @@ import (
 type Endpoints struct {
 	AgentSync       endpoint.Endpoint
 	AvailableModels endpoint.Endpoint
+	AddHook         endpoint.Endpoint
 	DBQuery         endpoint.Endpoint
 	DBCreate        endpoint.Endpoint
 	DBUpdate        endpoint.Endpoint
@@ -28,6 +29,7 @@ func MakeServerEndpoints(s service.Service) Endpoints {
 		DBUpdate:        makeDBUpdateEndpoint(s),
 		DBDelete:        makeDBDeleteEndpoint(s),
 		AvailableModels: makeAvailableModelsEndpoint(s),
+		AddHook:         makeAddHookEndpoint(s),
 		ListVersion:     makeListVersionEndpoint(s),
 		RevertVersion:   makeRevertVersionEndpoint(s),
 		Login:           makeLoginEndpoint(s),

@@ -3,6 +3,7 @@ package config
 import (
 	"crypto/md5"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"sync"
@@ -152,6 +153,23 @@ func (c *Config) UpdateConfigFromAgentConfig(agentCfg *agentConfig.Config) error
 
 	wr := NewBoltPersistent(c.PersistenceFileName, 0)
 	return wr.Write(c)
+}
+
+// AddHook add hook to configuration
+func (c *Config) AddHook(tableName, hookType, content string) error {
+	models := c.ModelList
+
+	for i := range models {
+		if models[i].TableName == tableName {
+			err := models[i].AddHook(hookType, content)
+			if err != nil {
+				return err
+			}
+			return nil
+		}
+	}
+
+	return errors.New("table_name not exist")
 }
 
 // UpdateConfig update configuration

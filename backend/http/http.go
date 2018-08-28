@@ -85,6 +85,13 @@ func NewHTTPHandler(endpoints endpoints.Endpoints,
 			options...,
 		).ServeHTTP)
 
+		r.Post("/hooks", httptransport.NewServer(
+			endpoints.AddHook,
+			decodeAddHookRequest,
+			httptransport.EncodeJSONResponse,
+			options...,
+		).ServeHTTP)
+
 		r.Put("/update", httptransport.NewServer(
 			endpoints.DBUpdate,
 			decodeDBUpdateRequest,

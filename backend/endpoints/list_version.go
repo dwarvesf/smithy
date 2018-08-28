@@ -17,7 +17,7 @@ func makeListVersionEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		cfg := s.Config.Config()
 
-		querier := config.NewBoltPersistent(cfg.PersistenceDB, 0)
+		querier := config.NewBoltPersistent(cfg.PersistenceFileName, 0)
 		versions, err := querier.ListVersion()
 
 		if err != nil {

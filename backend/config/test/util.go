@@ -80,9 +80,9 @@ func CreateBackendConfig(t *testing.T) (*backendConfig.Config, func()) {
 		},
 	}
 
-	db, clearDB := utilDB.CreateDatabase(t)
+	persistenceFileName, clearDB := utilDB.CreateDatabase(t)
 
-	cfg.PersistenceDB = db
+	cfg.PersistenceFileName = persistenceFileName
 
 	return cfg, clearDB
 }

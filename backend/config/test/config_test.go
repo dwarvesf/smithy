@@ -27,7 +27,7 @@ func TestStoreConfigInPersistent_1(t *testing.T) {
 			t.Fatalf("Fail to update agent config error = %v", err)
 		}
 
-		sCfg, err := backendConfig.NewBoltPersistent(bCfg.PersistenceDB, bCfg.Version.ID).Read()
+		sCfg, err := backendConfig.NewBoltPersistent(bCfg.PersistenceFileName, bCfg.Version.ID).Read()
 		if err != nil {
 			t.Fatalf("Fail to read config from persistent error = %v", err)
 		}
@@ -66,13 +66,13 @@ func TestStoreConfigInPersistent_2(t *testing.T) {
 		v2 := bCfg.Version
 
 		// read from persistent by ver num
-		sCfg_1, err := backendConfig.NewBoltPersistent(bCfg.PersistenceDB, v1.ID).Read()
+		sCfg_1, err := backendConfig.NewBoltPersistent(bCfg.PersistenceFileName, v1.ID).Read()
 		if err != nil {
 			t.Fatalf("Fail to read config from persistent error = %v", err)
 		}
 
 		// read the lastest config from persistent
-		sCfg_2, err := backendConfig.NewBoltPersistent(bCfg.PersistenceDB, 0).LastestVersion()
+		sCfg_2, err := backendConfig.NewBoltPersistent(bCfg.PersistenceFileName, 0).LastestVersion()
 		if err != nil {
 			t.Fatalf("Fail to read lastest config from persistent error = %v", err)
 		}
@@ -129,13 +129,13 @@ func TestRevertConfig(t *testing.T) {
 		}
 
 		// get the lastest version config
-		lastVerConfig, err := backendConfig.NewBoltPersistent(bCfg.PersistenceDB, 0).LastestVersion()
+		lastVerConfig, err := backendConfig.NewBoltPersistent(bCfg.PersistenceFileName, 0).LastestVersion()
 		if err != nil {
 			t.Fatalf("Fail to read lastest config from persistent error = %v", err)
 		}
 
 		//get 2th config
-		v2Config, err := backendConfig.NewBoltPersistent(bCfg.PersistenceDB, v2.ID).Read()
+		v2Config, err := backendConfig.NewBoltPersistent(bCfg.PersistenceFileName, v2.ID).Read()
 		if err != nil {
 			t.Fatalf("Fail to read lastest config from persistent error = %v", err)
 		}

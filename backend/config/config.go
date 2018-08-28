@@ -150,7 +150,7 @@ func (c *Config) UpdateConfigFromAgentConfig(agentCfg *agentConfig.Config) error
 	c.Version.Checksum = checksum
 	c.Version.SyncAt = time.Now()
 
-	wr := NewBoltPersistent(c.PersistenceDB, 0)
+	wr := NewBoltPersistent(c.PersistenceFileName, 0)
 	return wr.Write(c)
 }
 
@@ -171,7 +171,7 @@ func (c *Config) UpdateConfig(cfg *Config) error {
 
 // ChangeVersion get config in persistent by version number
 func (c *Config) ChangeVersion(id int) error {
-	reader := NewBoltPersistent(c.PersistenceDB, id)
+	reader := NewBoltPersistent(c.PersistenceFileName, id)
 	cfg, err := reader.Read()
 	if err != nil {
 		return err

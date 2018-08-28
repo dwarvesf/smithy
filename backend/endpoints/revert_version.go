@@ -12,7 +12,7 @@ import (
 
 // RevertVersionResquest request for revert version
 type RevertVersionResquest struct {
-	VersionNumber int64 `json:"version"`
+	VersionID int `json:"version_id"`
 }
 
 // RevertVersionResponse response for revert version
@@ -27,7 +27,7 @@ func makeRevertVersionEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, errors.New("failed to make type assertion")
 		}
 
-		if err := s.Config.Config().ChangeVersion(req.VersionNumber); err != nil {
+		if err := s.Config.Config().ChangeVersion(req.VersionID); err != nil {
 			return nil, err
 		}
 

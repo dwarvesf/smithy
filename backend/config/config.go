@@ -58,9 +58,9 @@ type Config struct {
 
 // Version version of backend config
 type Version struct {
-	Checksum      string    `json:"checksum"`
-	VersionNumber int64     `json:"version_number"`
-	SyncAt        time.Time `json:"sync_at"`
+	Checksum string    `json:"checksum"`
+	ID       int       `json:"id"`
+	SyncAt   time.Time `json:"sync_at"`
 }
 
 // Wrapper use to hide detail of a config
@@ -149,7 +149,6 @@ func (c *Config) UpdateConfigFromAgentConfig(agentCfg *agentConfig.Config) error
 
 	c.Version.Checksum = checksum
 	c.Version.SyncAt = time.Now()
-	c.Version.VersionNumber = c.Version.SyncAt.UnixNano()
 
 	wr := NewBoltPersistent(c.PersistenceDB, 0)
 	return wr.Write(c)
@@ -171,14 +170,14 @@ func (c *Config) UpdateConfig(cfg *Config) error {
 }
 
 // ChangeVersion get config in persistent by version number
-func (c *Config) ChangeVersion(versionNumber int64) error {
-	reader := NewBoltPersistent(c.PersistenceDB, versionNumber)
-	vCfg, err := reader.Read()
+func (c *Config) ChangeVersion(id int) error {
+	reader := NewBoltPersistent(c.PersistenceDB, id)
+	cfg, err := reader.Read()
 	if err != nil {
 		return err
 	}
 
-	return c.UpdateConfig(vCfg)
+	return c.UpdateConfig(cfg)
 }
 
 // UpdateDB update db connection

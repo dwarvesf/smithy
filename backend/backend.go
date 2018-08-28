@@ -43,6 +43,7 @@ func NewSQLMapper(c *backendConfig.Config, tableName string, columns []database.
 	}
 }
 
+// SyncPersistent load available config in persistent
 func SyncPersistent(c *backendConfig.Config) error {
 	switch c.PersistenceSupport {
 	case "boltdb":

@@ -37,7 +37,7 @@ func makeAddHookEndpoint(s service.Service) endpoint.Endpoint {
 		}
 
 		// Update Config persistent
-		writer := config.NewBoltPersistent(cfg.PersistenceDB, 0)
+		writer := config.NewBoltPersistent(cfg.PersistenceFileName, 0)
 		err = writer.Write(cfg)
 		if err != nil {
 			return nil, err

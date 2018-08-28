@@ -5,6 +5,7 @@ package drivers
 import (
 	"math"
 	"reflect"
+	"strconv"
 	"testing"
 
 	"github.com/dwarvesf/smithy/backend/sqlmapper"
@@ -126,7 +127,10 @@ func Test_pgStore_FindAll(t *testing.T) {
 				s = NewPGStore(cfg.DB(), tt.tableName, cols, cfg.ModelList)
 			}
 
-			got, err := s.FindAll(tt.args.Offset, tt.args.Limit)
+			got, err := s.FindAll(sqlmapper.Query{
+				Offset: tt.args.Offset,
+				Limit:  tt.args.Limit,
+			})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("pgStore.FindAll() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -153,7 +157,7 @@ func Test_pgStore_FindAll(t *testing.T) {
 				if len(got) != len(tt.want) ||
 					id != tt.want[i].ID ||
 					name != tt.want[i].Name {
-					t.Errorf("pgStore.FindByColumnName() = %v, want %v", got, tt.want)
+					t.Errorf("pgStore.FindAll() = %v, want %v", got, tt.want)
 				}
 			}
 		})
@@ -277,7 +281,15 @@ func Test_pgStore_FindByColumnName(t *testing.T) {
 				s = NewPGStore(cfg.DB(), tt.tableName, cols, cfg.ModelList)
 			}
 
-			got, err := s.FindByColumnName(tt.args.ColumnName, tt.args.Value, tt.args.Offset, tt.args.Limit)
+			got, err := s.FindByColumnName(
+				sqlmapper.Query{
+					Offset: tt.args.Offset,
+					Limit:  tt.args.Limit,
+					Filter: sqlmapper.Filter{
+						ColName: tt.args.ColumnName,
+						Value:   tt.args.Value,
+					},
+				})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("pgStore.FindByColumnName() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -392,7 +404,9 @@ func Test_pgStore_FindByID(t *testing.T) {
 				s = NewPGStore(cfg.DB(), tt.tableName, cols, cfg.ModelList)
 			}
 
-			got, err := s.FindByID(tt.args.id)
+			got, err := s.FindByID(sqlmapper.Query{
+				Filter: sqlmapper.Filter{Value: strconv.Itoa(tt.args.id)},
+			})
 			if err != nil {
 				if !tt.wantErr {
 					t.Errorf("pgStore.FindByID() error = %v, wantErr %v", err, tt.wantErr)

@@ -10,11 +10,27 @@ import (
 // Mapper interface for mapping query from sql to corresponding database engine
 type Mapper interface {
 	Create(d RowData) (RowData, error)
-	FindAll(offset int, limit int) ([]RowData, error)
 	Update(d RowData, id int) (RowData, error)
 	Delete(id int) error
-	FindByID(id int) (RowData, error)
-	FindByColumnName(columnName string, value string, offset int, limit int) ([]RowData, error)
+	Query(Query) ([]interface{}, error)
+	FindAll(Query) ([]RowData, error)
+	FindByID(Query) (RowData, error)
+	FindByColumnName(Query) ([]RowData, error)
+}
+
+// Query containt query data for a query request
+type Query struct {
+	SourceTable string
+	Fields      []database.Column
+	Filter      Filter
+	Offset      int
+	Limit       int
+}
+
+// Filter containt filter
+type Filter struct {
+	ColName string // TODO: extend filter type
+	Value   string
 }
 
 // Columns return columns listed in RowData

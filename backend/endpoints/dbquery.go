@@ -10,6 +10,7 @@ import (
 
 	"github.com/dwarvesf/smithy/backend"
 	"github.com/dwarvesf/smithy/backend/service"
+	"github.com/dwarvesf/smithy/backend/sqlmapper"
 	"github.com/dwarvesf/smithy/common/database"
 )
 
@@ -75,6 +76,13 @@ func makeDBQueryEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, err
 		}
 
+		q := sqlmapper.Query{
+			SourceTable: req.TableName,
+			Fields:      req.Columns,
+			Offset:      req.Offset,
+			Limit:       req.Limit,
+		}
+
 		var data interface{}
 		switch req.Method {
 		case "FindByID":
@@ -82,15 +90,17 @@ func makeDBQueryEndpoint(s service.Service) endpoint.Endpoint {
 			if id, err = req.getResourceID(); err != nil {
 				return nil, err
 			}
-			data, err = sqlmp.FindByID(id)
+			q.Filter.Value = strconv.Itoa(id)
+			data, err = sqlmp.FindByID(q)
 		case "FindAll":
-			data, err = sqlmp.FindAll(req.Offset, req.Limit)
+			data, err = sqlmp.FindAll(q)
 		case "FindByColumnName":
 			var columnName, value string
 			if columnName, value, err = req.getColumnAndValue(); err != nil {
 				return nil, err
 			}
-			data, err = sqlmp.FindByColumnName(columnName, value, req.Offset, req.Limit)
+			q.Filter = sqlmapper.Filter{ColName: columnName, Value: value}
+			data, err = sqlmp.FindByColumnName(q)
 		default:
 			return nil, errors.New("unknown query method")
 		}

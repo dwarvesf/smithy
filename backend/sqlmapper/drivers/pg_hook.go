@@ -45,6 +45,10 @@ func NewPGHookStore(store sqlmapper.Mapper, model database.Model) sqlmapper.Mapp
 	}
 }
 
+func (s *pgHookStore) Query(q sqlmapper.Query) ([]interface{}, error) {
+	return s.pgStore.Query(q)
+}
+
 func (s *pgHookStore) Create(d sqlmapper.RowData) (sqlmapper.RowData, error) {
 	if s.isBeforeCreateEnable() {
 		err := s.hookEngine.Eval(s.model.Hooks.BeforeCreate.Content)
@@ -88,8 +92,8 @@ func (s *pgHookStore) Delete(id int) error {
 	return res
 }
 
-func (s *pgHookStore) FindByID(id int) (sqlmapper.RowData, error) {
-	return s.pgStore.FindByID(id)
+func (s *pgHookStore) FindByID(q sqlmapper.Query) (sqlmapper.RowData, error) {
+	return s.pgStore.FindByID(q)
 }
 
 func (s *pgHookStore) Update(d sqlmapper.RowData, id int) (sqlmapper.RowData, error) {
@@ -115,10 +119,10 @@ func (s *pgHookStore) Update(d sqlmapper.RowData, id int) (sqlmapper.RowData, er
 	return res, nil
 }
 
-func (s *pgHookStore) FindByColumnName(columnName string, value string, offset int, limit int) ([]sqlmapper.RowData, error) {
-	return s.pgStore.FindByColumnName(columnName, value, offset, limit)
+func (s *pgHookStore) FindByColumnName(q sqlmapper.Query) ([]sqlmapper.RowData, error) {
+	return s.pgStore.FindByColumnName(q)
 }
 
-func (s *pgHookStore) FindAll(offset int, limit int) ([]sqlmapper.RowData, error) {
-	return s.pgStore.FindAll(offset, limit)
+func (s *pgHookStore) FindAll(q sqlmapper.Query) ([]sqlmapper.RowData, error) {
+	return s.pgStore.FindAll(q)
 }

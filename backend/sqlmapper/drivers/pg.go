@@ -25,23 +25,27 @@ func (s *pgStore) columnNames() string {
 }
 
 // NewPGStore .
-func NewPGStore(db *gorm.DB, tableName string, columns []database.Column, modelList []database.Model) sqlmapper.Mapper {
-	return &pgStore{db, tableName, columns, modelList}
+func NewPGStore(db *gorm.DB, tableName string, cols []database.Column, modelList []database.Model) sqlmapper.Mapper {
+	return &pgStore{db, tableName, cols, modelList}
 }
 
-func (s *pgStore) FindAll(offset int, limit int) ([]sqlmapper.RowData, error) {
+func (s *pgStore) Query(q sqlmapper.Query) ([]interface{}, error) {
+	return nil, nil
+}
+
+func (s *pgStore) FindAll(q sqlmapper.Query) ([]sqlmapper.RowData, error) {
 	db := s.db.Table(s.TableName).
 		Select(s.columnNames()).
-		Offset(offset)
+		Offset(q.Offset)
 
 	var (
 		rows *sql.Rows
 		err  error
 	)
-	if limit <= 0 {
+	if q.Limit <= 0 {
 		rows, err = db.Rows()
 	} else {
-		rows, err = db.Limit(limit).Rows()
+		rows, err = db.Limit(q.Limit).Rows()
 	}
 
 	defer func() {
@@ -57,8 +61,8 @@ func (s *pgStore) FindAll(offset int, limit int) ([]sqlmapper.RowData, error) {
 	return sqlmapper.RowsToQueryResults(rows, s.Columns)
 }
 
-func (s *pgStore) FindByID(id int) (sqlmapper.RowData, error) {
-	row := s.db.Table(s.TableName).Select(s.columnNames()).Where("id = ?", id).Row()
+func (s *pgStore) FindByID(q sqlmapper.Query) (sqlmapper.RowData, error) {
+	row := s.db.Table(s.TableName).Select(s.columnNames()).Where("id = ?", q.Filter.Value).Row()
 	res, err := sqlmapper.RowToQueryResult(row, s.Columns)
 	if err != nil {
 		return nil, err
@@ -183,21 +187,21 @@ func filterRowData(d sqlmapper.RowData) sqlmapper.RowData {
 	return d
 }
 
-func (s *pgStore) FindByColumnName(columnName string, value string, offset int, limit int) ([]sqlmapper.RowData, error) {
+func (s *pgStore) FindByColumnName(q sqlmapper.Query) ([]sqlmapper.RowData, error) {
 	// TODO: check sql injection
 	db := s.db.Table(s.TableName).
 		Select(s.columnNames()).
-		Where(columnName+" LIKE ?", "%"+value+"%").
-		Offset(offset)
+		Where(q.Filter.ColName+" LIKE ?", "%"+q.Filter.Value+"%").
+		Offset(q.Offset)
 
 	var (
 		rows *sql.Rows
 		err  error
 	)
-	if limit <= 0 {
+	if q.Limit <= 0 {
 		rows, err = db.Rows()
 	} else {
-		rows, err = db.Limit(limit).Rows()
+		rows, err = db.Limit(q.Limit).Rows()
 	}
 
 	defer func() {

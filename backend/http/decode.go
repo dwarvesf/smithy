@@ -73,3 +73,12 @@ func decodeLoginRequest(ctx context.Context, r *http.Request) (interface{}, erro
 
 	return req, err
 }
+
+func decodeAddHookRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	req := endpoints.AddHookRequest{}
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	defer r.Body.Close()
+
+	return req, err
+}

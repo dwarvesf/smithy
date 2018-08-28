@@ -7,6 +7,40 @@ import (
 	"github.com/mattn/anko/vm"
 )
 
+// HookType for hooks
+const (
+	BeforeCreate = "BeforeCreate"
+	AfterCreate  = "AfterCreate"
+	BeforeUpdate = "BeforeUpdate"
+	AfterUpdate  = "AfterUpdate"
+	BeforeDelete = "BeforeDelete"
+	AfterDelete  = "AfterDelete"
+)
+
+// HookType for hooks
+var (
+	HookTypes = []string{
+		BeforeCreate,
+		AfterCreate,
+		BeforeUpdate,
+		AfterUpdate,
+		BeforeDelete,
+		AfterDelete,
+	}
+)
+
+// IsAHookType check hook type is correct
+func IsAHookType(hookType string) bool {
+	res := false
+	for _, t := range HookTypes {
+		if hookType == t {
+			res = true
+		}
+	}
+
+	return res
+}
+
 // ScriptEngine interface for running script
 type ScriptEngine interface {
 	Eval(content string) error

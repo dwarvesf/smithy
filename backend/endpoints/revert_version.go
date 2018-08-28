@@ -12,12 +12,12 @@ import (
 
 // RevertVersionResquest request for revert version
 type RevertVersionResquest struct {
-	VersionNumber int64 `json:"version"`
+	VersionID int `json:"version_id"`
 }
 
 // RevertVersionResponse response for revert version
 type RevertVersionResponse struct {
-	Status string `json:"status"`
+	Version config.Version `json:"version"`
 }
 
 func makeRevertVersionEndpoint(s service.Service) endpoint.Endpoint {
@@ -27,18 +27,10 @@ func makeRevertVersionEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, errors.New("failed to make type assertion")
 		}
 
-		cfg := s.Config.Config()
-		reader := config.NewBoltPersistent(cfg.PersistenceDB, req.VersionNumber)
-		vCfg, err := reader.Read()
-
-		if err != nil {
+		if err := s.Config.Config().ChangeVersion(req.VersionID); err != nil {
 			return nil, err
 		}
 
-		if err := s.Config.Config().UpdateConfig(vCfg); err != nil {
-			return nil, err
-		}
-
-		return RevertVersionResponse{s.Config.Config().ModelList[0].TableName}, nil
+		return RevertVersionResponse{s.Config.Config().Version}, nil
 	}
 }

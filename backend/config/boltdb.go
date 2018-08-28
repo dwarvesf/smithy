@@ -3,30 +3,51 @@ package config
 import (
 	"encoding/json"
 	"strconv"
+	"time"
 
 	"github.com/boltdb/bolt"
 )
 
 type boltImpl struct {
-	bucket  string
-	version int64
-	db      *bolt.DB
+	bucket              string
+	versionID           int
+	db                  *bolt.DB
+	persistenceFileName string
 }
 
 // NewBoltPersistent Peristent Bolt
-func NewBoltPersistent(db *bolt.DB, version int64) ReaderWriterQuerier {
+func NewBoltPersistent(persistenceFileName string, versionID int) ReaderWriterQuerier {
 	return boltImpl{
-		bucket:  "ConfigVersion",
-		version: version,
-		db:      db,
+		bucket:              "ConfigVersion",
+		versionID:           versionID,
+		persistenceFileName: persistenceFileName,
 	}
 }
 
+func (b boltImpl) openConnection() (*bolt.DB, error) {
+	db, err := bolt.Open(b.persistenceFileName, 0600, &bolt.Options{Timeout: 1 * time.Second})
+	if err != nil {
+		return nil, err
+	}
+	return db, nil
+}
+
 func (b boltImpl) Read() (*Config, error) {
-	cfg := &Config{}
-	err := b.db.View(func(tx *bolt.Tx) error {
+	var err error
+	b.db, err = b.openConnection()
+	if err != nil {
+		return nil, err
+	}
+	defer b.db.Close()
+
+	var cfg *Config
+	err = b.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(b.bucket))
-		v := bucket.Get([]byte(strconv.FormatInt(b.version, 10)))
+		if bucket == nil {
+			return nil
+		}
+		v := bucket.Get([]byte(strconv.Itoa(b.versionID)))
+		cfg = &Config{}
 		return json.Unmarshal(v, cfg)
 	})
 
@@ -38,27 +59,42 @@ func (b boltImpl) Read() (*Config, error) {
 }
 
 func (b boltImpl) Write(cfg *Config) error {
-	buff, err := json.Marshal(cfg)
+	var err error
+	b.db, err = b.openConnection()
 	if err != nil {
 		return err
 	}
+	defer b.db.Close()
 
 	err = b.db.Update(func(tx *bolt.Tx) error {
-		bucket := tx.Bucket([]byte(b.bucket))
-		if bucket == nil {
-			bucket, err = tx.CreateBucket([]byte(b.bucket))
-			if err != nil {
-				return err
-			}
+		bucket, err := tx.CreateBucketIfNotExists([]byte(b.bucket))
+		if err != nil {
+			return err
 		}
-		return bucket.Put([]byte(strconv.FormatInt(cfg.Version.VersionNumber, 10)), buff)
+
+		id, _ := bucket.NextSequence()
+		cfg.Version.ID = int(id)
+
+		buff, err := json.Marshal(cfg)
+		if err != nil {
+			return err
+		}
+
+		return bucket.Put([]byte(strconv.Itoa(cfg.Version.ID)), buff)
 	})
 	return err
 }
 
 func (b boltImpl) ListVersion() ([]Version, error) {
+	var err error
+	b.db, err = b.openConnection()
+	if err != nil {
+		return nil, err
+	}
+	defer b.db.Close()
+
 	versions := make([]Version, 0)
-	err := b.db.View(func(tx *bolt.Tx) error {
+	err = b.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(b.bucket))
 
 		if bucket == nil {
@@ -88,8 +124,15 @@ func (b boltImpl) ListVersion() ([]Version, error) {
 }
 
 func (b boltImpl) LastestVersion() (*Config, error) {
+	var err error
+	b.db, err = b.openConnection()
+	if err != nil {
+		return nil, err
+	}
+	defer b.db.Close()
+
 	cfg := &Config{}
-	err := b.db.View(func(tx *bolt.Tx) error {
+	err = b.db.View(func(tx *bolt.Tx) error {
 		bucket := tx.Bucket([]byte(b.bucket))
 
 		if bucket == nil {

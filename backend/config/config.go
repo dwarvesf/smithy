@@ -58,9 +58,9 @@ type Config struct {
 
 // Version version of backend config
 type Version struct {
-	Checksum      string    `json:"checksum"`
-	VersionNumber int64     `json:"version_number"`
-	SyncAt        time.Time `json:"sync_at"`
+	Checksum string    `json:"checksum"`
+	ID       int       `json:"id"`
+	SyncAt   time.Time `json:"sync_at"`
 }
 
 // Wrapper use to hide detail of a config
@@ -92,8 +92,7 @@ func (c *Config) CheckSum() (string, error) {
 		return "", err
 	}
 
-	h := md5.New()
-	return fmt.Sprintf("%x", h.Sum(buff)), nil
+	return fmt.Sprintf("%x", md5.Sum(buff)), nil
 }
 
 // UpdateConfigFromAgent update configuration from agent
@@ -112,12 +111,17 @@ func (c *Config) UpdateConfigFromAgent() error {
 	}
 	defer res.Body.Close()
 
-	agentCfg := agentConfig.Config{}
-	err = json.NewDecoder(res.Body).Decode(&agentCfg)
+	agentCfg := &agentConfig.Config{}
+	err = json.NewDecoder(res.Body).Decode(agentCfg)
 	if err != nil {
 		return err
 	}
 
+	return c.UpdateConfigFromAgentConfig(agentCfg)
+}
+
+// UpdateConfigFromAgentConfig update config from AgentConfig
+func (c *Config) UpdateConfigFromAgentConfig(agentCfg *agentConfig.Config) error {
 	// Copy config file into tempCfg
 	tempCfg := Config{}
 
@@ -145,9 +149,8 @@ func (c *Config) UpdateConfigFromAgent() error {
 
 	c.Version.Checksum = checksum
 	c.Version.SyncAt = time.Now()
-	c.Version.VersionNumber = c.Version.SyncAt.Unix()
 
-	wr := NewBoltPersistent(c.PersistenceDB, 0)
+	wr := NewBoltPersistent(c.PersistenceFileName, 0)
 	return wr.Write(c)
 }
 
@@ -164,6 +167,17 @@ func (c *Config) UpdateConfig(cfg *Config) error {
 	c.Version = cfg.Version
 
 	return c.UpdateDB()
+}
+
+// ChangeVersion get config in persistent by version number
+func (c *Config) ChangeVersion(id int) error {
+	reader := NewBoltPersistent(c.PersistenceFileName, id)
+	cfg, err := reader.Read()
+	if err != nil {
+		return err
+	}
+
+	return c.UpdateConfig(cfg)
 }
 
 // UpdateDB update db connection

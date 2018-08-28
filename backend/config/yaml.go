@@ -2,9 +2,7 @@ package config
 
 import (
 	"io/ioutil"
-	"time"
 
-	"github.com/boltdb/bolt"
 	"gopkg.in/yaml.v2"
 )
 
@@ -26,15 +24,6 @@ func (c yamlReaderImpl) Read() (*Config, error) {
 	err = yaml.Unmarshal(buf, res)
 	if err != nil {
 		return nil, err
-	}
-
-	if res.PersistenceSupport == "boltdb" {
-		if res.PersistenceFileName != "" {
-			res.PersistenceDB, err = bolt.Open(res.PersistenceFileName, 0600, &bolt.Options{Timeout: 1 * time.Second})
-			if err != nil {
-				return nil, err
-			}
-		}
 	}
 
 	return res, nil

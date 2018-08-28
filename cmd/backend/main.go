@@ -39,7 +39,10 @@ func main() {
 		logger = log.With(logger, "caller", log.DefaultCaller)
 	}
 
-	s := service.NewService(cfg)
+	s, err := service.NewService(cfg)
+	if err != nil {
+		panic(err)
+	}
 
 	var h http.Handler
 	{

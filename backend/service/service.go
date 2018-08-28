@@ -1,6 +1,7 @@
 package service
 
 import (
+	"github.com/dwarvesf/smithy/backend"
 	backendConfig "github.com/dwarvesf/smithy/backend/config"
 	"github.com/dwarvesf/smithy/backend/sqlmapper"
 )
@@ -12,8 +13,14 @@ type Service struct {
 }
 
 // NewService new dashboard handler
-func NewService(cfg *backendConfig.Config) Service {
+func NewService(cfg *backendConfig.Config) (Service, error) {
+	mapper, err := backend.NewSQLMapper(cfg)
+	if err != nil {
+		return Service{}, err
+	}
+
 	return Service{
 		Wrapper: backendConfig.NewWrapper(cfg),
-	}
+		Mapper:  mapper,
+	}, nil
 }

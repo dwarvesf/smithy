@@ -8,7 +8,6 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 
-	"github.com/dwarvesf/smithy/backend"
 	"github.com/dwarvesf/smithy/backend/service"
 	"github.com/dwarvesf/smithy/backend/sqlmapper"
 	"github.com/dwarvesf/smithy/common/database"
@@ -71,10 +70,6 @@ func makeDBQueryEndpoint(s service.Service) endpoint.Endpoint {
 		if !ok {
 			return nil, errors.New("failed to make type assertion")
 		}
-		sqlmp, err := backend.NewSQLMapper(s.SyncConfig())
-		if err != nil {
-			return nil, err
-		}
 
 		q := sqlmapper.Query{
 			SourceTable: req.TableName,
@@ -83,7 +78,11 @@ func makeDBQueryEndpoint(s service.Service) endpoint.Endpoint {
 			Limit:       req.Limit,
 		}
 
-		var data interface{}
+		var (
+			data interface{}
+			err  error
+		)
+
 		switch req.Method {
 		case "FindByID":
 			var id int
@@ -91,19 +90,20 @@ func makeDBQueryEndpoint(s service.Service) endpoint.Endpoint {
 				return nil, err
 			}
 			q.Filter.Value = strconv.Itoa(id)
-			data, err = sqlmp.FindByID(q)
+			data, err = s.FindByID(q)
 		case "FindAll":
-			data, err = sqlmp.FindAll(q)
+			data, err = s.FindAll(q)
 		case "FindByColumnName":
 			var columnName, value string
 			if columnName, value, err = req.getColumnAndValue(); err != nil {
 				return nil, err
 			}
 			q.Filter = sqlmapper.Filter{ColName: columnName, Value: value}
-			data, err = sqlmp.FindByColumnName(q)
+			data, err = s.FindByColumnName(q)
 		default:
 			return nil, errors.New("unknown query method")
 		}
+
 		if err != nil {
 			return nil, err
 		}

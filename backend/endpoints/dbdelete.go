@@ -7,7 +7,6 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 
-	"github.com/dwarvesf/smithy/backend"
 	"github.com/dwarvesf/smithy/backend/service"
 )
 
@@ -33,17 +32,16 @@ func makeDBDeleteEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, errors.New("failed to make type assertion")
 		}
 
-		sqlmp, err := backend.NewSQLMapper(s.SyncConfig())
-		if err != nil {
-			return nil, err
-		}
+		var (
+			id  int
+			err error
+		)
 
-		var id int
 		if id, err = req.getResourceID(); err != nil {
 			return nil, err
 		}
 
-		if err := sqlmp.Delete(req.TableName, id); err != nil {
+		if err := s.Delete(req.TableName, id); err != nil {
 			return nil, err
 		}
 

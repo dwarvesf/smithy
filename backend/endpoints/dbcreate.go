@@ -6,7 +6,6 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 
-	"github.com/dwarvesf/smithy/backend"
 	"github.com/dwarvesf/smithy/backend/service"
 	"github.com/dwarvesf/smithy/backend/sqlmapper"
 )
@@ -30,12 +29,7 @@ func makeDBCreateEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, errors.New("failed to make type assertion")
 		}
 
-		sqlmp, err := backend.NewSQLMapper(s.SyncConfig())
-		if err != nil {
-			return nil, err
-		}
-
-		data, err := sqlmp.Create(req.TableName, req.Data)
+		data, err := s.Create(req.TableName, req.Data)
 		if err != nil {
 			return nil, err
 		}

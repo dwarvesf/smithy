@@ -44,7 +44,7 @@ func makeDBDeleteEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, err
 		}
 
-		if err := sqlmp.Delete(id); err != nil {
+		if err := sqlmp.Delete(req.TableName, id); err != nil {
 			return nil, err
 		}
 

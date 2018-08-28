@@ -46,7 +46,7 @@ func makeDBUpdateEndpoint(s service.Service) endpoint.Endpoint {
 		if id, err = req.getResourceID(); err != nil {
 			return nil, err
 		}
-		data, err := sqlmp.Update(req.Data, id)
+		data, err := sqlmp.Update(req.TableName, req.Data, id)
 
 		if err != nil {
 			return nil, err

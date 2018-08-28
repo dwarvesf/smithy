@@ -49,7 +49,7 @@ func (s *pgHookStore) Query(q sqlmapper.Query) ([]interface{}, error) {
 	return s.pgStore.Query(q)
 }
 
-func (s *pgHookStore) Create(d sqlmapper.RowData) (sqlmapper.RowData, error) {
+func (s *pgHookStore) Create(tableName string, d sqlmapper.RowData) (sqlmapper.RowData, error) {
 	if s.isBeforeCreateEnable() {
 		err := s.hookEngine.Eval(s.model.Hooks.BeforeCreate.Content)
 		if err != nil {
@@ -57,7 +57,7 @@ func (s *pgHookStore) Create(d sqlmapper.RowData) (sqlmapper.RowData, error) {
 		}
 	}
 
-	res, err := s.pgStore.Create(d)
+	res, err := s.pgStore.Create(tableName, d)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +72,7 @@ func (s *pgHookStore) Create(d sqlmapper.RowData) (sqlmapper.RowData, error) {
 	return res, nil
 }
 
-func (s *pgHookStore) Delete(id int) error {
+func (s *pgHookStore) Delete(tableName string, id int) error {
 	if s.isBeforeDeleteEnable() {
 		err := s.hookEngine.Eval(s.model.Hooks.BeforeDelete.Content)
 		if err != nil {
@@ -80,7 +80,7 @@ func (s *pgHookStore) Delete(id int) error {
 		}
 	}
 
-	res := s.pgStore.Delete(id)
+	res := s.pgStore.Delete(tableName, id)
 
 	if s.isAfterDeleteEnable() {
 		err := s.hookEngine.Eval(s.model.Hooks.AfterDelete.Content)
@@ -96,7 +96,7 @@ func (s *pgHookStore) FindByID(q sqlmapper.Query) (sqlmapper.RowData, error) {
 	return s.pgStore.FindByID(q)
 }
 
-func (s *pgHookStore) Update(d sqlmapper.RowData, id int) (sqlmapper.RowData, error) {
+func (s *pgHookStore) Update(tableName string, d sqlmapper.RowData, id int) (sqlmapper.RowData, error) {
 	if s.isBeforeUpdateEnable() {
 		err := s.hookEngine.Eval(s.model.Hooks.BeforeUpdate.Content)
 		if err != nil {
@@ -104,7 +104,7 @@ func (s *pgHookStore) Update(d sqlmapper.RowData, id int) (sqlmapper.RowData, er
 		}
 	}
 
-	res, err := s.pgStore.Update(d, id)
+	res, err := s.pgStore.Update(tableName, d, id)
 	if err != nil {
 		return nil, err
 	}

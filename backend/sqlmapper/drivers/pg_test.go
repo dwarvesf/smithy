@@ -128,8 +128,10 @@ func Test_pgStore_FindAll(t *testing.T) {
 			}
 
 			got, err := s.FindAll(sqlmapper.Query{
-				Offset: tt.args.Offset,
-				Limit:  tt.args.Limit,
+				SourceTable: tt.tableName,
+				Fields:      cols,
+				Offset:      tt.args.Offset,
+				Limit:       tt.args.Limit,
 			})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("pgStore.FindAll() error = %v, wantErr %v", err, tt.wantErr)
@@ -283,8 +285,10 @@ func Test_pgStore_FindByColumnName(t *testing.T) {
 
 			got, err := s.FindByColumnName(
 				sqlmapper.Query{
-					Offset: tt.args.Offset,
-					Limit:  tt.args.Limit,
+					Fields:      cols,
+					SourceTable: tt.tableName,
+					Offset:      tt.args.Offset,
+					Limit:       tt.args.Limit,
 					Filter: sqlmapper.Filter{
 						ColName: tt.args.ColumnName,
 						Value:   tt.args.Value,
@@ -405,7 +409,9 @@ func Test_pgStore_FindByID(t *testing.T) {
 			}
 
 			got, err := s.FindByID(sqlmapper.Query{
-				Filter: sqlmapper.Filter{Value: strconv.Itoa(tt.args.id)},
+				SourceTable: tt.tableName,
+				Fields:      cols,
+				Filter:      sqlmapper.Filter{Value: strconv.Itoa(tt.args.id)},
 			})
 			if err != nil {
 				if !tt.wantErr {
@@ -514,7 +520,7 @@ func Test_pgStore_Delete(t *testing.T) {
 				s = NewPGStore(cfg.DB(), tt.tableName, cols, cfg.ModelList)
 			}
 
-			err := s.Delete(tt.args.id)
+			err := s.Delete(tt.tableName, tt.args.id)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("pgStore.Delete() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -587,7 +593,7 @@ func Test_pgStore_Create(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := NewPGStore(cfg.DB(), tt.tableName, []database.Column{}, cfg.ModelList)
-			got, err := s.Create(tt.args.data)
+			got, err := s.Create(tt.tableName, tt.args.data)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("pgStore.Create() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -702,7 +708,7 @@ func Test_pgStore_Update(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := NewPGStore(cfg.DB(), tt.tableName, []database.Column{}, cfg.ModelList)
-			got, err := s.Update(tt.args.d, tt.args.id)
+			got, err := s.Update(tt.tableName, tt.args.d, tt.args.id)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("pgStore.Update() error = %v, wantErr %v", err, tt.wantErr)
 				return

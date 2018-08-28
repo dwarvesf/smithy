@@ -20,10 +20,6 @@ type pgStore struct {
 	ModelList []database.Model
 }
 
-func (s *pgStore) columnNames() string {
-	return strings.Join(database.Columns(s.Columns).Names(), ",")
-}
-
 // NewPGStore .
 func NewPGStore(db *gorm.DB, tableName string, cols []database.Column, modelList []database.Model) sqlmapper.Mapper {
 	return &pgStore{db, tableName, cols, modelList}
@@ -34,8 +30,8 @@ func (s *pgStore) Query(q sqlmapper.Query) ([]interface{}, error) {
 }
 
 func (s *pgStore) FindAll(q sqlmapper.Query) ([]sqlmapper.RowData, error) {
-	db := s.db.Table(s.TableName).
-		Select(s.columnNames()).
+	db := s.db.Table(q.SourceTable).
+		Select(q.ColumnNames()).
 		Offset(q.Offset)
 
 	var (
@@ -62,7 +58,7 @@ func (s *pgStore) FindAll(q sqlmapper.Query) ([]sqlmapper.RowData, error) {
 }
 
 func (s *pgStore) FindByID(q sqlmapper.Query) (sqlmapper.RowData, error) {
-	row := s.db.Table(s.TableName).Select(s.columnNames()).Where("id = ?", q.Filter.Value).Row()
+	row := s.db.Table(q.SourceTable).Select(q.ColumnNames()).Where("id = ?", q.Filter.Value).Row()
 	res, err := sqlmapper.RowToQueryResult(row, s.Columns)
 	if err != nil {
 		return nil, err
@@ -71,8 +67,8 @@ func (s *pgStore) FindByID(q sqlmapper.Query) (sqlmapper.RowData, error) {
 	return sqlmapper.RowData(res), nil
 }
 
-func (s *pgStore) Create(d sqlmapper.RowData) (sqlmapper.RowData, error) {
-	if err := verifyInput(d, s.TableName, s.ModelList); err != nil {
+func (s *pgStore) Create(tableName string, d sqlmapper.RowData) (sqlmapper.RowData, error) {
+	if err := verifyInput(d, tableName, s.ModelList); err != nil {
 		return nil, err
 	}
 
@@ -83,7 +79,7 @@ func (s *pgStore) Create(d sqlmapper.RowData) (sqlmapper.RowData, error) {
 	phs := strmangle.Placeholders(true, len(cols), 1, 1)
 
 	execQuery := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s) RETURNING id;",
-		s.TableName,
+		tableName,
 		strings.Join(cols, ","),
 		phs)
 
@@ -101,13 +97,13 @@ func (s *pgStore) Create(d sqlmapper.RowData) (sqlmapper.RowData, error) {
 	return d, nil
 }
 
-func (s *pgStore) Delete(id int) error {
-	if notExist, _ := s.isIDNotExist(id); !notExist {
+func (s *pgStore) Delete(tableName string, id int) error {
+	if notExist, _ := s.isIDNotExist(tableName, id); !notExist {
 		return errors.New("primary key is not exist")
 	}
 
 	exec := fmt.Sprintf("DELETE FROM %s WHERE %s=%v",
-		s.TableName,
+		tableName,
 		"id",
 		id)
 
@@ -189,8 +185,8 @@ func filterRowData(d sqlmapper.RowData) sqlmapper.RowData {
 
 func (s *pgStore) FindByColumnName(q sqlmapper.Query) ([]sqlmapper.RowData, error) {
 	// TODO: check sql injection
-	db := s.db.Table(s.TableName).
-		Select(s.columnNames()).
+	db := s.db.Table(q.SourceTable).
+		Select(q.ColumnNames()).
 		Where(q.Filter.ColName+" LIKE ?", "%"+q.Filter.Value+"%").
 		Offset(q.Offset)
 
@@ -218,12 +214,12 @@ func (s *pgStore) FindByColumnName(q sqlmapper.Query) ([]sqlmapper.RowData, erro
 	return sqlmapper.RowsToQueryResults(rows, s.Columns)
 }
 
-func (s *pgStore) Update(d sqlmapper.RowData, id int) (sqlmapper.RowData, error) {
-	if notExist, _ := s.isIDNotExist(id); !notExist {
+func (s *pgStore) Update(tableName string, d sqlmapper.RowData, id int) (sqlmapper.RowData, error) {
+	if notExist, _ := s.isIDNotExist(tableName, id); !notExist {
 		return nil, errors.New("primary key is not exist")
 	}
 
-	if err := verifyInput(d, s.TableName, s.ModelList); err != nil {
+	if err := verifyInput(d, tableName, s.ModelList); err != nil {
 		return nil, err
 	}
 
@@ -237,7 +233,7 @@ func (s *pgStore) Update(d sqlmapper.RowData, id int) (sqlmapper.RowData, error)
 	}
 
 	execQuery := fmt.Sprintf("UPDATE %s SET %s WHERE id = %d",
-		s.TableName,
+		tableName,
 		strings.Join(rowQuery, ","),
 		id)
 
@@ -246,12 +242,12 @@ func (s *pgStore) Update(d sqlmapper.RowData, id int) (sqlmapper.RowData, error)
 	}
 	return d, nil
 }
-func (s *pgStore) isIDNotExist(id int) (bool, error) {
+func (s *pgStore) isIDNotExist(tableName string, id int) (bool, error) {
 	data := struct {
 		Result bool
 	}{}
 
-	execQuery := fmt.Sprintf("SELECT EXISTS(SELECT 1 FROM %s WHERE id = %d) as result", s.TableName, id)
+	execQuery := fmt.Sprintf("SELECT EXISTS(SELECT 1 FROM %s WHERE id = %d) as result", tableName, id)
 
 	return data.Result, s.db.Raw(execQuery).Scan(&data).Error
 }

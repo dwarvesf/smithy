@@ -3,15 +3,16 @@ package sqlmapper
 import (
 	"database/sql"
 	"encoding/json"
+	"strings"
 
 	"github.com/dwarvesf/smithy/common/database"
 )
 
 // Mapper interface for mapping query from sql to corresponding database engine
 type Mapper interface {
-	Create(d RowData) (RowData, error)
-	Update(d RowData, id int) (RowData, error)
-	Delete(id int) error
+	Create(tableName string, d RowData) (RowData, error)
+	Update(tableName string, d RowData, id int) (RowData, error)
+	Delete(tableName string, id int) error
 	Query(Query) ([]interface{}, error)
 	FindAll(Query) ([]RowData, error)
 	FindByID(Query) (RowData, error)
@@ -25,6 +26,11 @@ type Query struct {
 	Filter      Filter
 	Offset      int
 	Limit       int
+}
+
+// ColumnNames return columns name in query
+func (q *Query) ColumnNames() string {
+	return strings.Join(database.Columns(q.Fields).Names(), ", ")
 }
 
 // Filter containt filter

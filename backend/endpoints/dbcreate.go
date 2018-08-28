@@ -36,7 +36,7 @@ func makeDBCreateEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, err
 		}
 
-		data, err := sqlmp.Create(req.Data)
+		data, err := sqlmp.Create(req.TableName, req.Data)
 		if err != nil {
 			return nil, err
 		}

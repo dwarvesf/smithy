@@ -3,6 +3,7 @@ package sqlmapper
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	"github.com/dwarvesf/smithy/common/database"
@@ -14,6 +15,7 @@ type Mapper interface {
 	Update(tableName string, d RowData, id int) (RowData, error)
 	Delete(tableName string, id int) error
 	Query(Query) ([]string, []interface{}, error)
+	ColumnMetadata(Query) ([]database.Column, error)
 }
 
 // Query containt query data for a query request
@@ -35,15 +37,26 @@ func (q *Query) Columns() []string {
 	return q.Fields
 }
 
-// ColumnMetadata .
-func (q *Query) ColumnMetadata([]database.Column) []database.Column {
-	return nil
+// ColumnMetadata convert query to column spec
+func (q *Query) ColumnMetadata(columns []database.Column) ([]database.Column, error) {
+	res := []database.Column{}
+	colMap := database.Columns(columns).GroupByName()
+	for _, field := range q.Fields {
+		cols, ok := colMap[field]
+		if !ok {
+			return nil, fmt.Errorf("unknown field %s ", field)
+		}
+
+		res = append(res, cols[0]) // expect all cols is a same column, if dupplicate happened
+	}
+
+	return res, nil
 }
 
 // Filter containt filter
 type Filter struct {
-	Operator   string      `json:"operator"`    // "="
-	ColumnName string      `json:"column_name"` // TODO: extend filter type
+	Operator   string      `json:"operator"` // "="
+	ColumnName string      `json:"column_name"`
 	Value      interface{} `json:"value"`
 }
 

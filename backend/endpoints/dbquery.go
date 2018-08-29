@@ -24,29 +24,16 @@ type DBQueryResponse struct {
 	Cols    []database.Column `json:"cols,omitempty"`
 }
 
-// // UpdateColumnsByCols .
-// func (r *DBQueryRequest) UpdateColumnsByCols() error {
-// 	res := []database.Column{}
-// 	for _, col := range r.Cols {
-// 		tmp := strings.Split(col, ",")
-// 		if len(tmp) != 2 {
-// 			return errors.New("wrong format of a column need at least 2 element")
-// 		}
-
-// 		name, colType := tmp[0], tmp[1]
-// 		res = append(res, database.Column{Name: name, Type: colType})
-// 	}
-
-// 	r.Columns = res
-
-// 	return nil
-// }
-
 func makeDBQueryEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(DBQueryRequest)
 		if !ok {
 			return nil, errors.New("failed to make type assertion")
+		}
+
+		columnMeta, err := s.ColumnMetadata(req.Query)
+		if err != nil {
+			return nil, err
 		}
 
 		columns, data, err := s.Query(req.Query)
@@ -58,6 +45,7 @@ func makeDBQueryEndpoint(s service.Service) endpoint.Endpoint {
 			Status:  "success",
 			Columns: columns,
 			Rows:    data,
+			Cols:    columnMeta,
 		}, nil
 	}
 }

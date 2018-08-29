@@ -25,6 +25,10 @@ func (s *pgHookStore) Query(q sqlmapper.Query) ([]string, []interface{}, error) 
 	return s.pgStore.Query(q)
 }
 
+func (s *pgHookStore) ColumnMetadata(q sqlmapper.Query) ([]database.Column, error) {
+	return s.pgStore.ColumnMetadata(q)
+}
+
 func (s *pgHookStore) Create(tableName string, d sqlmapper.RowData) (sqlmapper.RowData, error) {
 	model := database.Models(s.models).ModelByTableName()[tableName]
 	if model.IsBeforeCreateEnable() {

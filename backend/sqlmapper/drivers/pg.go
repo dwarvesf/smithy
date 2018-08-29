@@ -13,13 +13,16 @@ import (
 )
 
 type pgStore struct {
-	db        *gorm.DB
-	ModelList []database.Model
+	db       *gorm.DB
+	modelMap map[string]database.Model
 }
 
 // NewPGStore .
 func NewPGStore(db *gorm.DB, modelList []database.Model) sqlmapper.Mapper {
-	return &pgStore{db, modelList}
+	return &pgStore{
+		db:       db,
+		modelMap: database.Models(modelList).GroupByName(),
+	}
 }
 
 func (s *pgStore) addFilter(q sqlmapper.Query, db *gorm.DB) (*gorm.DB, error) {
@@ -74,8 +77,17 @@ func (s *pgStore) Query(q sqlmapper.Query) ([]string, []interface{}, error) {
 	return q.Columns(), data, err
 }
 
+func (s *pgStore) ColumnMetadata(q sqlmapper.Query) ([]database.Column, error) {
+	m, ok := s.modelMap[q.SourceTable]
+	if !ok {
+		return nil, fmt.Errorf("uknown source_table %s", q.SourceTable)
+	}
+
+	return q.ColumnMetadata(m.Columns)
+}
+
 func (s *pgStore) Create(tableName string, d sqlmapper.RowData) (sqlmapper.RowData, error) {
-	if err := verifyInput(d, tableName, s.ModelList); err != nil {
+	if err := verifyInput(d, tableName, s.modelMap); err != nil {
 		return nil, err
 	}
 
@@ -120,7 +132,7 @@ func (s *pgStore) Delete(tableName string, id int) error {
 	return nil
 }
 
-func verifyInput(d sqlmapper.RowData, tableName string, modelList []database.Model) error {
+func verifyInput(d sqlmapper.RowData, tableName string, modelList map[string]database.Model) error {
 	// name data_type nullable primary_key
 	d = filterRowData(d)
 	if len(d) <= 0 {
@@ -195,7 +207,7 @@ func (s *pgStore) Update(tableName string, d sqlmapper.RowData, id int) (sqlmapp
 		return nil, errors.New("primary key is not exist")
 	}
 
-	if err := verifyInput(d, tableName, s.ModelList); err != nil {
+	if err := verifyInput(d, tableName, s.modelMap); err != nil {
 		return nil, err
 	}
 

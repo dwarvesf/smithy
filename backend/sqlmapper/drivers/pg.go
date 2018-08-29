@@ -15,33 +15,31 @@ import (
 
 type pgStore struct {
 	db        *gorm.DB
-	TableName string
-	Columns   []database.Column
 	ModelList []database.Model
 }
 
-func (s *pgStore) columnNames() string {
-	return strings.Join(database.Columns(s.Columns).Names(), ",")
-}
-
 // NewPGStore .
-func NewPGStore(db *gorm.DB, tableName string, columns []database.Column, modelList []database.Model) sqlmapper.Mapper {
-	return &pgStore{db, tableName, columns, modelList}
+func NewPGStore(db *gorm.DB, modelList []database.Model) sqlmapper.Mapper {
+	return &pgStore{db, modelList}
 }
 
-func (s *pgStore) FindAll(offset int, limit int) ([]sqlmapper.RowData, error) {
-	db := s.db.Table(s.TableName).
-		Select(s.columnNames()).
-		Offset(offset)
+func (s *pgStore) Query(q sqlmapper.Query) ([]interface{}, error) {
+	return nil, nil
+}
+
+func (s *pgStore) FindAll(q sqlmapper.Query) ([]sqlmapper.RowData, error) {
+	db := s.db.Table(q.SourceTable).
+		Select(q.ColumnNames()).
+		Offset(q.Offset)
 
 	var (
 		rows *sql.Rows
 		err  error
 	)
-	if limit <= 0 {
+	if q.Limit <= 0 {
 		rows, err = db.Rows()
 	} else {
-		rows, err = db.Limit(limit).Rows()
+		rows, err = db.Limit(q.Limit).Rows()
 	}
 
 	defer func() {
@@ -54,12 +52,12 @@ func (s *pgStore) FindAll(offset int, limit int) ([]sqlmapper.RowData, error) {
 	if err != nil {
 		return nil, err
 	}
-	return sqlmapper.RowsToQueryResults(rows, s.Columns)
+	return sqlmapper.RowsToQueryResults(rows, q.Fields)
 }
 
-func (s *pgStore) FindByID(id int) (sqlmapper.RowData, error) {
-	row := s.db.Table(s.TableName).Select(s.columnNames()).Where("id = ?", id).Row()
-	res, err := sqlmapper.RowToQueryResult(row, s.Columns)
+func (s *pgStore) FindByID(q sqlmapper.Query) (sqlmapper.RowData, error) {
+	row := s.db.Table(q.SourceTable).Select(q.ColumnNames()).Where("id = ?", q.Filter.Value).Row()
+	res, err := sqlmapper.RowToQueryResult(row, q.Fields)
 	if err != nil {
 		return nil, err
 	}
@@ -67,8 +65,8 @@ func (s *pgStore) FindByID(id int) (sqlmapper.RowData, error) {
 	return sqlmapper.RowData(res), nil
 }
 
-func (s *pgStore) Create(d sqlmapper.RowData) (sqlmapper.RowData, error) {
-	if err := verifyInput(d, s.TableName, s.ModelList); err != nil {
+func (s *pgStore) Create(tableName string, d sqlmapper.RowData) (sqlmapper.RowData, error) {
+	if err := verifyInput(d, tableName, s.ModelList); err != nil {
 		return nil, err
 	}
 
@@ -79,7 +77,7 @@ func (s *pgStore) Create(d sqlmapper.RowData) (sqlmapper.RowData, error) {
 	phs := strmangle.Placeholders(true, len(cols), 1, 1)
 
 	execQuery := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s) RETURNING id;",
-		s.TableName,
+		tableName,
 		strings.Join(cols, ","),
 		phs)
 
@@ -97,13 +95,13 @@ func (s *pgStore) Create(d sqlmapper.RowData) (sqlmapper.RowData, error) {
 	return d, nil
 }
 
-func (s *pgStore) Delete(id int) error {
-	if notExist, _ := s.isIDNotExist(id); !notExist {
+func (s *pgStore) Delete(tableName string, id int) error {
+	if notExist, _ := s.isIDNotExist(tableName, id); !notExist {
 		return errors.New("primary key is not exist")
 	}
 
 	exec := fmt.Sprintf("DELETE FROM %s WHERE %s=%v",
-		s.TableName,
+		tableName,
 		"id",
 		id)
 
@@ -183,21 +181,21 @@ func filterRowData(d sqlmapper.RowData) sqlmapper.RowData {
 	return d
 }
 
-func (s *pgStore) FindByColumnName(columnName string, value string, offset int, limit int) ([]sqlmapper.RowData, error) {
+func (s *pgStore) FindByColumnName(q sqlmapper.Query) ([]sqlmapper.RowData, error) {
 	// TODO: check sql injection
-	db := s.db.Table(s.TableName).
-		Select(s.columnNames()).
-		Where(columnName+" LIKE ?", "%"+value+"%").
-		Offset(offset)
+	db := s.db.Table(q.SourceTable).
+		Select(q.ColumnNames()).
+		Where(q.Filter.ColName+" LIKE ?", "%"+q.Filter.Value+"%").
+		Offset(q.Offset)
 
 	var (
 		rows *sql.Rows
 		err  error
 	)
-	if limit <= 0 {
+	if q.Limit <= 0 {
 		rows, err = db.Rows()
 	} else {
-		rows, err = db.Limit(limit).Rows()
+		rows, err = db.Limit(q.Limit).Rows()
 	}
 
 	defer func() {
@@ -211,15 +209,15 @@ func (s *pgStore) FindByColumnName(columnName string, value string, offset int, 
 		return nil, err
 	}
 
-	return sqlmapper.RowsToQueryResults(rows, s.Columns)
+	return sqlmapper.RowsToQueryResults(rows, q.Fields)
 }
 
-func (s *pgStore) Update(d sqlmapper.RowData, id int) (sqlmapper.RowData, error) {
-	if notExist, _ := s.isIDNotExist(id); !notExist {
+func (s *pgStore) Update(tableName string, d sqlmapper.RowData, id int) (sqlmapper.RowData, error) {
+	if notExist, _ := s.isIDNotExist(tableName, id); !notExist {
 		return nil, errors.New("primary key is not exist")
 	}
 
-	if err := verifyInput(d, s.TableName, s.ModelList); err != nil {
+	if err := verifyInput(d, tableName, s.ModelList); err != nil {
 		return nil, err
 	}
 
@@ -233,7 +231,7 @@ func (s *pgStore) Update(d sqlmapper.RowData, id int) (sqlmapper.RowData, error)
 	}
 
 	execQuery := fmt.Sprintf("UPDATE %s SET %s WHERE id = %d",
-		s.TableName,
+		tableName,
 		strings.Join(rowQuery, ","),
 		id)
 
@@ -242,12 +240,12 @@ func (s *pgStore) Update(d sqlmapper.RowData, id int) (sqlmapper.RowData, error)
 	}
 	return d, nil
 }
-func (s *pgStore) isIDNotExist(id int) (bool, error) {
+func (s *pgStore) isIDNotExist(tableName string, id int) (bool, error) {
 	data := struct {
 		Result bool
 	}{}
 
-	execQuery := fmt.Sprintf("SELECT EXISTS(SELECT 1 FROM %s WHERE id = %d) as result", s.TableName, id)
+	execQuery := fmt.Sprintf("SELECT EXISTS(SELECT 1 FROM %s WHERE id = %d) as result", tableName, id)
 
 	return data.Result, s.db.Raw(execQuery).Scan(&data).Error
 }

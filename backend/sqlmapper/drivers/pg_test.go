@@ -5,6 +5,7 @@ package drivers
 import (
 	"math"
 	"reflect"
+	"strconv"
 	"testing"
 
 	"github.com/dwarvesf/smithy/backend/sqlmapper"
@@ -121,12 +122,17 @@ func Test_pgStore_FindAll(t *testing.T) {
 				if err != nil {
 					t.Fatalf("Failed to migrate table by error %v", err)
 				}
-				s = NewPGStore(cfgEmpty.DB(), tt.tableName, cols, cfgEmpty.ModelList)
+				s = NewPGStore(cfgEmpty.DB(), cfgEmpty.ModelList)
 			} else {
-				s = NewPGStore(cfg.DB(), tt.tableName, cols, cfg.ModelList)
+				s = NewPGStore(cfg.DB(), cfg.ModelList)
 			}
 
-			got, err := s.FindAll(tt.args.Offset, tt.args.Limit)
+			got, err := s.FindAll(sqlmapper.Query{
+				SourceTable: tt.tableName,
+				Fields:      cols,
+				Offset:      tt.args.Offset,
+				Limit:       tt.args.Limit,
+			})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("pgStore.FindAll() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -153,7 +159,7 @@ func Test_pgStore_FindAll(t *testing.T) {
 				if len(got) != len(tt.want) ||
 					id != tt.want[i].ID ||
 					name != tt.want[i].Name {
-					t.Errorf("pgStore.FindByColumnName() = %v, want %v", got, tt.want)
+					t.Errorf("pgStore.FindAll() = %v, want %v", got, tt.want)
 				}
 			}
 		})
@@ -272,12 +278,22 @@ func Test_pgStore_FindByColumnName(t *testing.T) {
 				if err != nil {
 					t.Fatalf("Failed to migrate table by error %v", err)
 				}
-				s = NewPGStore(cfgEmpty.DB(), tt.tableName, cols, cfgEmpty.ModelList)
+				s = NewPGStore(cfgEmpty.DB(), cfgEmpty.ModelList)
 			} else {
-				s = NewPGStore(cfg.DB(), tt.tableName, cols, cfg.ModelList)
+				s = NewPGStore(cfg.DB(), cfg.ModelList)
 			}
 
-			got, err := s.FindByColumnName(tt.args.ColumnName, tt.args.Value, tt.args.Offset, tt.args.Limit)
+			got, err := s.FindByColumnName(
+				sqlmapper.Query{
+					Fields:      cols,
+					SourceTable: tt.tableName,
+					Offset:      tt.args.Offset,
+					Limit:       tt.args.Limit,
+					Filter: sqlmapper.Filter{
+						ColName: tt.args.ColumnName,
+						Value:   tt.args.Value,
+					},
+				})
 			if (err != nil) != tt.wantErr {
 				t.Errorf("pgStore.FindByColumnName() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -387,12 +403,16 @@ func Test_pgStore_FindByID(t *testing.T) {
 				if err != nil {
 					t.Fatalf("Failed to migrate table by error %v", err)
 				}
-				s = NewPGStore(cfgEmpty.DB(), tt.tableName, cols, cfgEmpty.ModelList)
+				s = NewPGStore(cfgEmpty.DB(), cfgEmpty.ModelList)
 			} else {
-				s = NewPGStore(cfg.DB(), tt.tableName, cols, cfg.ModelList)
+				s = NewPGStore(cfg.DB(), cfg.ModelList)
 			}
 
-			got, err := s.FindByID(tt.args.id)
+			got, err := s.FindByID(sqlmapper.Query{
+				SourceTable: tt.tableName,
+				Fields:      cols,
+				Filter:      sqlmapper.Filter{Value: strconv.Itoa(tt.args.id)},
+			})
 			if err != nil {
 				if !tt.wantErr {
 					t.Errorf("pgStore.FindByID() error = %v, wantErr %v", err, tt.wantErr)
@@ -436,17 +456,6 @@ func Test_pgStore_Delete(t *testing.T) {
 	_, err = utilTest.CreateUserSampleData(cfg.DB())
 	if err != nil {
 		t.Fatalf("Failed to create sample data by error %v", err)
-	}
-
-	cols := []database.Column{
-		{
-			Name: "id",
-			Type: "int",
-		},
-		{
-			Name: "name",
-			Type: "string",
-		},
 	}
 
 	type args struct {
@@ -495,12 +504,12 @@ func Test_pgStore_Delete(t *testing.T) {
 				if err != nil {
 					t.Fatalf("Failed to migrate table by error %v", err)
 				}
-				s = NewPGStore(cfgEmpty.DB(), tt.tableName, cols, cfgEmpty.ModelList)
+				s = NewPGStore(cfgEmpty.DB(), cfgEmpty.ModelList)
 			} else {
-				s = NewPGStore(cfg.DB(), tt.tableName, cols, cfg.ModelList)
+				s = NewPGStore(cfg.DB(), cfg.ModelList)
 			}
 
-			err := s.Delete(tt.args.id)
+			err := s.Delete(tt.tableName, tt.args.id)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("pgStore.Delete() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -572,8 +581,8 @@ func Test_pgStore_Create(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := NewPGStore(cfg.DB(), tt.tableName, []database.Column{}, cfg.ModelList)
-			got, err := s.Create(tt.args.data)
+			s := NewPGStore(cfg.DB(), cfg.ModelList)
+			got, err := s.Create(tt.tableName, tt.args.data)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("pgStore.Create() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -687,8 +696,8 @@ func Test_pgStore_Update(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := NewPGStore(cfg.DB(), tt.tableName, []database.Column{}, cfg.ModelList)
-			got, err := s.Update(tt.args.d, tt.args.id)
+			s := NewPGStore(cfg.DB(), cfg.ModelList)
+			got, err := s.Update(tt.tableName, tt.args.d, tt.args.id)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("pgStore.Update() error = %v, wantErr %v", err, tt.wantErr)
 				return

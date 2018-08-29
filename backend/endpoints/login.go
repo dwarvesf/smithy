@@ -36,14 +36,14 @@ func makeLoginEndpoint(s service.Service) endpoint.Endpoint {
 		// otherwise return login fail
 
 		// if login fail
-		ok, rule := login(req.Username, req.Password, s.Config.Config().ConvertUserListToMap())
+		ok, rule := login(req.Username, req.Password, s.SyncConfig().ConvertUserListToMap())
 
 		if !ok {
 			return nil, jwtAuth.ErrLogin
 		}
 
 		// create user authentication
-		loginAuth := backend.NewAuthenticate(s.Config.Config(), req.Username, rule)
+		loginAuth := backend.NewAuthenticate(s.SyncConfig(), req.Username, rule)
 
 		// login success
 		// return json with jwt is attached

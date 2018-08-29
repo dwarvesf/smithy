@@ -27,10 +27,10 @@ func makeRevertVersionEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, errors.New("failed to make type assertion")
 		}
 
-		if err := s.Config.Config().ChangeVersion(req.VersionID); err != nil {
+		if err := s.SyncConfig().ChangeVersion(req.VersionID); err != nil {
 			return nil, err
 		}
 
-		return RevertVersionResponse{s.Config.Config().Version}, nil
+		return RevertVersionResponse{s.SyncConfig().Version}, nil
 	}
 }

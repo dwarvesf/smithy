@@ -14,9 +14,6 @@ type Mapper interface {
 	Update(tableName string, d RowData, id int) (RowData, error)
 	Delete(tableName string, id int) error
 	Query(Query) ([]string, []interface{}, error)
-	// FindAll(Query) ([]RowData, error)
-	// FindByID(Query) (RowData, error)
-	// FindByColumnName(Query) ([]RowData, error)
 }
 
 // Query containt query data for a query request
@@ -48,6 +45,11 @@ type Filter struct {
 	Operator   string      `json:"operator"`    // "="
 	ColumnName string      `json:"column_name"` // TODO: extend filter type
 	Value      interface{} `json:"value"`
+}
+
+// IsZero check filter is empty
+func (f *Filter) IsZero() bool {
+	return f.Operator == ""
 }
 
 // Columns return columns listed in RowData

@@ -1,7 +1,6 @@
 package drivers
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"strings"
@@ -23,19 +22,41 @@ func NewPGStore(db *gorm.DB, modelList []database.Model) sqlmapper.Mapper {
 	return &pgStore{db, modelList}
 }
 
+func (s *pgStore) addFilter(q sqlmapper.Query, db *gorm.DB) (*gorm.DB, error) {
+	if q.Filter.IsZero() {
+		return db, nil
+	}
+
+	switch q.Filter.Operator {
+	case "=":
+		return db.Where(q.Filter.ColumnName+" = ?", q.Filter.Value), nil
+	default:
+		return db, fmt.Errorf("unknown filter operator %s", q.Filter.Operator)
+	}
+}
+
+func (s *pgStore) addLimitOffset(q sqlmapper.Query, db *gorm.DB) *gorm.DB {
+	db = db.Offset(q.Offset)
+	if q.Limit > 0 {
+		db = db.Limit(q.Limit)
+	}
+
+	return db
+}
+
 func (s *pgStore) Query(q sqlmapper.Query) ([]string, []interface{}, error) {
 	db := s.db.Table(q.SourceTable).
-		Select(q.ColumnNames()).
-		Offset(q.Offset)
+		Select(q.ColumnNames())
 
-	var (
-		rows *sql.Rows
-		err  error
-	)
-	if q.Limit <= 0 {
-		rows, err = db.Rows()
-	} else {
-		rows, err = db.Limit(q.Limit).Rows()
+	db = s.addLimitOffset(q, db)
+	db, err := s.addFilter(q, db)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	rows, err := db.Rows()
+	if err != nil {
+		return nil, nil, err
 	}
 
 	defer func() {
@@ -52,45 +73,6 @@ func (s *pgStore) Query(q sqlmapper.Query) ([]string, []interface{}, error) {
 
 	return q.Columns(), data, err
 }
-
-// func (s *pgStore) FindAll(q sqlmapper.Query) ([]sqlmapper.RowData, error) {
-// 	db := s.db.Table(q.SourceTable).
-// 		Select(q.ColumnNames()).
-// 		Offset(q.Offset)
-
-// 	var (
-// 		rows *sql.Rows
-// 		err  error
-// 	)
-// 	if q.Limit <= 0 {
-// 		rows, err = db.Rows()
-// 	} else {
-// 		rows, err = db.Limit(q.Limit).Rows()
-// 	}
-
-// 	defer func() {
-// 		if err != nil {
-// 			return
-// 		}
-// 		rows.Close()
-// 	}()
-
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	return sqlmapper.RowsToQueryResults(rows, q.Fields)
-// }
-
-// func (s *pgStore) FindByID(q sqlmapper.Query) (sqlmapper.RowData, error) {
-// 	row := s.db.Table(q.SourceTable).Select(q.ColumnNames()).Where("id = ?", q.Filter.Value).Row()
-// 	res, err := sqlmapper.RowToQueryResult(row, q.Fields)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	return sqlmapper.RowData(res), nil
-// }
 
 func (s *pgStore) Create(tableName string, d sqlmapper.RowData) (sqlmapper.RowData, error) {
 	if err := verifyInput(d, tableName, s.ModelList); err != nil {
@@ -207,37 +189,6 @@ func filterRowData(d sqlmapper.RowData) sqlmapper.RowData {
 	}
 	return d
 }
-
-// func (s *pgStore) FindByColumnName(q sqlmapper.Query) ([]sqlmapper.RowData, error) {
-// 	// TODO: check sql injection
-// 	db := s.db.Table(q.SourceTable).
-// 		Select(q.ColumnNames()).
-// 		Where(q.Filter.ColName+" LIKE ?", "%"+fmt.Sprintf("%v", q.Filter.Value)+"%").
-// 		Offset(q.Offset)
-
-// 	var (
-// 		rows *sql.Rows
-// 		err  error
-// 	)
-// 	if q.Limit <= 0 {
-// 		rows, err = db.Rows()
-// 	} else {
-// 		rows, err = db.Limit(q.Limit).Rows()
-// 	}
-
-// 	defer func() {
-// 		if err != nil {
-// 			return
-// 		}
-// 		rows.Close()
-// 	}()
-
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	return sqlmapper.RowsToQueryResults(rows, q.Fields)
-// }
 
 func (s *pgStore) Update(tableName string, d sqlmapper.RowData, id int) (sqlmapper.RowData, error) {
 	if notExist, _ := s.isIDNotExist(tableName, id); !notExist {

@@ -32,7 +32,7 @@ func checkConfig(c *backendConfig.Config) error {
 // NewSQLMapper create new new sqlmapper to working with request query
 func NewSQLMapper(c *backendConfig.Config) (sqlmapper.Mapper, error) {
 	switch c.DBType {
-	case "postgres": // TODO(@hieunmce): must firgue out how make hook work
+	case "postgres":
 		return sqlmapperDrv.NewPGHookStore(
 			sqlmapperDrv.NewPGStore(c.DB(), c.ModelList),
 			c.ModelList,

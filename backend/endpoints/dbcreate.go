@@ -34,6 +34,6 @@ func makeDBCreateEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, err
 		}
 
-		return DBQueryResponse{"success", data}, nil
+		return DBCreateResponse{"success", data}, nil
 	}
 }

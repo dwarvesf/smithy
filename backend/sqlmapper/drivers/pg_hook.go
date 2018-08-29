@@ -21,7 +21,7 @@ func NewPGHookStore(store sqlmapper.Mapper, models []database.Model) sqlmapper.M
 	}
 }
 
-func (s *pgHookStore) Query(q sqlmapper.Query) ([]interface{}, error) {
+func (s *pgHookStore) Query(q sqlmapper.Query) ([]string, []interface{}, error) {
 	return s.pgStore.Query(q)
 }
 
@@ -70,10 +70,6 @@ func (s *pgHookStore) Delete(tableName string, id int) error {
 	return res
 }
 
-func (s *pgHookStore) FindByID(q sqlmapper.Query) (sqlmapper.RowData, error) {
-	return s.pgStore.FindByID(q)
-}
-
 func (s *pgHookStore) Update(tableName string, d sqlmapper.RowData, id int) (sqlmapper.RowData, error) {
 	model := database.Models(s.models).ModelByTableName()[tableName]
 	if model.IsBeforeUpdateEnable() {
@@ -96,12 +92,4 @@ func (s *pgHookStore) Update(tableName string, d sqlmapper.RowData, id int) (sql
 	}
 
 	return res, nil
-}
-
-func (s *pgHookStore) FindByColumnName(q sqlmapper.Query) ([]sqlmapper.RowData, error) {
-	return s.pgStore.FindByColumnName(q)
-}
-
-func (s *pgHookStore) FindAll(q sqlmapper.Query) ([]sqlmapper.RowData, error) {
-	return s.pgStore.FindAll(q)
 }

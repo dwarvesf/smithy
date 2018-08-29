@@ -13,30 +13,41 @@ type Mapper interface {
 	Create(tableName string, d RowData) (RowData, error)
 	Update(tableName string, d RowData, id int) (RowData, error)
 	Delete(tableName string, id int) error
-	Query(Query) ([]interface{}, error)
-	FindAll(Query) ([]RowData, error)
-	FindByID(Query) (RowData, error)
-	FindByColumnName(Query) ([]RowData, error)
+	Query(Query) ([]string, []interface{}, error)
+	// FindAll(Query) ([]RowData, error)
+	// FindByID(Query) (RowData, error)
+	// FindByColumnName(Query) ([]RowData, error)
 }
 
 // Query containt query data for a query request
 type Query struct {
-	SourceTable string
-	Fields      []database.Column
-	Filter      Filter
-	Offset      int
-	Limit       int
+	SourceTable string   `json:"source_table"`
+	Fields      []string `json:"fields"`
+	Filter      Filter   `json:"filter"`
+	Offset      int      `json:"offset"`
+	Limit       int      `json:"limit"`
 }
 
 // ColumnNames return columns name in query
 func (q *Query) ColumnNames() string {
-	return strings.Join(database.Columns(q.Fields).Names(), ", ")
+	return strings.Join(q.Fields, ", ")
+}
+
+// Columns return columsn from query
+func (q *Query) Columns() []string {
+	return q.Fields
+}
+
+// ColumnMetadata .
+func (q *Query) ColumnMetadata([]database.Column) []database.Column {
+	return nil
 }
 
 // Filter containt filter
 type Filter struct {
-	ColName string // TODO: extend filter type
-	Value   string
+	Operator   string      `json:"operator"`    // "="
+	ColumnName string      `json:"column_name"` // TODO: extend filter type
+	Value      interface{} `json:"value"`
 }
 
 // Columns return columns listed in RowData
@@ -88,6 +99,32 @@ func makeRowDataSet(columns []database.Column) RowData {
 	}
 
 	return res
+}
+
+// SQLRowsToRows return rows from sql.Rows
+func SQLRowsToRows(rows *sql.Rows, colNum int) ([]interface{}, error) {
+	var res []interface{}
+	for rows.Next() {
+		columns := make([]interface{}, colNum)
+		columnPointers := make([]interface{}, colNum)
+		for i := range columns {
+			columnPointers[i] = &columns[i]
+		}
+
+		// Scan the result into the column pointers...
+		if err := rows.Scan(columnPointers...); err != nil {
+			return nil, err
+		}
+		tmp := []interface{}{}
+		for i := range columnPointers {
+			val := columnPointers[i].(*interface{})
+			tmp = append(tmp, val)
+		}
+
+		res = append(res, tmp)
+	}
+
+	return res, nil
 }
 
 // RowsToQueryResults rows to query results

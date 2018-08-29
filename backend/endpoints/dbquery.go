@@ -3,8 +3,6 @@ package endpoints
 import (
 	"context"
 	"errors"
-	"strconv"
-	"strings"
 
 	"github.com/go-kit/kit/endpoint"
 
@@ -15,54 +13,34 @@ import (
 
 // DBQueryRequest request for db query
 type DBQueryRequest struct {
-	Method    string   `json:"method" schema:"method,required"`
-	TableName string   `json:"table_name" schema:"table_name,required"`
-	Cols      []string `json:"columns" schema:"columns,required"`
-	Columns   []database.Column
-	QueryData string `json:"query_data" schema:"query_data"`
-	Offset    int    `json:"offset" schema:"offset" default:"0"`
-	Limit     int    `json:"limit" schema:"limit" default:"-1"`
+	sqlmapper.Query
 }
 
 // DBQueryResponse response for db query
 type DBQueryResponse struct {
-	Status string      `json:"status"`
-	Data   interface{} `json:"data"`
+	Status  string            `json:"status"`
+	Columns []string          `json:"columns,omitempty"`
+	Rows    []interface{}     `json:"rows,omitempty"`
+	Cols    []database.Column `json:"cols,omitempty"`
 }
 
-// UpdateColumnsByCols .
-func (r *DBQueryRequest) UpdateColumnsByCols() error {
-	res := []database.Column{}
-	for _, col := range r.Cols {
-		tmp := strings.Split(col, ",")
-		if len(tmp) != 2 {
-			return errors.New("wrong format of a column need at least 2 element")
-		}
+// // UpdateColumnsByCols .
+// func (r *DBQueryRequest) UpdateColumnsByCols() error {
+// 	res := []database.Column{}
+// 	for _, col := range r.Cols {
+// 		tmp := strings.Split(col, ",")
+// 		if len(tmp) != 2 {
+// 			return errors.New("wrong format of a column need at least 2 element")
+// 		}
 
-		name, colType := tmp[0], tmp[1]
-		res = append(res, database.Column{Name: name, Type: colType})
-	}
+// 		name, colType := tmp[0], tmp[1]
+// 		res = append(res, database.Column{Name: name, Type: colType})
+// 	}
 
-	r.Columns = res
+// 	r.Columns = res
 
-	return nil
-}
-
-func (r *DBQueryRequest) getResourceID() (int, error) {
-	return strconv.Atoi(r.QueryData)
-}
-
-func (r *DBQueryRequest) getColumnAndValue() (columnName string, value string, err error) {
-	tmp := strings.Split(r.QueryData, ",")
-	if len(tmp) != 2 {
-		err = errors.New("query_data is wrong format")
-		return
-	}
-	columnName = tmp[0]
-	value = tmp[1]
-
-	return
-}
+// 	return nil
+// }
 
 func makeDBQueryEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
@@ -71,43 +49,15 @@ func makeDBQueryEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, errors.New("failed to make type assertion")
 		}
 
-		q := sqlmapper.Query{
-			SourceTable: req.TableName,
-			Fields:      req.Columns,
-			Offset:      req.Offset,
-			Limit:       req.Limit,
-		}
-
-		var (
-			data interface{}
-			err  error
-		)
-
-		switch req.Method {
-		case "FindByID":
-			var id int
-			if id, err = req.getResourceID(); err != nil {
-				return nil, err
-			}
-			q.Filter.Value = strconv.Itoa(id)
-			data, err = s.FindByID(q)
-		case "FindAll":
-			data, err = s.FindAll(q)
-		case "FindByColumnName":
-			var columnName, value string
-			if columnName, value, err = req.getColumnAndValue(); err != nil {
-				return nil, err
-			}
-			q.Filter = sqlmapper.Filter{ColName: columnName, Value: value}
-			data, err = s.FindByColumnName(q)
-		default:
-			return nil, errors.New("unknown query method")
-		}
-
+		columns, data, err := s.Query(req.Query)
 		if err != nil {
 			return nil, err
 		}
 
-		return DBQueryResponse{"success", data}, nil
+		return DBQueryResponse{
+			Status:  "success",
+			Columns: columns,
+			Rows:    data,
+		}, nil
 	}
 }

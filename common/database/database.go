@@ -57,6 +57,36 @@ func (m *Model) AddHook(hookType, content string) error {
 	return nil
 }
 
+// IsBeforeCreateEnable check before_create is enable
+func (m *Model) IsBeforeCreateEnable() bool {
+	return m.Hooks.BeforeCreate.Enable
+}
+
+// IsAfterCreateEnable check after_create is enable
+func (m *Model) IsAfterCreateEnable() bool {
+	return m.Hooks.AfterCreate.Enable
+}
+
+// IsBeforeUpdateEnable check before_update is enable
+func (m *Model) IsBeforeUpdateEnable() bool {
+	return m.Hooks.BeforeUpdate.Enable
+}
+
+// IsAfterUpdateEnable check after_update is enable
+func (m *Model) IsAfterUpdateEnable() bool {
+	return m.Hooks.AfterUpdate.Enable
+}
+
+// IsBeforeDeleteEnable check before_delete is enable
+func (m *Model) IsBeforeDeleteEnable() bool {
+	return m.Hooks.BeforeDelete.Enable
+}
+
+// IsAfterDeleteEnable check after_delete is enable
+func (m *Model) IsAfterDeleteEnable() bool {
+	return m.Hooks.AfterDelete.Enable
+}
+
 // Hooks hook declaration for a model
 type Hooks struct {
 	BeforeCreate Hook `yaml:"before_create" json:"before_create"`
@@ -69,7 +99,7 @@ type Hooks struct {
 
 // Hook define a
 type Hook struct {
-	Enable  bool   `yaml:"enable" json:"enable"` // Is model enable a hook
+	Enable  bool   `yaml:"enable" json:"enable"` // Is enable a hook
 	Content string `yaml:"content" json:"content"`
 }
 
@@ -110,9 +140,9 @@ type ACLDetail struct {
 type Models []Model
 
 // ColumnsByTableName create map columns by table name from array of column
-func (ms Models) ColumnsByTableName() map[string][]Column {
+func (mss Models) ColumnsByTableName() map[string][]Column {
 	res := make(map[string][]Column)
-	for _, m := range ms {
+	for _, m := range mss {
 		if _, ok := res[m.TableName]; ok {
 			res[m.TableName] = append(res[m.TableName], m.Columns...)
 		} else {
@@ -124,9 +154,9 @@ func (ms Models) ColumnsByTableName() map[string][]Column {
 }
 
 // ModelByTableName create map model by table name
-func (ms Models) ModelByTableName() map[string]Model {
+func (mss Models) ModelByTableName() map[string]Model {
 	res := make(map[string]Model)
-	for _, m := range ms {
+	for _, m := range mss {
 		res[m.TableName] = m
 	}
 

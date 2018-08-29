@@ -127,33 +127,6 @@ func SQLRowsToRows(rows *sql.Rows, colNum int) ([]interface{}, error) {
 	return res, nil
 }
 
-// RowsToQueryResults rows to query results
-func RowsToQueryResults(rows *sql.Rows, coldefs []database.Column) (QueryResults, error) {
-	cols := database.Columns(coldefs).Names()
-	res := []RowData{}
-	for rows.Next() {
-		columns := make([]interface{}, len(cols))
-		columnPointers := make([]interface{}, len(cols))
-		for i := range columns {
-			columnPointers[i] = &columns[i]
-		}
-		// Scan the result into the column pointers...
-		if err := rows.Scan(columnPointers...); err != nil {
-			return nil, err
-		}
-
-		rowData := makeRowDataSet(coldefs)
-		for i, colName := range cols {
-			val := columnPointers[i].(*interface{})
-			rowData[colName] = ColData{Data: val, DataType: rowData[colName].DataType}
-		}
-
-		res = append(res, rowData)
-	}
-
-	return res, nil
-}
-
 // RowToQueryResult rows to query result
 func RowToQueryResult(row *sql.Row, colDefines []database.Column) (QueryResult, error) {
 	cols := database.Columns(colDefines).Names()

@@ -50,13 +50,6 @@ func NewHTTPHandler(endpoints endpoints.Endpoints,
 		r.Use(jwtauth.Authenticator)
 		r.Use(auth.Authorization)
 
-		r.Get("/query", httptransport.NewServer(
-			endpoints.DBQuery,
-			decodeDBQueryRequest,
-			httptransport.EncodeJSONResponse,
-			options...,
-		).ServeHTTP)
-
 		r.Post("/query", httptransport.NewServer( // Post query for case a query have more than 2048 character
 			endpoints.DBQuery,
 			decodeDBQueryRequest,

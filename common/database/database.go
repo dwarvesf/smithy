@@ -139,6 +139,16 @@ type ACLDetail struct {
 // Models array of model
 type Models []Model
 
+// GroupByName create map model by table name
+func (ms Models) GroupByName() map[string]Model {
+	res := make(map[string]Model)
+	for _, m := range ms {
+		res[m.TableName] = m
+	}
+
+	return res
+}
+
 // ColumnsByTableName create map columns by table name from array of column
 func (ms Models) ColumnsByTableName() map[string][]Column {
 	res := make(map[string][]Column)

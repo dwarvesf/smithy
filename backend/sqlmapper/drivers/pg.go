@@ -1,7 +1,6 @@
 package drivers
 
 import (
-	"database/sql"
 	"errors"
 	"fmt"
 	"strings"
@@ -14,32 +13,53 @@ import (
 )
 
 type pgStore struct {
-	db        *gorm.DB
-	ModelList []database.Model
+	db       *gorm.DB
+	modelMap map[string]database.Model
 }
 
 // NewPGStore .
 func NewPGStore(db *gorm.DB, modelList []database.Model) sqlmapper.Mapper {
-	return &pgStore{db, modelList}
+	return &pgStore{
+		db:       db,
+		modelMap: database.Models(modelList).GroupByName(),
+	}
 }
 
-func (s *pgStore) Query(q sqlmapper.Query) ([]interface{}, error) {
-	return nil, nil
+func (s *pgStore) addFilter(q sqlmapper.Query, db *gorm.DB) (*gorm.DB, error) {
+	if q.Filter.IsZero() {
+		return db, nil
+	}
+
+	switch q.Filter.Operator {
+	case "=":
+		return db.Where(q.Filter.ColumnName+" = ?", q.Filter.Value), nil
+	default:
+		return db, fmt.Errorf("unknown filter operator %s", q.Filter.Operator)
+	}
 }
 
-func (s *pgStore) FindAll(q sqlmapper.Query) ([]sqlmapper.RowData, error) {
+func (s *pgStore) addLimitOffset(q sqlmapper.Query, db *gorm.DB) *gorm.DB {
+	db = db.Offset(q.Offset)
+	if q.Limit > 0 {
+		db = db.Limit(q.Limit)
+	}
+
+	return db
+}
+
+func (s *pgStore) Query(q sqlmapper.Query) ([]string, []interface{}, error) {
 	db := s.db.Table(q.SourceTable).
-		Select(q.ColumnNames()).
-		Offset(q.Offset)
+		Select(q.ColumnNames())
 
-	var (
-		rows *sql.Rows
-		err  error
-	)
-	if q.Limit <= 0 {
-		rows, err = db.Rows()
-	} else {
-		rows, err = db.Limit(q.Limit).Rows()
+	db = s.addLimitOffset(q, db)
+	db, err := s.addFilter(q, db)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	rows, err := db.Rows()
+	if err != nil {
+		return nil, nil, err
 	}
 
 	defer func() {
@@ -50,23 +70,24 @@ func (s *pgStore) FindAll(q sqlmapper.Query) ([]sqlmapper.RowData, error) {
 	}()
 
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	return sqlmapper.RowsToQueryResults(rows, q.Fields)
+	data, err := sqlmapper.SQLRowsToRows(rows, len(q.Columns()))
+
+	return q.Columns(), data, err
 }
 
-func (s *pgStore) FindByID(q sqlmapper.Query) (sqlmapper.RowData, error) {
-	row := s.db.Table(q.SourceTable).Select(q.ColumnNames()).Where("id = ?", q.Filter.Value).Row()
-	res, err := sqlmapper.RowToQueryResult(row, q.Fields)
-	if err != nil {
-		return nil, err
+func (s *pgStore) ColumnMetadata(q sqlmapper.Query) ([]database.Column, error) {
+	m, ok := s.modelMap[q.SourceTable]
+	if !ok {
+		return nil, fmt.Errorf("uknown source_table %s", q.SourceTable)
 	}
 
-	return sqlmapper.RowData(res), nil
+	return q.ColumnMetadata(m.Columns)
 }
 
 func (s *pgStore) Create(tableName string, d sqlmapper.RowData) (sqlmapper.RowData, error) {
-	if err := verifyInput(d, tableName, s.ModelList); err != nil {
+	if err := verifyInput(d, tableName, s.modelMap); err != nil {
 		return nil, err
 	}
 
@@ -111,7 +132,7 @@ func (s *pgStore) Delete(tableName string, id int) error {
 	return nil
 }
 
-func verifyInput(d sqlmapper.RowData, tableName string, modelList []database.Model) error {
+func verifyInput(d sqlmapper.RowData, tableName string, modelList map[string]database.Model) error {
 	// name data_type nullable primary_key
 	d = filterRowData(d)
 	if len(d) <= 0 {
@@ -181,43 +202,12 @@ func filterRowData(d sqlmapper.RowData) sqlmapper.RowData {
 	return d
 }
 
-func (s *pgStore) FindByColumnName(q sqlmapper.Query) ([]sqlmapper.RowData, error) {
-	// TODO: check sql injection
-	db := s.db.Table(q.SourceTable).
-		Select(q.ColumnNames()).
-		Where(q.Filter.ColName+" LIKE ?", "%"+q.Filter.Value+"%").
-		Offset(q.Offset)
-
-	var (
-		rows *sql.Rows
-		err  error
-	)
-	if q.Limit <= 0 {
-		rows, err = db.Rows()
-	} else {
-		rows, err = db.Limit(q.Limit).Rows()
-	}
-
-	defer func() {
-		if err != nil {
-			return
-		}
-		rows.Close()
-	}()
-
-	if err != nil {
-		return nil, err
-	}
-
-	return sqlmapper.RowsToQueryResults(rows, q.Fields)
-}
-
 func (s *pgStore) Update(tableName string, d sqlmapper.RowData, id int) (sqlmapper.RowData, error) {
 	if notExist, _ := s.isIDNotExist(tableName, id); !notExist {
 		return nil, errors.New("primary key is not exist")
 	}
 
-	if err := verifyInput(d, tableName, s.ModelList); err != nil {
+	if err := verifyInput(d, tableName, s.modelMap); err != nil {
 		return nil, err
 	}
 

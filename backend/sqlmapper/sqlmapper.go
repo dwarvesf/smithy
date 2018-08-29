@@ -3,6 +3,7 @@ package sqlmapper
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	"github.com/dwarvesf/smithy/common/database"
@@ -13,30 +14,55 @@ type Mapper interface {
 	Create(tableName string, d RowData) (RowData, error)
 	Update(tableName string, d RowData, id int) (RowData, error)
 	Delete(tableName string, id int) error
-	Query(Query) ([]interface{}, error)
-	FindAll(Query) ([]RowData, error)
-	FindByID(Query) (RowData, error)
-	FindByColumnName(Query) ([]RowData, error)
+	Query(Query) ([]string, []interface{}, error)
+	ColumnMetadata(Query) ([]database.Column, error)
 }
 
 // Query containt query data for a query request
 type Query struct {
-	SourceTable string
-	Fields      []database.Column
-	Filter      Filter
-	Offset      int
-	Limit       int
+	SourceTable string   `json:"source_table"`
+	Fields      []string `json:"fields"`
+	Filter      Filter   `json:"filter"`
+	Offset      int      `json:"offset"`
+	Limit       int      `json:"limit"`
 }
 
 // ColumnNames return columns name in query
 func (q *Query) ColumnNames() string {
-	return strings.Join(database.Columns(q.Fields).Names(), ", ")
+	return strings.Join(q.Fields, ", ")
+}
+
+// Columns return columsn from query
+func (q *Query) Columns() []string {
+	return q.Fields
+}
+
+// ColumnMetadata convert query to column spec
+func (q *Query) ColumnMetadata(columns []database.Column) ([]database.Column, error) {
+	res := []database.Column{}
+	colMap := database.Columns(columns).GroupByName()
+	for _, field := range q.Fields {
+		cols, ok := colMap[field]
+		if !ok {
+			return nil, fmt.Errorf("unknown field %s ", field)
+		}
+
+		res = append(res, cols[0]) // expect all cols is a same column, if dupplicate happened
+	}
+
+	return res, nil
 }
 
 // Filter containt filter
 type Filter struct {
-	ColName string // TODO: extend filter type
-	Value   string
+	Operator   string      `json:"operator"` // "="
+	ColumnName string      `json:"column_name"`
+	Value      interface{} `json:"value"`
+}
+
+// IsZero check filter is empty
+func (f *Filter) IsZero() bool {
+	return f.Operator == ""
 }
 
 // Columns return columns listed in RowData
@@ -90,28 +116,27 @@ func makeRowDataSet(columns []database.Column) RowData {
 	return res
 }
 
-// RowsToQueryResults rows to query results
-func RowsToQueryResults(rows *sql.Rows, coldefs []database.Column) (QueryResults, error) {
-	cols := database.Columns(coldefs).Names()
-	res := []RowData{}
+// SQLRowsToRows return rows from sql.Rows
+func SQLRowsToRows(rows *sql.Rows, colNum int) ([]interface{}, error) {
+	var res []interface{}
 	for rows.Next() {
-		columns := make([]interface{}, len(cols))
-		columnPointers := make([]interface{}, len(cols))
+		columns := make([]interface{}, colNum)
+		columnPointers := make([]interface{}, colNum)
 		for i := range columns {
 			columnPointers[i] = &columns[i]
 		}
+
 		// Scan the result into the column pointers...
 		if err := rows.Scan(columnPointers...); err != nil {
 			return nil, err
 		}
-
-		rowData := makeRowDataSet(coldefs)
-		for i, colName := range cols {
+		tmp := []interface{}{}
+		for i := range columnPointers {
 			val := columnPointers[i].(*interface{})
-			rowData[colName] = ColData{Data: val, DataType: rowData[colName].DataType}
+			tmp = append(tmp, val)
 		}
 
-		res = append(res, rowData)
+		res = append(res, tmp)
 	}
 
 	return res, nil

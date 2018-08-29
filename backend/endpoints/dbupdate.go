@@ -48,6 +48,6 @@ func makeDBUpdateEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, err
 		}
 
-		return DBQueryResponse{"success", data}, nil
+		return DBUpdateResponse{"success", data}, nil
 	}
 }

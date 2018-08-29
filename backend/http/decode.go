@@ -5,28 +5,16 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/gorilla/schema"
-
 	"github.com/dwarvesf/smithy/backend/endpoints"
 )
 
 func decodeDBQueryRequest(ctx context.Context, r *http.Request) (interface{}, error) {
-	err := r.ParseForm()
-	if err != nil {
-		return nil, err
-	}
+	var req endpoints.DBQueryRequest
 
-	decoder := schema.NewDecoder()
-	req := endpoints.DBQueryRequest{}
-	if err := decoder.Decode(&req, r.Form); err != nil {
-		return nil, err
-	}
+	err := json.NewDecoder(r.Body).Decode(&req)
+	defer r.Body.Close()
 
-	if err := req.UpdateColumnsByCols(); err != nil {
-		return nil, err
-	}
-
-	return req, nil
+	return req, err
 }
 
 func decodeDBCreateRequest(ctx context.Context, r *http.Request) (interface{}, error) {

@@ -140,9 +140,9 @@ type ACLDetail struct {
 type Models []Model
 
 // ColumnsByTableName create map columns by table name from array of column
-func (mss Models) ColumnsByTableName() map[string][]Column {
+func (ms Models) ColumnsByTableName() map[string][]Column {
 	res := make(map[string][]Column)
-	for _, m := range mss {
+	for _, m := range ms {
 		if _, ok := res[m.TableName]; ok {
 			res[m.TableName] = append(res[m.TableName], m.Columns...)
 		} else {
@@ -154,9 +154,9 @@ func (mss Models) ColumnsByTableName() map[string][]Column {
 }
 
 // ModelByTableName create map model by table name
-func (mss Models) ModelByTableName() map[string]Model {
+func (ms Models) ModelByTableName() map[string]Model {
 	res := make(map[string]Model)
-	for _, m := range mss {
+	for _, m := range ms {
 		res[m.TableName] = m
 	}
 

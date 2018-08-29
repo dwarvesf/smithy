@@ -13,7 +13,7 @@ import (
 
 // DBUpdateRequest request for db Update data
 type DBUpdateRequest struct {
-	TableName  string            `json:"table_name"`
+	TableName  string            `json:"-"`
 	Data       sqlmapper.RowData `json:"data"`
 	PrimaryKey string            `json:"primary_key" schema:"primary_key"`
 }

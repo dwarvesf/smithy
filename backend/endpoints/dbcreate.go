@@ -12,7 +12,7 @@ import (
 
 // DBCreateRequest request for db create data
 type DBCreateRequest struct {
-	TableName string            `json:"table_name"`
+	TableName string            `json:"-"`
 	Data      sqlmapper.RowData `json:"data"`
 }
 

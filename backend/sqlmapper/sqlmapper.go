@@ -18,9 +18,9 @@ type Mapper interface {
 	ColumnMetadata(Query) ([]database.Column, error)
 }
 
-// Query containt query data for a query request
+// Query contain query data for a query request
 type Query struct {
-	SourceTable string   `json:"source_table"`
+	SourceTable string   `json:"-"`
 	Fields      []string `json:"fields"`
 	Filter      Filter   `json:"filter"`
 	Offset      int      `json:"offset"`

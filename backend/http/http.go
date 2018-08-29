@@ -50,13 +50,6 @@ func NewHTTPHandler(endpoints endpoints.Endpoints,
 		r.Use(jwtauth.Authenticator)
 		r.Use(auth.Authorization)
 
-		r.Post("/query", httptransport.NewServer( // Post query for case a query have more than 2048 character
-			endpoints.DBQuery,
-			decodeDBQueryRequest,
-			httptransport.EncodeJSONResponse,
-			options...,
-		).ServeHTTP)
-
 		r.Get("/agent-sync", httptransport.NewServer(
 			endpoints.AgentSync,
 			httptransport.NopRequestDecoder,
@@ -64,12 +57,35 @@ func NewHTTPHandler(endpoints endpoints.Endpoints,
 			options...,
 		).ServeHTTP)
 
-		r.Post("/create", httptransport.NewServer(
-			endpoints.DBCreate,
-			decodeDBCreateRequest,
-			httptransport.EncodeJSONResponse,
-			options...,
-		).ServeHTTP)
+		r.Route("/tables/{table_name}", func(r chi.Router) {
+			r.Post("/query", httptransport.NewServer( // Post query for case a query have more than 2048 character
+				endpoints.DBQuery,
+				decodeDBQueryRequest,
+				httptransport.EncodeJSONResponse,
+				options...,
+			).ServeHTTP)
+
+			r.Post("/create", httptransport.NewServer(
+				endpoints.DBCreate,
+				decodeDBCreateRequest,
+				httptransport.EncodeJSONResponse,
+				options...,
+			).ServeHTTP)
+
+			r.Put("/update", httptransport.NewServer(
+				endpoints.DBUpdate,
+				decodeDBUpdateRequest,
+				httptransport.EncodeJSONResponse,
+				options...,
+			).ServeHTTP)
+
+			r.Delete("/delete", httptransport.NewServer(
+				endpoints.DBDelete,
+				decodeDBDeleteRequest,
+				httptransport.EncodeJSONResponse,
+				options...,
+			).ServeHTTP)
+		})
 
 		r.Get("/models", httptransport.NewServer(
 			endpoints.AvailableModels,
@@ -85,19 +101,6 @@ func NewHTTPHandler(endpoints endpoints.Endpoints,
 			options...,
 		).ServeHTTP)
 
-		r.Put("/update", httptransport.NewServer(
-			endpoints.DBUpdate,
-			decodeDBUpdateRequest,
-			httptransport.EncodeJSONResponse,
-			options...,
-		).ServeHTTP)
-
-		r.Delete("/delete", httptransport.NewServer(
-			endpoints.DBDelete,
-			decodeDBDeleteRequest,
-			httptransport.EncodeJSONResponse,
-			options...,
-		).ServeHTTP)
 	})
 
 	r.Route("/auth", func(r chi.Router) {

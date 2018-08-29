@@ -8,7 +8,9 @@ import (
 	"testing"
 
 	"github.com/dwarvesf/smithy/backend/sqlmapper"
+	"github.com/dwarvesf/smithy/common/database"
 	utilTest "github.com/dwarvesf/smithy/common/utils/database/pg/test/set1"
+	"github.com/jinzhu/gorm"
 )
 
 /**
@@ -700,6 +702,42 @@ func Test_pgStore_Update(t *testing.T) {
 			}
 			if !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("pgStore.Update() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_pgStore_Query(t *testing.T) {
+	type fields struct {
+		db       *gorm.DB
+		modelMap map[string]database.Model
+	}
+	tests := []struct {
+		name    string
+		args    sqlmapper.Query
+		want    []string
+		want1   []interface{}
+		wantErr bool
+	}{
+		// TODO: Add test cases.
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := NewPGStore()
+			s := &pgStore{
+				db:       tt.fields.db,
+				modelMap: tt.fields.modelMap,
+			}
+			got, got1, err := s.Query(tt.args.q)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("pgStore.Query() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, tt.want) {
+				t.Errorf("pgStore.Query() got = %v, want %v", got, tt.want)
+			}
+			if !reflect.DeepEqual(got1, tt.want1) {
+				t.Errorf("pgStore.Query() got1 = %v, want %v", got1, tt.want1)
 			}
 		})
 	}

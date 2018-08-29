@@ -27,9 +27,15 @@ func main() {
 		panic(err)
 	}
 
-	err = backend.SyncPersistent(cfg)
+	ok, err := backend.SyncPersistent(cfg)
 	if err != nil {
 		panic(err)
+	}
+
+	if !ok {
+		if err = cfg.UpdateConfigFromAgent(); err != nil {
+			panic(err)
+		}
 	}
 
 	var logger log.Logger

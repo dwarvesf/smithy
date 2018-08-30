@@ -3,6 +3,7 @@ package sqlmapper
 import (
 	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -18,9 +19,9 @@ type Mapper interface {
 	ColumnMetadata(Query) ([]database.Column, error)
 }
 
-// Query containt query data for a query request
+// Query contain query data for a query request
 type Query struct {
-	SourceTable string   `json:"source_table"`
+	SourceTable string   `json:"-"`
 	Fields      []string `json:"fields"`
 	Filter      Filter   `json:"filter"`
 	Offset      int      `json:"offset"`
@@ -92,6 +93,20 @@ type ColData struct {
 	Name     string      `json:"name"`
 	Data     interface{} `json:"data"`
 	DataType string      `json:"data_type"`
+}
+
+// MakeRowData make row_data from fields([]string) and data([]{}interface)
+func MakeRowData(fields []string, data []interface{}) (RowData, error) {
+	if len(fields) != len(data) {
+		return nil, errors.New("length of fields and data is not the same")
+	}
+	res := make(map[string]ColData)
+
+	for i := range fields {
+		res[fields[i]] = ColData{Data: data[i], Name: fields[i]}
+	}
+
+	return res, nil
 }
 
 // RowData hold data of a row

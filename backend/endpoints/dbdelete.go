@@ -12,7 +12,7 @@ import (
 
 // DBDeleteRequest request for db delete data by id
 type DBDeleteRequest struct {
-	TableName  string `json:"table_name"`
+	TableName  string `json:"-"`
 	PrimaryKey string `json:"primary_key" schema:"primary_key"`
 }
 

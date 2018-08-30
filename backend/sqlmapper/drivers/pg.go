@@ -172,7 +172,7 @@ func verifyInput(d sqlmapper.RowData, tableName string, modelList map[string]dat
 		}
 	}
 	if tableNotExist {
-		return errors.New("Table have existed yet")
+		return fmt.Errorf("table %s doesn't exist", tableName)
 	}
 
 	return nil

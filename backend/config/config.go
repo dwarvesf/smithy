@@ -129,8 +129,6 @@ func (c *Config) UpdateConfigFromAgentConfig(agentCfg *agentConfig.Config) error
 	tempCfg.ModelList = agentCfg.ModelList
 
 	// If available new version, update config then save it into persistence
-	tmpVer := tempCfg.Version
-	tempCfg.Version = Version{}
 	checksum, err := tempCfg.CheckSum()
 	if err != nil {
 		return err
@@ -138,7 +136,6 @@ func (c *Config) UpdateConfigFromAgentConfig(agentCfg *agentConfig.Config) error
 	if checksum == c.Version.Checksum {
 		return nil
 	}
-	tempCfg.Version = tmpVer
 
 	err = c.UpdateConfig(&tempCfg)
 	if err != nil {

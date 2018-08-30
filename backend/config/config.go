@@ -49,7 +49,7 @@ type Config struct {
 	ModelList               []database.Model `yaml:"-"`
 	Version                 Version          `yaml:"-" json:"version"`
 	db                      *gorm.DB
-	Authentication          *Authentication `yaml:"authentication" json:"authentication"`
+	Authentication          Authentication `yaml:"authentication" json:"authentication"`
 
 	sync.Mutex
 }

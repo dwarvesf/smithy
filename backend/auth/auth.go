@@ -63,21 +63,21 @@ func Authorization(next http.Handler) http.Handler {
 
 		var err error
 		if len(methods) <= 0 {
-			if err = writeToResponse(w, r, "Methods is empty"); err != nil {
+			if err = writeToResponse(w, r, "Unauthorized"); err != nil {
 				log.Println("Respone authorized error")
 			}
 			return
 		}
 		if methods[0] == "/query" {
 			if claims["role"] != Admin && claims["role"] != User {
-				if err = writeToResponse(w, r, "Client isn't user or admin"); err != nil {
+				if err = writeToResponse(w, r, "Unauthorized"); err != nil {
 					log.Println("Respone authorized error")
 				}
 				return
 			}
 		} else {
 			if claims["role"] != Admin {
-				if err = writeToResponse(w, r, "Client isn't admin"); err != nil {
+				if err = writeToResponse(w, r, "Unauthorized"); err != nil {
 					log.Println("Respone authorized error")
 				}
 				return

@@ -89,7 +89,7 @@ func TestNewHTTPHandler(t *testing.T) {
 		{
 			name:       "Client can't agent-sync",
 			header:     newAuthHeader(auth.New(secretKey, "bbb", User).Encode()),
-			wantErr:    "Client isn't admin",
+			wantErr:    "Unauthorized",
 			wantStatus: http.StatusUnauthorized,
 		},
 	}

@@ -107,7 +107,7 @@ func CreateConfig(t *testing.T) (*backendConfig.Config, func()) {
 				{
 					Username: "aaa",
 					Password: "abc",
-					Role:     "admin",
+					Role:     "client",
 				},
 				{
 					Username: "bbb",

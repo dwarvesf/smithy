@@ -2,7 +2,6 @@ package auth
 
 import (
 	"encoding/json"
-	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -64,21 +63,21 @@ func Authorization(next http.Handler) http.Handler {
 		var err error
 		if len(methods) <= 0 {
 			if err = writeToResponse(w, r, "Unauthorized"); err != nil {
-				log.Println("Respone authorized error")
+				http.Error(w, err.Error(), http.StatusUnauthorized)
 			}
 			return
 		}
 		if methods[0] == "/query" {
 			if claims["role"] != Admin && claims["role"] != User {
 				if err = writeToResponse(w, r, "Unauthorized"); err != nil {
-					log.Println("Respone authorized error")
+					http.Error(w, err.Error(), http.StatusUnauthorized)
 				}
 				return
 			}
 		} else {
 			if claims["role"] != Admin {
 				if err = writeToResponse(w, r, "Unauthorized"); err != nil {
-					log.Println("Respone authorized error")
+					http.Error(w, err.Error(), http.StatusUnauthorized)
 				}
 				return
 			}
@@ -96,14 +95,14 @@ func Authenticator(next http.Handler) http.Handler {
 
 		if err != nil {
 			if err = writeToResponse(w, r, err.Error()); err != nil {
-				log.Println("Respone authorized error")
+				http.Error(w, err.Error(), http.StatusUnauthorized)
 			}
 			return
 		}
 
 		if token == nil || !token.Valid {
 			if err = writeToResponse(w, r, err.Error()); err != nil {
-				log.Println("Respone authorized error")
+				http.Error(w, err.Error(), http.StatusUnauthorized)
 			}
 			return
 		}

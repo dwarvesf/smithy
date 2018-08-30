@@ -43,21 +43,21 @@ func NewSQLMapper(c *backendConfig.Config) (sqlmapper.Mapper, error) {
 }
 
 // SyncPersistent load available config in persistent
-func SyncPersistent(c *backendConfig.Config) error {
+func SyncPersistent(c *backendConfig.Config) (bool, error) {
 	switch c.PersistenceSupport {
 	case "boltdb":
 		boltIO := backendConfig.NewBoltPersistent(c.PersistenceFileName, 0)
 		lastCfg, err := boltIO.LastestVersion()
 		if err != nil {
-			return err
+			return false, err
 		}
 
 		if lastCfg == nil {
-			return nil
+			return false, nil
 		}
-		return c.UpdateConfig(lastCfg)
+		return true, c.UpdateConfig(lastCfg)
 	default:
-		return errors.New("Uknown Persistent DB")
+		return false, errors.New("Uknown Persistent DB")
 	}
 }
 

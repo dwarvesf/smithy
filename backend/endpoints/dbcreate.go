@@ -12,8 +12,9 @@ import (
 
 // DBCreateRequest request for db create data
 type DBCreateRequest struct {
-	TableName string            `json:"-"`
-	Data      sqlmapper.RowData `json:"data"`
+	TableName string        `json:"-"`
+	Fields    []string      `json:"fields"`
+	Data      []interface{} `json:"data"`
 }
 
 // DBCreateResponse response for db create data
@@ -29,7 +30,12 @@ func makeDBCreateEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, errors.New("failed to make type assertion")
 		}
 
-		data, err := s.Create(req.TableName, req.Data)
+		rowData, err := sqlmapper.MakeRowData(req.Fields, req.Data)
+		if err != nil {
+			return nil, err
+		}
+
+		data, err := s.Create(req.TableName, rowData)
 		if err != nil {
 			return nil, err
 		}

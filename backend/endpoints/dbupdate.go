@@ -13,9 +13,10 @@ import (
 
 // DBUpdateRequest request for db Update data
 type DBUpdateRequest struct {
-	TableName  string            `json:"-"`
-	Data       sqlmapper.RowData `json:"data"`
-	PrimaryKey string            `json:"primary_key" schema:"primary_key"`
+	TableName  string        `json:"-"`
+	Fields     []string      `json:"fields"`
+	Data       []interface{} `json:"data"`
+	PrimaryKey string        `json:"primary_key" schema:"primary_key"`
 }
 
 // DBUpdateResponse response for db Update data
@@ -42,7 +43,13 @@ func makeDBUpdateEndpoint(s service.Service) endpoint.Endpoint {
 		if id, err = req.getResourceID(); err != nil {
 			return nil, err
 		}
-		data, err := s.Update(req.TableName, req.Data, id)
+
+		rowData, err := sqlmapper.MakeRowData(req.Fields, req.Data)
+		if err != nil {
+			return nil, err
+		}
+
+		data, err := s.Update(req.TableName, rowData, id)
 
 		if err != nil {
 			return nil, err

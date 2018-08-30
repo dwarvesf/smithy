@@ -16,11 +16,10 @@ import (
 	"github.com/go-kit/kit/log"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 
-	"github.com/dwarvesf/smithy/backend"
 	auth "github.com/dwarvesf/smithy/backend/auth"
-	backendConfig "github.com/dwarvesf/smithy/backend/config"
 	"github.com/dwarvesf/smithy/backend/endpoints"
 	"github.com/dwarvesf/smithy/backend/service"
+	utilTest "github.com/dwarvesf/smithy/common/utils/database/pg/test/set1"
 )
 
 const (
@@ -31,7 +30,7 @@ const (
 
 func TestNewHTTPHandler(t *testing.T) {
 	//make up-dashboard
-	tsDashboard := httptest.NewServer(initDashboardServer())
+	tsDashboard := httptest.NewServer(initDashboardServer(t))
 	defer tsDashboard.Close()
 
 	tests := []struct {
@@ -184,11 +183,8 @@ func newAuthHeader(tokenStr string) http.Header {
 	return h
 }
 
-func initDashboardServer() http.Handler {
-	cfg, err := backend.NewConfig(backendConfig.ReadYAML("../../example_dashboard_config.yaml"))
-	if err != nil {
-		panic(err)
-	}
+func initDashboardServer(t *testing.T) http.Handler {
+	cfg, _ := utilTest.CreateConfig(t)
 
 	var logger log.Logger
 	{
@@ -197,7 +193,10 @@ func initDashboardServer() http.Handler {
 		logger = log.With(logger, "caller", log.DefaultCaller)
 	}
 
-	s := service.NewService(cfg)
+	s, err := service.NewService(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	return NewHTTPHandler(
 		endpoints.MakeServerEndpoints(s),

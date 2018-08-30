@@ -101,6 +101,21 @@ func CreateConfig(t *testing.T) (*backendConfig.Config, func()) {
 			DBHostname:      dbHost,
 			DBSSLModeOption: "false",
 		},
+		Authentication: backendConfig.Authentication{
+			SerectKey: "lalala",
+			UserList: []backendConfig.User{
+				{
+					Username: "aaa",
+					Password: "abc",
+					Role:     "admin",
+				},
+				{
+					Username: "bbb",
+					Password: "abc",
+					Role:     "user",
+				},
+			},
+		},
 	}
 	err := cfg.UpdateDB()
 	if err != nil {

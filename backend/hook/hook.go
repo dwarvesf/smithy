@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/jinzhu/gorm"
 	"github.com/mattn/anko/vm"
 )
 
@@ -48,16 +49,79 @@ type ScriptEngine interface {
 
 type ankoScriptEngine struct {
 	engine *vm.Env
+	dblib  DBLib
+}
+
+// DBLib interface for lib in db
+type DBLib interface {
+	First(tableName string, condition string) (map[interface{}]interface{}, error)
+	All(tableName string, condition string) ([]map[interface{}]interface{}, error)
+	Create(tableName string, data map[interface{}]interface{}) (map[interface{}]interface{}, error)
+	Update(tableName string, primaryKey interface{}, data map[interface{}]interface{}) (map[interface{}]interface{}, error)
+	Delete(tableName string, primaryKey interface{}) error
+}
+
+type pgLibImpl struct {
+	db *gorm.DB
+}
+
+// NewPGLib dblib implement by postgres
+func NewPGLib(db *gorm.DB) DBLib {
+	return &pgLibImpl{db: db}
+}
+
+func (s *pgLibImpl) First(tableName string, condition string) (map[interface{}]interface{}, error) {
+	return nil, nil
+}
+func (s *pgLibImpl) All(tableName string, condition string) ([]map[interface{}]interface{}, error) {
+	return nil, nil
+}
+func (s *pgLibImpl) Create(tableName string, data map[interface{}]interface{}) (map[interface{}]interface{}, error) {
+	return nil, nil
+}
+func (s *pgLibImpl) Update(tableName string, primaryKey interface{}, data map[interface{}]interface{}) (map[interface{}]interface{}, error) {
+	return nil, nil
+}
+func (s *pgLibImpl) Delete(tableName string, primaryKey interface{}) error {
+	return nil
+}
+
+func defineAnkoDBLib(env *vm.Env, lib DBLib) error {
+	err := env.Define("db_first", lib.First)
+	if err != nil {
+		return err
+	}
+	err = env.Define("db_all", lib.All)
+	if err != nil {
+		return err
+	}
+	err = env.Define("db_create", lib.Create)
+	if err != nil {
+		return err
+	}
+	err = env.Define("db_update", lib.Update)
+	if err != nil {
+		return err
+	}
+
+	return env.Define("db_delete", lib.Delete)
 }
 
 // NewAnkoScriptEngine engine for running a engine
-func NewAnkoScriptEngine() ScriptEngine {
+func NewAnkoScriptEngine(db *gorm.DB) ScriptEngine {
 	env := vm.NewEnv()
 	err := env.Define("println", fmt.Println) // TODO: REMOVE THIS LATTER
 	if err != nil {
-		log.Fatalf("Define error: %v\n", err)
+		log.Fatalf("define error: %v\n", err)
 	}
-	return &ankoScriptEngine{engine: env}
+
+	lib := NewPGLib(db)
+	defineAnkoDBLib(env, lib)
+
+	return &ankoScriptEngine{
+		engine: env,
+		dblib:  lib,
+	}
 }
 
 type libCtx struct {

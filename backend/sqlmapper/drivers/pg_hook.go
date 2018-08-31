@@ -1,6 +1,8 @@
 package drivers
 
 import (
+	"github.com/jinzhu/gorm"
+
 	"github.com/dwarvesf/smithy/backend/hook"
 	"github.com/dwarvesf/smithy/backend/sqlmapper"
 	"github.com/dwarvesf/smithy/common/database"
@@ -13,10 +15,10 @@ type pgHookStore struct {
 }
 
 // NewPGHookStore new pg implement for hook
-func NewPGHookStore(store sqlmapper.Mapper, models []database.Model) sqlmapper.Mapper {
+func NewPGHookStore(store sqlmapper.Mapper, models []database.Model, db *gorm.DB) sqlmapper.Mapper {
 	return &pgHookStore{
 		pgStore:    store,
-		hookEngine: hook.NewAnkoScriptEngine(),
+		hookEngine: hook.NewAnkoScriptEngine(db),
 		models:     models,
 	}
 }

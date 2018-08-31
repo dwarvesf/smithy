@@ -25,6 +25,10 @@ hooks:
 
 ### Script support function
 
-- `println`: is same with `fmt.Println`
-- `ctx`: get current data value in a object (map key value of current model), change value of `ctx` will also change data of column in current context, ex: `this()["name"]` will return value of `name` column of current context model
-- `callAPI`: is a utility to call API to a URL, have 3 arguments: method, URL, data (currently only support json string format), return `false`, `true` if it correct
+- `println(...)`: is same with `fmt.Println`
+- `ctx()`: get current data value in a object (map key value of current model), change value of `ctx` will also change data of column in current context, ex: `this()["name"]` will return value of `name` column of current context model
+- `db_get("table_name", "condition")`
+- `db_insert("table_name", {data_in_map})`:
+- `db_update("table_name", primary_key, {data_in_map})`
+- `db_delete("table_name"), "column", "condition"`:
+- `callAPI(method, URL, data)`: is a utility to call API to a URL, have 3 arguments: method, URL, data (currently only support json string format), return `false`, `true` if it correct

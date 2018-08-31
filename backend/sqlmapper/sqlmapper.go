@@ -88,6 +88,29 @@ func (r RowData) ColumnsAndData() ([]string, []interface{}) {
 	return cols, data
 }
 
+// Ctx for current sqlmapper data context
+type Ctx map[string]interface{}
+
+// ToCtx return map[string]interface{} from a RowData
+func (r RowData) ToCtx() Ctx {
+	res := make(map[string]interface{})
+	for k, v := range r {
+		res[k] = v.Data
+	}
+
+	return res
+}
+
+// ToRowData convert Ctx back to RowData
+func (c Ctx) ToRowData() RowData {
+	res := make(map[string]ColData)
+	for k, v := range c {
+		res[k] = ColData{Data: v}
+	}
+
+	return res
+}
+
 // ColData hold data of a column
 type ColData struct {
 	Name     string      `json:"name"`

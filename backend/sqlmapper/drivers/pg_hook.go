@@ -30,12 +30,15 @@ func (s *pgHookStore) ColumnMetadata(q sqlmapper.Query) ([]database.Column, erro
 }
 
 func (s *pgHookStore) Create(tableName string, d sqlmapper.RowData) (sqlmapper.RowData, error) {
+	ctx := d.ToCtx()
+
 	model := database.Models(s.models).ModelByTableName()[tableName]
 	if model.IsBeforeCreateEnable() {
-		err := s.hookEngine.Eval(model.Hooks.BeforeCreate.Content)
+		err := s.hookEngine.Eval(ctx, model.Hooks.BeforeCreate.Content)
 		if err != nil {
 			return nil, err
 		}
+		d = sqlmapper.Ctx(ctx).ToRowData()
 	}
 
 	res, err := s.pgStore.Create(tableName, d)
@@ -44,10 +47,12 @@ func (s *pgHookStore) Create(tableName string, d sqlmapper.RowData) (sqlmapper.R
 	}
 
 	if model.IsAfterCreateEnable() {
-		err := s.hookEngine.Eval(model.Hooks.AfterCreate.Content)
+		err := s.hookEngine.Eval(ctx, model.Hooks.AfterCreate.Content)
 		if err != nil {
 			return nil, err
 		}
+
+		d = sqlmapper.Ctx(ctx).ToRowData()
 	}
 
 	return res, nil
@@ -56,7 +61,7 @@ func (s *pgHookStore) Create(tableName string, d sqlmapper.RowData) (sqlmapper.R
 func (s *pgHookStore) Delete(tableName string, id int) error {
 	model := database.Models(s.models).ModelByTableName()[tableName]
 	if model.IsBeforeDeleteEnable() {
-		err := s.hookEngine.Eval(model.Hooks.BeforeDelete.Content)
+		err := s.hookEngine.Eval(nil, model.Hooks.BeforeDelete.Content)
 		if err != nil {
 			return err
 		}
@@ -65,7 +70,7 @@ func (s *pgHookStore) Delete(tableName string, id int) error {
 	res := s.pgStore.Delete(tableName, id)
 
 	if model.IsAfterDeleteEnable() {
-		err := s.hookEngine.Eval(model.Hooks.AfterDelete.Content)
+		err := s.hookEngine.Eval(nil, model.Hooks.AfterDelete.Content)
 		if err != nil {
 			return err
 		}
@@ -77,7 +82,7 @@ func (s *pgHookStore) Delete(tableName string, id int) error {
 func (s *pgHookStore) Update(tableName string, d sqlmapper.RowData, id int) (sqlmapper.RowData, error) {
 	model := database.Models(s.models).ModelByTableName()[tableName]
 	if model.IsBeforeUpdateEnable() {
-		err := s.hookEngine.Eval(model.Hooks.BeforeUpdate.Content)
+		err := s.hookEngine.Eval(nil, model.Hooks.BeforeUpdate.Content)
 		if err != nil {
 			return nil, err
 		}
@@ -89,7 +94,7 @@ func (s *pgHookStore) Update(tableName string, d sqlmapper.RowData, id int) (sql
 	}
 
 	if model.IsAfterUpdateEnable() {
-		err := s.hookEngine.Eval(model.Hooks.AfterUpdate.Content)
+		err := s.hookEngine.Eval(nil, model.Hooks.AfterUpdate.Content)
 		if err != nil {
 			return nil, err
 		}

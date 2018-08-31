@@ -43,7 +43,7 @@ func IsAHookType(hookType string) bool {
 
 // ScriptEngine interface for running script
 type ScriptEngine interface {
-	Eval(content string) error
+	Eval(ctx map[string]interface{}, content string) error
 }
 
 type ankoScriptEngine struct {
@@ -60,8 +60,23 @@ func NewAnkoScriptEngine() ScriptEngine {
 	return &ankoScriptEngine{engine: env}
 }
 
-func (e *ankoScriptEngine) Eval(content string) error {
+type libCtx struct {
+	data map[string]interface{}
+}
+
+func (l *libCtx) Ctx() map[string]interface{} {
+	return l.data
+}
+
+func (e *ankoScriptEngine) Eval(ctx map[string]interface{}, content string) error {
+	l := libCtx{ctx}
+	env := e.engine.NewEnv()
+	err := env.Define("ctx", l.Ctx)
+	if err != nil {
+		return err
+	}
+
 	// TODO: implement string processor
-	_, err := e.engine.Execute(content)
+	_, err = env.Execute(content)
 	return err
 }

@@ -27,11 +27,17 @@ type Query struct {
 	Filter      Filter   `json:"filter"`
 	Offset      int      `json:"offset"`
 	Limit       int      `json:"limit"`
+	Order       []string `json:"order,omited"` // 2 elements: column name and "asc" if ascending order, "desc" if descending order
 }
 
 // ColumnNames return columns name in query
 func (q *Query) ColumnNames() string {
 	return strings.Join(q.Fields, ", ")
+}
+
+// OrderSequence return order sequence of columns in query
+func (q *Query) OrderSequence() string {
+	return strings.Join(q.Order, " ")
 }
 
 // Columns return columsn from query

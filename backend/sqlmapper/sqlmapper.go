@@ -27,7 +27,7 @@ type Query struct {
 	Filter      Filter   `json:"filter"`
 	Offset      int      `json:"offset"`
 	Limit       int      `json:"limit"`
-	Order       []string `json:"order,omited"` // 2 elements: column name and "asc" if ascending order, "desc" if descending order
+	Order       []string `json:"order,omitempty"` // 2 elements: column name and "asc" if ascending order, "desc" if descending order
 }
 
 // ColumnNames return columns name in query

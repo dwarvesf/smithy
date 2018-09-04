@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/dwarvesf/smithy/common/database"
 )
@@ -155,29 +156,78 @@ func makeRowDataSet(columns []database.Column) RowData {
 }
 
 // SQLRowsToRows return rows from sql.Rows
-func SQLRowsToRows(rows *sql.Rows, colNum int) ([]interface{}, error) {
+func SQLRowsToRows(rows *sql.Rows) ([]interface{}, error) {
 	var res []interface{}
+	columns, _ := rows.Columns()
 	for rows.Next() {
-		columns := make([]interface{}, colNum)
-		columnPointers := make([]interface{}, colNum)
-		for i := range columns {
-			columnPointers[i] = &columns[i]
+		row := make([]interface{}, len(columns))
+		for idx := range columns {
+			row[idx] = new(metalScanner)
 		}
 
-		// Scan the result into the column pointers...
-		if err := rows.Scan(columnPointers...); err != nil {
-			return nil, err
+		err := rows.Scan(row...)
+		if err != nil {
+			fmt.Println(err)
 		}
+
 		tmp := []interface{}{}
-		for i := range columnPointers {
-			val := columnPointers[i].(*interface{})
-			tmp = append(tmp, val)
+		for idx := range columns {
+			var scanner = row[idx].(*metalScanner)
+			tmp = append(tmp, scanner.value)
 		}
 
 		res = append(res, tmp)
 	}
 
 	return res, nil
+}
+
+type metalScanner struct {
+	valid bool
+	value interface{}
+}
+
+func (scanner *metalScanner) getBytes(src interface{}) []byte {
+	if a, ok := src.([]uint8); ok {
+		return a
+	}
+	return nil
+}
+
+func (scanner *metalScanner) Scan(src interface{}) error {
+	switch src.(type) {
+	case int64:
+		if value, ok := src.(int64); ok {
+			scanner.value = value
+			scanner.valid = true
+		}
+	case float64:
+		if value, ok := src.(float64); ok {
+			scanner.value = value
+			scanner.valid = true
+		}
+	case bool:
+		if value, ok := src.(bool); ok {
+			scanner.value = value
+			scanner.valid = true
+		}
+	case string:
+		scanner.value = src
+		scanner.valid = true
+	case []byte:
+		value := scanner.getBytes(src)
+		scanner.value = value
+		scanner.valid = true
+	case time.Time:
+		if value, ok := src.(time.Time); ok {
+			scanner.value = value
+			scanner.valid = true
+		}
+	case nil:
+		scanner.value = nil
+		scanner.valid = true
+	}
+	return nil
 }
 
 // RowToQueryResult rows to query result

@@ -72,7 +72,7 @@ func (s *pgStore) Query(q sqlmapper.Query) ([]string, []interface{}, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	data, err := sqlmapper.SQLRowsToRows(rows, len(q.Columns()))
+	data, err := sqlmapper.SQLRowsToRows(rows)
 
 	return q.Columns(), data, err
 }

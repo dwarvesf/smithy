@@ -56,7 +56,7 @@ func (s *pgLibImpl) First(tableName string, condition string) (map[interface{}]i
 		return nil, err
 	}
 
-	data, err := sqlmapper.SQLRowsToRows(rows, len(cols))
+	data, err := sqlmapper.SQLRowsToRows(rows)
 	if err != nil {
 		return nil, err
 	}

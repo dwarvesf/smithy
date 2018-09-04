@@ -13,7 +13,6 @@ import (
 	"github.com/dwarvesf/smithy/common/database"
 	utilDB "github.com/dwarvesf/smithy/common/utils/database/pg"
 	utilTest "github.com/dwarvesf/smithy/common/utils/database/pg/test/set1"
-	utilReflect "github.com/dwarvesf/smithy/common/utils/reflect"
 )
 
 func Test_pgStore_Query(t *testing.T) {
@@ -190,16 +189,8 @@ func Test_pgStore_Query(t *testing.T) {
 				u := got1[i].([]interface{})
 
 				// convert data
-				iId, err := utilReflect.ConvertFromInterfacePtr(u[0])
-				if err != nil {
-					t.Fatal(err)
-				}
-				id := iId.(int)
-				iName, err := utilReflect.ConvertFromInterfacePtr(u[1])
-				if err != nil {
-					t.Fatal(err)
-				}
-				name := iName.(string)
+				id := int(u[0].(int64))
+				name := u[1].(string)
 
 				if id != tt.want1[i].ID ||
 					name != tt.want1[i].Name {

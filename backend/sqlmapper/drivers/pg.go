@@ -18,10 +18,10 @@ type pgStore struct {
 }
 
 // NewPGStore .
-func NewPGStore(db *gorm.DB, modelList []database.Model) sqlmapper.Mapper {
+func NewPGStore(db *gorm.DB, modelMap map[string]database.Model) sqlmapper.Mapper {
 	return &pgStore{
 		db:       db,
-		modelMap: database.Models(modelList).GroupByName(),
+		modelMap: modelMap,
 	}
 }
 
@@ -72,7 +72,7 @@ func (s *pgStore) Query(q sqlmapper.Query) ([]string, []interface{}, error) {
 	if err != nil {
 		return nil, nil, err
 	}
-	data, err := sqlmapper.SQLRowsToRows(rows, len(q.Columns()))
+	data, err := sqlmapper.SQLRowsToRows(rows)
 
 	return q.Columns(), data, err
 }

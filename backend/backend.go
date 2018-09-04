@@ -34,11 +34,12 @@ func NewSQLMapper(c *backendConfig.Config) (sqlmapper.Mapper, error) {
 	switch c.DBType {
 	case "postgres":
 		return sqlmapperDrv.NewPGHookStore(
-			sqlmapperDrv.NewPGStore(c.DB(), c.ModelList),
-			c.ModelList,
+			sqlmapperDrv.NewPGStore(c.DB(), c.ModelMap),
+			c.ModelMap,
+			c.DB(),
 		), nil
 	default:
-		return nil, errors.New("Uknown DB Driver")
+		return nil, errors.New("uknown DB Driver")
 	}
 }
 

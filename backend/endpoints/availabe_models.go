@@ -5,7 +5,6 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 
-	"github.com/dwarvesf/smithy/backend/hook"
 	"github.com/dwarvesf/smithy/backend/service"
 	"github.com/dwarvesf/smithy/common/database"
 )
@@ -20,7 +19,7 @@ var (
 		"Update",
 	}
 
-	availableHookTypes = hook.HookTypes
+	availableHookTypes = database.HookTypes
 )
 
 // AvailableModelsResponse response for available model endpoints

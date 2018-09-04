@@ -6,6 +6,8 @@ import (
 	"time"
 
 	"github.com/boltdb/bolt"
+
+	"github.com/dwarvesf/smithy/common/database"
 )
 
 type boltImpl struct {
@@ -54,6 +56,9 @@ func (b boltImpl) Read() (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// init model map for prevent access nil map
+	cfg.ModelMap = make(map[string]database.Model)
 
 	return cfg, nil
 }

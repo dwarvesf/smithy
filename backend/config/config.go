@@ -46,8 +46,9 @@ type Config struct {
 	PersistenceFileName string `yaml:"persistence_file_name"`
 
 	database.ConnectionInfo `yaml:"-"`
-	ModelList               []database.Model `yaml:"-"`
-	Version                 Version          `yaml:"-" json:"version"`
+	ModelList               []database.Model          `yaml:"-"`
+	ModelMap                map[string]database.Model `yaml:"-" json:"-"`
+	Version                 Version                   `yaml:"-" json:"version"`
 	db                      *gorm.DB
 	Authentication          Authentication `yaml:"authentication" json:"authentication"`
 
@@ -177,6 +178,15 @@ func (c *Config) UpdateConfig(cfg *Config) error {
 	c.DBPassword = cfg.DBPassword
 	c.ModelList = cfg.ModelList
 	c.Version = cfg.Version
+
+	for k := range c.ModelMap {
+		delete(c.ModelMap, k)
+	}
+
+	tmp := database.Models(c.ModelList).GroupByName()
+	for k := range tmp {
+		c.ModelMap[k] = tmp[k]
+	}
 
 	return c.UpdateDB()
 }

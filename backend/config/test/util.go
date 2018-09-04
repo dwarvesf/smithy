@@ -65,6 +65,7 @@ func CreateModelList() []database.Model {
 func CreateBackendConfig(t *testing.T) (*backendConfig.Config, func()) {
 	cfg := &backendConfig.Config{
 		ModelList: CreateModelList(),
+		ModelMap:  make(map[string]database.Model),
 		ConnectionInfo: database.ConnectionInfo{
 			DBType:          "postgres",
 			DBUsername:      dbUser,

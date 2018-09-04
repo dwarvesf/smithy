@@ -4,6 +4,8 @@ import (
 	"io/ioutil"
 
 	"gopkg.in/yaml.v2"
+
+	"github.com/dwarvesf/smithy/common/database"
 )
 
 type yamlReaderImpl struct {
@@ -25,6 +27,9 @@ func (c yamlReaderImpl) Read() (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	// init model map for prevent access nil map
+	res.ModelMap = make(map[string]database.Model)
 
 	return res, nil
 }

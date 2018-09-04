@@ -54,7 +54,7 @@ func (s *pgHookStore) Create(tableName string, d sqlmapper.RowData) (sqlmapper.R
 			return nil, err
 		}
 
-		d = sqlmapper.Ctx(ctx).ToRowData()
+		return sqlmapper.Ctx(ctx).ToRowData(), nil
 	}
 
 	return res, nil

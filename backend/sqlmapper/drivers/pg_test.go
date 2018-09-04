@@ -165,9 +165,9 @@ func Test_pgStore_Query(t *testing.T) {
 				if err != nil {
 					t.Fatalf("Failed to migrate table by error %v", err)
 				}
-				s = NewPGStore(cfgEmpty.DB(), cfgEmpty.ModelList)
+				s = NewPGStore(cfgEmpty.DB(), database.Models(cfgEmpty.ModelList).GroupByName())
 			} else {
-				s = NewPGStore(cfg.DB(), cfg.ModelList)
+				s = NewPGStore(cfg.DB(), database.Models(cfg.ModelList).GroupByName())
 			}
 
 			got, got1, err := s.Query(*tt.args)
@@ -273,9 +273,9 @@ func Test_pgStore_Delete(t *testing.T) {
 				if err != nil {
 					t.Fatalf("Failed to migrate table by error %v", err)
 				}
-				s = NewPGStore(cfgEmpty.DB(), cfgEmpty.ModelList)
+				s = NewPGStore(cfgEmpty.DB(), database.Models(cfgEmpty.ModelList).GroupByName())
 			} else {
-				s = NewPGStore(cfg.DB(), cfg.ModelList)
+				s = NewPGStore(cfg.DB(), database.Models(cfg.ModelList).GroupByName())
 			}
 
 			err := s.Delete(tt.tableName, tt.args.id)
@@ -350,7 +350,7 @@ func Test_pgStore_Create(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := NewPGStore(cfg.DB(), cfg.ModelList)
+			s := NewPGStore(cfg.DB(), database.Models(cfg.ModelList).GroupByName())
 			got, err := s.Create(tt.tableName, tt.args.data)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("pgStore.Create() error = %v, wantErr %v", err, tt.wantErr)
@@ -465,7 +465,7 @@ func Test_pgStore_Update(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := NewPGStore(cfg.DB(), cfg.ModelList)
+			s := NewPGStore(cfg.DB(), database.Models(cfg.ModelList).GroupByName())
 			got, err := s.Update(tt.tableName, tt.args.d, tt.args.id)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("pgStore.Update() error = %v, wantErr %v", err, tt.wantErr)

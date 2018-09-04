@@ -46,8 +46,9 @@ type Config struct {
 	PersistenceFileName string `yaml:"persistence_file_name"`
 
 	database.ConnectionInfo `yaml:"-"`
-	ModelList               []database.Model `yaml:"-"`
-	Version                 Version          `yaml:"-" json:"version"`
+	ModelList               []database.Model          `yaml:"-"`
+	ModelMap                map[string]database.Model `yaml:"-" json:"-"`
+	Version                 Version                   `yaml:"-" json:"version"`
 	db                      *gorm.DB
 	Authentication          Authentication `yaml:"authentication" json:"authentication"`
 

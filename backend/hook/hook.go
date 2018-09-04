@@ -116,7 +116,10 @@ func NewAnkoScriptEngine(db *gorm.DB, modelMap map[string]database.Model) Script
 	}
 
 	lib := NewPGLib(db, modelMap)
-	defineAnkoDBLib(env, lib)
+	err = defineAnkoDBLib(env, lib)
+	if err != nil {
+		log.Fatalf("define error: %v\n", err)
+	}
 
 	return &ankoScriptEngine{
 		engine: env,

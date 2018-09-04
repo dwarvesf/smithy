@@ -7,6 +7,7 @@ import (
 
 	"github.com/jinzhu/gorm"
 	"github.com/mattn/anko/vm"
+	"github.com/volatiletech/sqlboiler/strmangle"
 
 	"github.com/dwarvesf/smithy/backend/sqlmapper"
 	"github.com/dwarvesf/smithy/common/database"
@@ -25,7 +26,7 @@ type ankoScriptEngine struct {
 // DBLib interface for lib in db
 type DBLib interface {
 	First(tableName string, condition string) (map[interface{}]interface{}, error)
-	All(tableName string, condition string) ([]map[interface{}]interface{}, error)
+	Where(tableName string, condition string) ([]map[interface{}]interface{}, error)
 	Create(tableName string, data map[interface{}]interface{}) (map[interface{}]interface{}, error)
 	Update(tableName string, primaryKey interface{}, data map[interface{}]interface{}) (map[interface{}]interface{}, error)
 	Delete(tableName string, primaryKey interface{}) error
@@ -73,12 +74,77 @@ func (s *pgLibImpl) First(tableName string, condition string) (map[interface{}]i
 
 	return res, nil
 }
-func (s *pgLibImpl) All(tableName string, condition string) ([]map[interface{}]interface{}, error) {
-	return nil, nil
+
+func (s *pgLibImpl) Where(tableName string, condition string) ([]map[interface{}]interface{}, error) {
+	model, ok := s.modelMap[tableName]
+	if !ok {
+		return nil, fmt.Errorf("uknown table_name %s", tableName)
+	}
+	cols := database.Columns(model.Columns).Names()
+	colNames := strings.Join(cols, ",")
+	rows, err := s.db.Table(tableName).Select(colNames).Where(condition).Rows()
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := sqlmapper.SQLRowsToRows(rows)
+	if err != nil {
+		return nil, err
+	}
+
+	if len(data) == 0 {
+		return nil, nil
+	}
+
+	res := []map[interface{}]interface{}{}
+	for i := range data {
+		tmp := make(map[interface{}]interface{})
+		for j := range cols {
+			tmp[cols[j]] = data[i].([]interface{})[j]
+		}
+
+		res = append(res, tmp)
+	}
+
+	return res, nil
 }
-func (s *pgLibImpl) Create(tableName string, data map[interface{}]interface{}) (map[interface{}]interface{}, error) {
-	return nil, nil
+
+func toRowData(data map[interface{}]interface{}) sqlmapper.RowData {
+	res := make(map[string]sqlmapper.ColData)
+	for k, v := range data {
+		res[k.(string)] = sqlmapper.ColData{Data: v}
+	}
+
+	return res
 }
+
+func (s *pgLibImpl) Create(tableName string, d map[interface{}]interface{}) (map[interface{}]interface{}, error) {
+	db := s.db.DB()
+	row := toRowData(d)
+
+	cols, data := row.ColumnsAndData()
+
+	phs := strmangle.Placeholders(true, len(cols), 1, 1)
+
+	execQuery := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s) RETURNING id;",
+		tableName,
+		strings.Join(cols, ","),
+		phs)
+
+	res := db.QueryRow(execQuery, data...)
+
+	var id int
+	err := res.Scan(&id)
+	if err != nil {
+		return nil, err
+	}
+
+	// update id if create success
+	d["id"] = sqlmapper.ColData{Data: id}
+
+	return d, nil
+}
+
 func (s *pgLibImpl) Update(tableName string, primaryKey interface{}, data map[interface{}]interface{}) (map[interface{}]interface{}, error) {
 	return nil, nil
 }
@@ -91,7 +157,7 @@ func defineAnkoDBLib(env *vm.Env, lib DBLib) error {
 	if err != nil {
 		return err
 	}
-	err = env.Define("db_all", lib.All)
+	err = env.Define("db_where", lib.Where)
 	if err != nil {
 		return err
 	}

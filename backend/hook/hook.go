@@ -1,6 +1,7 @@
 package hook
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"strings"
@@ -109,15 +110,6 @@ func (s *pgLibImpl) Where(tableName string, condition string) ([]map[interface{}
 	return res, nil
 }
 
-func toRowData(data map[interface{}]interface{}) sqlmapper.RowData {
-	res := make(map[string]sqlmapper.ColData)
-	for k, v := range data {
-		res[k.(string)] = sqlmapper.ColData{Data: v}
-	}
-
-	return res
-}
-
 func (s *pgLibImpl) Create(tableName string, d map[interface{}]interface{}) (map[interface{}]interface{}, error) {
 	db := s.db.DB()
 	row := toRowData(d)
@@ -145,11 +137,47 @@ func (s *pgLibImpl) Create(tableName string, d map[interface{}]interface{}) (map
 	return d, nil
 }
 
-func (s *pgLibImpl) Update(tableName string, primaryKey interface{}, data map[interface{}]interface{}) (map[interface{}]interface{}, error) {
-	return nil, nil
+func (s *pgLibImpl) Update(tableName string, primaryKey interface{}, d map[interface{}]interface{}) (map[interface{}]interface{}, error) {
+	db := s.db.DB()
+	row := toRowData(d)
+	cols, data := row.ColumnsAndData()
+
+	rowQuery := make([]string, len(cols))
+
+	for i := 0; i < len(cols); i++ {
+		rowQuery[i] = fmt.Sprintf("%s = $%d", cols[i], i+1)
+	}
+
+	execQuery := fmt.Sprintf("UPDATE %s SET %s WHERE id = %d", // FIXME: set primary key could have dynamic name not only id
+		tableName,
+		strings.Join(rowQuery, ","),
+		primaryKey)
+
+	if _, err := db.Exec(execQuery, data...); err != nil {
+		return nil, err
+	}
+	return d, nil
 }
 func (s *pgLibImpl) Delete(tableName string, primaryKey interface{}) error {
+	exec := fmt.Sprintf("DELETE FROM %s WHERE %s=%v",
+		tableName,
+		"id",
+		primaryKey)
+
+	if _, err := s.db.DB().Exec(exec); err != nil {
+		return errors.New("delete error")
+	}
+
 	return nil
+}
+
+func toRowData(data map[interface{}]interface{}) sqlmapper.RowData {
+	res := make(map[string]sqlmapper.ColData)
+	for k, v := range data {
+		res[k.(string)] = sqlmapper.ColData{Data: v}
+	}
+
+	return res
 }
 
 func defineAnkoDBLib(env *vm.Env, lib DBLib) error {

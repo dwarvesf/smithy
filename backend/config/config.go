@@ -179,6 +179,15 @@ func (c *Config) UpdateConfig(cfg *Config) error {
 	c.ModelList = cfg.ModelList
 	c.Version = cfg.Version
 
+	for k := range c.ModelMap {
+		delete(c.ModelMap, k)
+	}
+
+	tmp := database.Models(c.ModelList).GroupByName()
+	for k := range tmp {
+		c.ModelMap[k] = tmp[k]
+	}
+
 	return c.UpdateDB()
 }
 

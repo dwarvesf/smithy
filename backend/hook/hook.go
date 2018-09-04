@@ -3,44 +3,14 @@ package hook
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/jinzhu/gorm"
 	"github.com/mattn/anko/vm"
+
+	"github.com/dwarvesf/smithy/backend/sqlmapper"
+	"github.com/dwarvesf/smithy/common/database"
 )
-
-// HookType for hooks
-const (
-	BeforeCreate = "BeforeCreate"
-	AfterCreate  = "AfterCreate"
-	BeforeUpdate = "BeforeUpdate"
-	AfterUpdate  = "AfterUpdate"
-	BeforeDelete = "BeforeDelete"
-	AfterDelete  = "AfterDelete"
-)
-
-// HookType for hooks
-var (
-	HookTypes = []string{
-		BeforeCreate,
-		AfterCreate,
-		BeforeUpdate,
-		AfterUpdate,
-		BeforeDelete,
-		AfterDelete,
-	}
-)
-
-// IsAHookType check hook type is correct
-func IsAHookType(hookType string) bool {
-	res := false
-	for _, t := range HookTypes {
-		if hookType == t {
-			res = true
-		}
-	}
-
-	return res
-}
 
 // ScriptEngine interface for running script
 type ScriptEngine interface {
@@ -62,16 +32,46 @@ type DBLib interface {
 }
 
 type pgLibImpl struct {
-	db *gorm.DB
+	db       *gorm.DB
+	modelMap map[string]database.Model
 }
 
 // NewPGLib dblib implement by postgres
-func NewPGLib(db *gorm.DB) DBLib {
-	return &pgLibImpl{db: db}
+func NewPGLib(db *gorm.DB, modelMap map[string]database.Model) DBLib {
+	return &pgLibImpl{
+		db:       db,
+		modelMap: modelMap,
+	}
 }
 
 func (s *pgLibImpl) First(tableName string, condition string) (map[interface{}]interface{}, error) {
-	return nil, nil
+	model, ok := s.modelMap[tableName]
+	if !ok {
+		return nil, fmt.Errorf("uknown table_name %s", tableName)
+	}
+	cols := database.Columns(model.Columns).Names()
+	colNames := strings.Join(cols, ",")
+	rows, err := s.db.Table(tableName).Select(colNames).Where(condition).Limit(1).Rows()
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := sqlmapper.SQLRowsToRows(rows, len(cols))
+	if err != nil {
+		return nil, err
+	}
+
+	if len(data) == 0 {
+		return nil, nil
+	}
+
+	first := data[0].([]interface{})
+	res := make(map[interface{}]interface{})
+	for i := range first {
+		res[cols[i]] = first[i]
+	}
+
+	return res, nil
 }
 func (s *pgLibImpl) All(tableName string, condition string) ([]map[interface{}]interface{}, error) {
 	return nil, nil
@@ -108,14 +108,14 @@ func defineAnkoDBLib(env *vm.Env, lib DBLib) error {
 }
 
 // NewAnkoScriptEngine engine for running a engine
-func NewAnkoScriptEngine(db *gorm.DB) ScriptEngine {
+func NewAnkoScriptEngine(db *gorm.DB, modelMap map[string]database.Model) ScriptEngine {
 	env := vm.NewEnv()
 	err := env.Define("println", fmt.Println) // TODO: REMOVE THIS LATTER
 	if err != nil {
 		log.Fatalf("define error: %v\n", err)
 	}
 
-	lib := NewPGLib(db)
+	lib := NewPGLib(db, modelMap)
 	defineAnkoDBLib(env, lib)
 
 	return &ankoScriptEngine{

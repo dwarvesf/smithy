@@ -2,9 +2,41 @@ package database
 
 import (
 	"errors"
-
-	"github.com/dwarvesf/smithy/backend/hook"
 )
+
+// HookType for hooks
+const (
+	HookBeforeCreate = "BeforeCreate"
+	HookAfterCreate  = "AfterCreate"
+	HookBeforeUpdate = "BeforeUpdate"
+	HookAfterUpdate  = "AfterUpdate"
+	HookBeforeDelete = "BeforeDelete"
+	HookAfterDelete  = "AfterDelete"
+)
+
+// HookType for hooks
+var (
+	HookTypes = []string{
+		HookBeforeCreate,
+		HookAfterCreate,
+		HookBeforeUpdate,
+		HookAfterUpdate,
+		HookBeforeDelete,
+		HookAfterDelete,
+	}
+)
+
+// IsAHookType check hook type is correct
+func IsAHookType(hookType string) bool {
+	res := false
+	for _, t := range HookTypes {
+		if hookType == t {
+			res = true
+		}
+	}
+
+	return res
+}
 
 // ConnectionInfo store information to connect to a database
 type ConnectionInfo struct {
@@ -37,17 +69,17 @@ func (m *Model) AddHook(hookType, content string) error {
 	h := Hook{Enable: true, Content: content} // TODO: add check hook content
 
 	switch hookType {
-	case hook.BeforeCreate:
+	case HookBeforeCreate:
 		m.Hooks.BeforeCreate = h
-	case hook.AfterCreate:
+	case HookAfterCreate:
 		m.Hooks.AfterCreate = h
-	case hook.BeforeUpdate:
+	case HookBeforeUpdate:
 		m.Hooks.BeforeUpdate = h
-	case hook.AfterUpdate:
+	case HookAfterUpdate:
 		m.Hooks.AfterUpdate = h
-	case hook.BeforeDelete:
+	case HookBeforeDelete:
 		m.Hooks.BeforeDelete = h
-	case hook.AfterDelete:
+	case HookAfterDelete:
 		m.Hooks.AfterDelete = h
 	default:
 		return errors.New("hook_type is not exist")

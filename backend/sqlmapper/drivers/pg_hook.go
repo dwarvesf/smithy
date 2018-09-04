@@ -11,15 +11,15 @@ import (
 type pgHookStore struct {
 	pgStore    sqlmapper.Mapper
 	hookEngine hook.ScriptEngine
-	models     []database.Model
+	modelMap   map[string]database.Model
 }
 
 // NewPGHookStore new pg implement for hook
-func NewPGHookStore(store sqlmapper.Mapper, models []database.Model, db *gorm.DB) sqlmapper.Mapper {
+func NewPGHookStore(store sqlmapper.Mapper, modelMap map[string]database.Model, db *gorm.DB) sqlmapper.Mapper {
 	return &pgHookStore{
 		pgStore:    store,
-		hookEngine: hook.NewAnkoScriptEngine(db),
-		models:     models,
+		hookEngine: hook.NewAnkoScriptEngine(db, modelMap),
+		modelMap:   modelMap,
 	}
 }
 
@@ -34,7 +34,7 @@ func (s *pgHookStore) ColumnMetadata(q sqlmapper.Query) ([]database.Column, erro
 func (s *pgHookStore) Create(tableName string, d sqlmapper.RowData) (sqlmapper.RowData, error) {
 	ctx := d.ToCtx()
 
-	model := database.Models(s.models).ModelByTableName()[tableName]
+	model := s.modelMap[tableName]
 	if model.IsBeforeCreateEnable() {
 		err := s.hookEngine.Eval(ctx, model.Hooks.BeforeCreate.Content)
 		if err != nil {
@@ -61,7 +61,7 @@ func (s *pgHookStore) Create(tableName string, d sqlmapper.RowData) (sqlmapper.R
 }
 
 func (s *pgHookStore) Delete(tableName string, id int) error {
-	model := database.Models(s.models).ModelByTableName()[tableName]
+	model := s.modelMap[tableName]
 	if model.IsBeforeDeleteEnable() {
 		err := s.hookEngine.Eval(nil, model.Hooks.BeforeDelete.Content)
 		if err != nil {
@@ -82,7 +82,7 @@ func (s *pgHookStore) Delete(tableName string, id int) error {
 }
 
 func (s *pgHookStore) Update(tableName string, d sqlmapper.RowData, id int) (sqlmapper.RowData, error) {
-	model := database.Models(s.models).ModelByTableName()[tableName]
+	model := s.modelMap[tableName]
 	if model.IsBeforeUpdateEnable() {
 		err := s.hookEngine.Eval(nil, model.Hooks.BeforeUpdate.Content)
 		if err != nil {

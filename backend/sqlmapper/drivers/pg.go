@@ -18,10 +18,10 @@ type pgStore struct {
 }
 
 // NewPGStore .
-func NewPGStore(db *gorm.DB, modelList []database.Model) sqlmapper.Mapper {
+func NewPGStore(db *gorm.DB, modelMap map[string]database.Model) sqlmapper.Mapper {
 	return &pgStore{
 		db:       db,
-		modelMap: database.Models(modelList).GroupByName(),
+		modelMap: modelMap,
 	}
 }
 

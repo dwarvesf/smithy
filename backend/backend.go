@@ -7,6 +7,7 @@ import (
 	backendConfig "github.com/dwarvesf/smithy/backend/config"
 	"github.com/dwarvesf/smithy/backend/sqlmapper"
 	sqlmapperDrv "github.com/dwarvesf/smithy/backend/sqlmapper/drivers"
+	"github.com/dwarvesf/smithy/common/database"
 )
 
 // NewConfig check dashboard config is correct
@@ -31,11 +32,12 @@ func checkConfig(c *backendConfig.Config) error {
 
 // NewSQLMapper create new new sqlmapper to working with request query
 func NewSQLMapper(c *backendConfig.Config) (sqlmapper.Mapper, error) {
+	modelMapByName := database.Models(c.ModelList).GroupByName()
 	switch c.DBType {
 	case "postgres":
 		return sqlmapperDrv.NewPGHookStore(
-			sqlmapperDrv.NewPGStore(c.DB(), c.ModelList),
-			c.ModelList,
+			sqlmapperDrv.NewPGStore(c.DB(), modelMapByName),
+			modelMapByName,
 			c.DB(),
 		), nil
 	default:

@@ -48,8 +48,11 @@ func (s *pgStore) addLimitOffset(q sqlmapper.Query, db *gorm.DB) *gorm.DB {
 }
 
 func (s *pgStore) addOrder(q sqlmapper.Query, db *gorm.DB) (*gorm.DB, error) {
-	// len(q.Order) == 0 when we don't want to sort
-	if len(q.Order) > 0 && len(q.Order) != 2 {
+	if len(q.Order) == 0 {
+		return db, nil
+	}
+
+	if len(q.Order) != 2 {
 		return db, fmt.Errorf("error require 2 elements: column name and 'asc' if ascending order, 'desc' if descending order")
 	}
 	return db.Order(q.OrderSequence()), nil

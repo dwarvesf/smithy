@@ -26,9 +26,9 @@ hooks:
 ### Script support function
 
 - `println(...)`: is same with `fmt.Println`
-- `ctx()`: get current data value in a object (map key value of current model), change value of `ctx` will also change data of column in current context, ex: `this()["name"]` will return value of `name` column of current context model
-- `db_get("table_name", "condition")`
-- `db_insert("table_name", {data_in_map})`:
-- `db_update("table_name", primary_key, {data_in_map})`
-- `db_delete("table_name"), "column", "condition"`:
-- `callAPI(method, URL, data)`: is a utility to call API to a URL, have 3 arguments: method, URL, data (currently only support json string format), return `false`, `true` if it correct
+- `ctx()[map]`: get current data value in a object (map key value of current model), change value of `ctx` will also change data of column in current context, ex: `this()["name"]` will return value of `name` column of current context model
+- `db_first("table_name", "condition")[array[map, error]]`: get first record by table name and condition
+- `db_where("table_name", "condition")[array[map, error]]`:  get all records by table name and condition
+- `db_create("table_name", {data_in_map})[array[map, error]]`: create record by table name and data(data is a map(key, value))
+- `db_update("table_name", primary_key, {data_in_map}) [array[map, error]]`: update record by tableName and primary key(id)
+- `db_delete("table_name", primary_key)[error]`: delete record by tableName and primary key(id)

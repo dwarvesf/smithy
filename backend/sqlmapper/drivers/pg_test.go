@@ -5,6 +5,7 @@ package drivers
 import (
 	"math"
 	"reflect"
+	"sort"
 	"testing"
 
 	"github.com/jinzhu/gorm"
@@ -26,11 +27,32 @@ func Test_pgStore_Query(t *testing.T) {
 		t.Fatalf("Failed to migrate table by error %v", err)
 	}
 
-	//create sample data
+	// create sample data
 	users, err := utilTest.CreateUserSampleData(cfg.DB())
 	if err != nil {
 		t.Fatalf("Failed to create sample data by error %v", err)
 	}
+
+	// sort for sample data
+	// sort users by name in ascending order
+	ascUserName := make([]utilDB.User, len(users))
+	copy(ascUserName, users)
+	sort.Slice(ascUserName, func(i, j int) bool { return ascUserName[i].Name < ascUserName[j].Name })
+
+	// sort users by name in descending order
+	descUserName := make([]utilDB.User, len(users))
+	copy(descUserName, users)
+	sort.Slice(descUserName, func(i, j int) bool { return descUserName[i].Name > descUserName[j].Name })
+
+	// sort users by ID in ascending order
+	ascUserID := make([]utilDB.User, len(users))
+	copy(ascUserID, users)
+	sort.Slice(users, func(i, j int) bool { return users[i].ID < users[j].ID })
+
+	// sort users by ID in descending order
+	descUserID := make([]utilDB.User, len(users))
+	copy(descUserID, users)
+	sort.Slice(descUserID, func(i, j int) bool { return descUserID[i].ID > descUserID[j].ID })
 
 	type fields struct {
 		db       *gorm.DB
@@ -150,6 +172,88 @@ func Test_pgStore_Query(t *testing.T) {
 			},
 			want:  []string{"id", "name"},
 			want1: users[3:],
+		},
+		{
+			name: "success sort by name in descending order",
+			args: &sqlmapper.Query{
+				SourceTable: "users",
+				Fields:      []string{"id", "name"},
+				Order:       []string{"name", "desc"},
+			},
+			want:    []string{"id", "name"},
+			want1:   descUserName,
+			wantErr: false,
+		},
+		{
+			name: "success sort by name in ascending order",
+			args: &sqlmapper.Query{
+				SourceTable: "users",
+				Fields:      []string{"id", "name"},
+				Order:       []string{"name", "asc"},
+			},
+			want:    []string{"id", "name"},
+			want1:   ascUserName,
+			wantErr: false,
+		},
+		{
+			name: "success sort by ID in descending order",
+			args: &sqlmapper.Query{
+				SourceTable: "users",
+				Fields:      []string{"id", "name"},
+				Order:       []string{"id", "desc"},
+			},
+			want:    []string{"id", "name"},
+			want1:   descUserID,
+			wantErr: false,
+		},
+		{
+			name: "success sort by ID in ascending order",
+			args: &sqlmapper.Query{
+				SourceTable: "users",
+				Fields:      []string{"id", "name"},
+				Order:       []string{"id", "asc"},
+			},
+			want:    []string{"id", "name"},
+			want1:   ascUserID,
+			wantErr: false,
+		},
+		{
+			name: "success for none sort",
+			args: &sqlmapper.Query{
+				SourceTable: "users",
+				Fields:      []string{"id", "name"},
+				Order:       []string{},
+			},
+			want:    []string{"id", "name"},
+			want1:   users,
+			wantErr: false,
+		},
+		{
+			name: "fail sort because missing argument of Order",
+			args: &sqlmapper.Query{
+				SourceTable: "users",
+				Fields:      []string{"id", "name"},
+				Order:       []string{"name"},
+			},
+			wantErr: true,
+		},
+		{
+			name: "fail sort because wrong argument format for Order",
+			args: &sqlmapper.Query{
+				SourceTable: "users",
+				Fields:      []string{"id", "name"},
+				Order:       []string{"name", "ascending"},
+			},
+			wantErr: true,
+		},
+		{
+			name: "fail sort because column name doesn't exist",
+			args: &sqlmapper.Query{
+				SourceTable: "users",
+				Fields:      []string{"id", "name"},
+				Order:       []string{"age", "asc"},
+			},
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {

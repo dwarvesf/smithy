@@ -37,7 +37,7 @@ func NewSQLMapper(c *backendConfig.Config) (sqlmapper.Mapper, error) {
 			sqlmapperDrv.NewPGStore(c.DB(), c.ModelMap),
 			c.ModelMap,
 			c.DB(),
-		), nil
+		)
 	default:
 		return nil, errors.New("uknown DB Driver")
 	}

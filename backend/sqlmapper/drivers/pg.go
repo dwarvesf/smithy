@@ -1,6 +1,7 @@
 package drivers
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"strings"
@@ -102,34 +103,128 @@ func (s *pgStore) ColumnMetadata(q sqlmapper.Query) ([]database.Column, error) {
 	return q.ColumnMetadata(m.Columns)
 }
 
-func (s *pgStore) Create(tableName string, d sqlmapper.RowData) (sqlmapper.RowData, error) {
-	if err := verifyInput(d, tableName, s.modelMap); err != nil {
+func (s *pgStore) getRelationship(tableName string, relateTableName string) string {
+	relationships := s.modelMap[tableName].Relationship
+	var relationship string
+	for _, rel := range relationships {
+		if rel.Table == relateTableName {
+			relationship = rel.Type
+		}
+	}
+
+	return relationship
+}
+
+func (s *pgStore) getRelateColumn(tableName string, relateTableName string) (*database.Column, error) {
+	cs := s.modelMap[relateTableName].Columns
+	var c *database.Column
+	for i := 0; i < len(cs); i++ {
+		if cs[i].ForeignKey.Table == tableName {
+			c = &cs[i]
+			break
+		}
+	}
+
+	if c == nil {
+		return nil, errors.New("Can't find relate column")
+	}
+
+	return c, nil
+}
+
+func (s *pgStore) Create(tableName string, row sqlmapper.RowData) (sqlmapper.RowData, error) {
+	if err := verifyInput(row, tableName, s.modelMap); err != nil {
 		return nil, err
 	}
 
-	db := s.db.DB()
-
-	cols, data := d.ColumnsAndData()
-
-	phs := strmangle.Placeholders(true, len(cols), 1, 1)
-
-	execQuery := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s) RETURNING id;",
-		tableName,
-		strings.Join(cols, ","),
-		phs)
-
-	res := db.QueryRow(execQuery, data...)
-
-	var id int
-	err := res.Scan(&id)
+	tx, err := s.db.DB().Begin()
 	if err != nil {
 		return nil, err
 	}
 
-	// update id if create success
-	d["id"] = sqlmapper.ColData{Data: id}
+	cols, data := row.ColumnsAndData()
 
-	return d, nil
+	phs := strmangle.Placeholders(true, len(cols), 1, 1)
+	sqlQuery := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s) RETURNING id;",
+		tableName,
+		strings.Join(cols, ","),
+		phs)
+
+	stmt, err := tx.Prepare(sqlQuery)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	// update id if create success
+	var id int
+	err = stmt.QueryRow(data...).Scan(&id)
+	if err != nil {
+		err = tx.Rollback()
+		return nil, err
+	}
+
+	row["id"] = sqlmapper.ColData{Data: id}
+
+	// create relation data
+	relateRowData := row.RelateData()
+	for relateTableName, rows := range relateRowData {
+		relationship := s.getRelationship(tableName, relateTableName)
+
+		switch relationship {
+		case "has_many":
+			err = s.createWithHasMany(tx, tableName, id, relateTableName, rows)
+			if err != nil {
+				err = tx.Rollback()
+				return nil, err
+			}
+		default:
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return row, nil
+}
+
+func (s *pgStore) createWithHasMany(tx *sql.Tx, tableName string, id int, relateTableName string, rows []sqlmapper.RowData) error {
+	for _, row := range rows {
+		// find relate column
+		c, err := s.getRelateColumn(tableName, relateTableName)
+		if c == nil {
+			return err
+		}
+
+		cols, data := row.ColumnsAndData()
+		cols = append(cols, c.Name)
+		data = append(data, id)
+
+		phs := strmangle.Placeholders(true, len(cols), 1, 1)
+		sqlQuery := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s) RETURNING id;",
+			relateTableName,
+			strings.Join(cols, ","),
+			phs)
+
+		stmt, err := tx.Prepare(sqlQuery)
+		if err != nil {
+			return err
+		}
+		defer stmt.Close()
+
+		// update id if create success
+		var id int
+		err = stmt.QueryRow(data...).Scan(&id)
+		if err != nil {
+			return err
+		}
+
+		row["id"] = sqlmapper.ColData{Data: id}
+	}
+
+	return nil
 }
 
 func (s *pgStore) Delete(tableName string, id int) error {

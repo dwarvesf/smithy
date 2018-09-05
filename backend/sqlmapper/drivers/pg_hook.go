@@ -36,8 +36,8 @@ func (s *pgHookStore) ColumnMetadata(q sqlmapper.Query) ([]database.Column, erro
 	return s.pgStore.ColumnMetadata(q)
 }
 
-func (s *pgHookStore) Create(tableName string, d sqlmapper.RowData) (sqlmapper.RowData, error) {
-	ctx := d.ToCtx()
+func (s *pgHookStore) Create(tableName string, row sqlmapper.RowData) (sqlmapper.RowData, error) {
+	ctx := row.ToCtx()
 
 	model := s.modelMap[tableName]
 	if model.IsBeforeCreateEnable() {
@@ -45,10 +45,10 @@ func (s *pgHookStore) Create(tableName string, d sqlmapper.RowData) (sqlmapper.R
 		if err != nil {
 			return nil, err
 		}
-		d = sqlmapper.Ctx(ctx).ToRowData()
+		row = sqlmapper.Ctx(ctx).ToRowData()
 	}
 
-	res, err := s.pgStore.Create(tableName, d)
+	res, err := s.pgStore.Create(tableName, row)
 	if err != nil {
 		return nil, err
 	}

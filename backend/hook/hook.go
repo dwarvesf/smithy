@@ -30,7 +30,7 @@ type DBLib interface {
 	Where(tableName string, condition string) ([]map[interface{}]interface{}, error)
 	Create(tableName string, data map[interface{}]interface{}) (map[interface{}]interface{}, error)
 	Update(tableName string, primaryKey interface{}, data map[interface{}]interface{}) (map[interface{}]interface{}, error)
-	Delete(tableName string, primaryKey interface{}) error
+	Delete(tableName string, fields, data []interface{}) error
 }
 
 type pgLibImpl struct {
@@ -158,16 +158,25 @@ func (s *pgLibImpl) Update(tableName string, primaryKey interface{}, d map[inter
 	}
 	return d, nil
 }
-func (s *pgLibImpl) Delete(tableName string, primaryKey interface{}) error {
-	exec := fmt.Sprintf("DELETE FROM %s WHERE %s=%v",
-		tableName,
-		"id",
-		primaryKey)
+func (s *pgLibImpl) Delete(tableName string, fields, data []interface{}) error {
+	execPostfix := fmt.Sprintf("DELETE FROM %s WHERE", tableName)
+
+	if len(fields) != len(data) {
+		return errors.New("Fields and data isn't match")
+	}
+
+	param := []string{}
+
+	numberOfParam := len(fields)
+	for i := 0; i < numberOfParam; i++ {
+		param = append(param, fmt.Sprintf("%v=%v", fields[i], data[i]))
+	}
+
+	exec := fmt.Sprintf("%s %s", execPostfix, strings.Join(param, "AND"))
 
 	if _, err := s.db.DB().Exec(exec); err != nil {
 		return errors.New("delete error")
 	}
-
 	return nil
 }
 

@@ -7,7 +7,6 @@ import (
 	"github.com/go-kit/kit/endpoint"
 
 	"github.com/dwarvesf/smithy/backend/service"
-	"github.com/dwarvesf/smithy/backend/sqlmapper"
 )
 
 // DBDeleteRequest request for db delete data by id
@@ -29,9 +28,7 @@ func makeDBDeleteEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, errors.New("failed to make type assertion")
 		}
 
-		rowData, relateRowData, err := sqlmapper.MakeRowData(req.Fields, req.Data)
-
-		if err != nil {
+		if err := s.Delete(req.TableName, req.Fields, req.Data); err != nil {
 			return nil, err
 		}
 

@@ -42,10 +42,10 @@ func (s *pgLibImpl) First(tableName string, condition string) (map[interface{}]i
 	}
 
 	if len(data) == 0 {
-		return nil, nil
+		return nil, errors.New("record not found")
 	}
 
-	first := data[0].([]interface{})
+	first := data[0].([]interface{}) // get only first element
 	res := make(map[interface{}]interface{})
 	for i := range first {
 		res[cols[i]] = first[i]
@@ -79,7 +79,7 @@ func (s *pgLibImpl) Where(tableName string, condition string) ([]map[interface{}
 	for i := range data {
 		tmp := make(map[interface{}]interface{})
 		for j := range cols {
-			tmp[cols[j]] = data[i].([]interface{})[j]
+			tmp[cols[j]] = data[i].([]interface{})[j] // row is a []interface{}
 		}
 
 		res = append(res, tmp)
@@ -103,20 +103,24 @@ func (s *pgLibImpl) Create(tableName string, d map[interface{}]interface{}) (map
 
 	res := db.QueryRow(execQuery, data...)
 
-	var id int
+	var id int64
 	err := res.Scan(&id)
 	if err != nil {
 		return nil, err
 	}
 
 	// update id if create success
-	d["id"] = sqlmapper.ColData{Data: id}
+	d["id"] = id
 
 	return d, nil
 }
 
 func (s *pgLibImpl) Update(tableName string, primaryKey interface{}, d map[interface{}]interface{}) (map[interface{}]interface{}, error) {
 	db := s.db.DB()
+	if notExist, _ := s.isIDNotExist(tableName, primaryKey); !notExist {
+		return nil, errors.New("primary key is not exist")
+	}
+
 	row := toRowData(d)
 	cols, data := row.ColumnsAndData()
 
@@ -137,6 +141,10 @@ func (s *pgLibImpl) Update(tableName string, primaryKey interface{}, d map[inter
 	return d, nil
 }
 func (s *pgLibImpl) Delete(tableName string, primaryKey interface{}) error {
+	if notExist, _ := s.isIDNotExist(tableName, primaryKey); !notExist {
+		return errors.New("primary key is not exist")
+	}
+
 	exec := fmt.Sprintf("DELETE FROM %s WHERE %s=%v",
 		tableName,
 		"id",
@@ -147,4 +155,14 @@ func (s *pgLibImpl) Delete(tableName string, primaryKey interface{}) error {
 	}
 
 	return nil
+}
+
+func (s *pgLibImpl) isIDNotExist(tableName string, primaryKey interface{}) (bool, error) {
+	data := struct {
+		Result bool
+	}{}
+
+	execQuery := fmt.Sprintf("SELECT EXISTS(SELECT 1 FROM %s WHERE id = %v) as result", tableName, primaryKey)
+
+	return data.Result, s.db.Raw(execQuery).Scan(&data).Error
 }

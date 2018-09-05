@@ -64,13 +64,13 @@ func NewAnkoScriptEngine(db *gorm.DB, modelMap map[string]database.Model) (Scrip
 	env := vm.NewEnv()
 	err := env.Define("println", fmt.Println) // TODO: REMOVE THIS LATTER
 	if err != nil {
-		return nil, fmt.Errorf("define error: %v\n", err)
+		return nil, fmt.Errorf("define error: %v", err)
 	}
 
 	lib := NewPGLib(db, modelMap)
 	err = defineAnkoDBLib(env, lib)
 	if err != nil {
-		return nil, fmt.Errorf("define error: %v\n", err)
+		return nil, fmt.Errorf("define error: %v", err)
 	}
 
 	return &ankoScriptEngine{

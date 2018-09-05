@@ -172,7 +172,7 @@ func (s *pgLibImpl) Delete(tableName string, fields, data []interface{}) error {
 		param = append(param, fmt.Sprintf("%v=%v", fields[i], data[i]))
 	}
 
-	exec := fmt.Sprintf("%s %s", execPostfix, strings.Join(param, "AND"))
+	exec := fmt.Sprintf("%s %s", execPostfix, strings.Join(param, " AND "))
 
 	if _, err := s.db.DB().Exec(exec); err != nil {
 		return errors.New("delete error")

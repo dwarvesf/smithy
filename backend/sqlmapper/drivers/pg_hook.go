@@ -15,12 +15,17 @@ type pgHookStore struct {
 }
 
 // NewPGHookStore new pg implement for hook
-func NewPGHookStore(store sqlmapper.Mapper, modelMap map[string]database.Model, db *gorm.DB) sqlmapper.Mapper {
+func NewPGHookStore(store sqlmapper.Mapper, modelMap map[string]database.Model, db *gorm.DB) (sqlmapper.Mapper, error) {
+	scriptEngine, err := hook.NewAnkoScriptEngine(db, modelMap)
+	if err != nil {
+		return nil, err
+	}
+
 	return &pgHookStore{
 		pgStore:    store,
-		hookEngine: hook.NewAnkoScriptEngine(db, modelMap),
+		hookEngine: scriptEngine,
 		modelMap:   modelMap,
-	}
+	}, nil
 }
 
 func (s *pgHookStore) Query(q sqlmapper.Query) ([]string, []interface{}, error) {

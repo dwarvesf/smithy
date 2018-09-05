@@ -66,21 +66,6 @@ func CreateModelList() []database.Model {
 					Type:       "string",
 					IsNullable: true,
 				},
-				{
-					Name:       "title",
-					Type:       "string",
-					IsNullable: true,
-				},
-				{
-					Name:       "description",
-					Type:       "string",
-					IsNullable: true,
-				},
-				{
-					Name:       "age",
-					Type:       "int",
-					IsNullable: true,
-				},
 			},
 		},
 	}
@@ -92,6 +77,7 @@ func CreateModelList() []database.Model {
 func CreateConfig(t *testing.T) (*backendConfig.Config, func()) {
 	cfg := &backendConfig.Config{
 		ModelList: CreateModelList(),
+		ModelMap:  make(map[string]database.Model),
 		ConnectionInfo: database.ConnectionInfo{
 			DBType:          "postgres",
 			DBUsername:      dbUser,
@@ -117,7 +103,13 @@ func CreateConfig(t *testing.T) (*backendConfig.Config, func()) {
 			},
 		},
 	}
-	err := cfg.UpdateDB()
+
+	err := cfg.UpdateConfig(cfg) // update table map
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = cfg.UpdateDB()
 	if err != nil {
 		t.Fatal(err)
 	}

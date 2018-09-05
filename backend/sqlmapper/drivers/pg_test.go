@@ -219,7 +219,9 @@ func Test_pgStore_Delete(t *testing.T) {
 	}
 
 	type args struct {
-		id int
+		tableName string
+		fields    []interface{}
+		data      []interface{}
 	}
 	tests := []struct {
 		name              string
@@ -229,27 +231,51 @@ func Test_pgStore_Delete(t *testing.T) {
 		testForEmptyTable bool
 	}{
 		{
-			name:      "Valid test case",
+			name:      "Valid test case: id",
 			tableName: "users",
 			args: &args{
-				id: 1,
+				tableName: "users",
+				fields: []interface{}{
+					"id",
+				},
+				data: []interface{}{
+					"1",
+				},
 			},
+			wantErr:           false,
+			testForEmptyTable: false,
 		},
 		{
-			name:      "id not exists",
+			name:      "Valid test case: id name",
 			tableName: "users",
 			args: &args{
-				id: 111,
+				tableName: "users",
+				fields: []interface{}{
+					"id",
+					"name",
+				},
+				data: []interface{}{
+					"1",
+					"hieudeptrai1",
+				},
 			},
-			wantErr: true,
+			wantErr:           false,
+			testForEmptyTable: false,
 		},
 		{
-			name:      "id too long",
+			name:      "Invalid testcase",
 			tableName: "users",
 			args: &args{
-				id: math.MaxInt32 + 1,
+				tableName: "users",
+				fields: []interface{}{
+					"iddfdf",
+				},
+				data: []interface{}{
+					"1",
+				},
 			},
-			wantErr: true,
+			wantErr:           true,
+			testForEmptyTable: false,
 		},
 	}
 	for _, tt := range tests {
@@ -269,7 +295,7 @@ func Test_pgStore_Delete(t *testing.T) {
 				s = NewPGStore(cfg.DB(), database.Models(cfg.ModelList).GroupByName())
 			}
 
-			err := s.Delete(tt.tableName, tt.args.id)
+			err := s.Delete(tt.tableName, tt.args.fields, tt.args.data)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("pgStore.Delete() error = %v, wantErr %v", err, tt.wantErr)
 				return

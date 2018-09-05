@@ -127,10 +127,10 @@ func (s *pgStore) Delete(tableName string, fields, data []interface{}) error {
 
 	numberOfParam := len(fields)
 	for i := 0; i < numberOfParam; i++ {
-		param = append(param, fmt.Sprintf("%v=%v", fields[i], data[i]))
+		param = append(param, fmt.Sprintf("%v='%v'", fields[i], data[i]))
 	}
 
-	exec := fmt.Sprintf("%s %s", execPostfix, strings.Join(param, "AND"))
+	exec := fmt.Sprintf("%s %s", execPostfix, strings.Join(param, " AND "))
 
 	if _, err := s.db.DB().Exec(exec); err != nil {
 		return errors.New("delete error")

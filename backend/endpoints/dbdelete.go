@@ -3,26 +3,23 @@ package endpoints
 import (
 	"context"
 	"errors"
-	"strconv"
 
 	"github.com/go-kit/kit/endpoint"
 
 	"github.com/dwarvesf/smithy/backend/service"
+	"github.com/dwarvesf/smithy/backend/sqlmapper"
 )
 
 // DBDeleteRequest request for db delete data by id
 type DBDeleteRequest struct {
-	TableName  string `json:"-"`
-	PrimaryKey string `json:"primary_key" schema:"primary_key"`
+	TableName string        `json:"-"`
+	Fields    []interface{} `json:"fields"`
+	Data      []interface{} `json:"data"`
 }
 
 // DBDeleteResponse response for db delete data by id
 type DBDeleteResponse struct {
 	Status string `json:"status"`
-}
-
-func (r *DBDeleteRequest) getResourceID() (int, error) {
-	return strconv.Atoi(r.PrimaryKey)
 }
 
 func makeDBDeleteEndpoint(s service.Service) endpoint.Endpoint {
@@ -32,16 +29,9 @@ func makeDBDeleteEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, errors.New("failed to make type assertion")
 		}
 
-		var (
-			id  int
-			err error
-		)
+		rowData, relateRowData, err := sqlmapper.MakeRowData(req.Fields, req.Data)
 
-		if id, err = req.getResourceID(); err != nil {
-			return nil, err
-		}
-
-		if err := s.Delete(req.TableName, id); err != nil {
+		if err != nil {
 			return nil, err
 		}
 

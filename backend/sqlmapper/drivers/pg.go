@@ -132,15 +132,21 @@ func (s *pgStore) Create(tableName string, d sqlmapper.RowData) (sqlmapper.RowDa
 	return d, nil
 }
 
-func (s *pgStore) Delete(tableName string, id int) error {
-	if notExist, _ := s.isIDNotExist(tableName, id); !notExist {
-		return errors.New("primary key is not exist")
+func (s *pgStore) Delete(tableName string, fields, data []interface{}) error {
+	execPostfix := fmt.Sprintf("DELETE FROM %s WHERE", tableName)
+
+	if len(fields) != len(data) {
+		return errors.New("Fields and data isn't match")
 	}
 
-	exec := fmt.Sprintf("DELETE FROM %s WHERE %s=%v",
-		tableName,
-		"id",
-		id)
+	param := []string{}
+
+	numberOfParam := len(fields)
+	for i := 0; i < numberOfParam; i++ {
+		param = append(param, fmt.Sprintf("%v='%v'", fields[i], data[i]))
+	}
+
+	exec := fmt.Sprintf("%s %s", execPostfix, strings.Join(param, " AND "))
 
 	if _, err := s.db.DB().Exec(exec); err != nil {
 		return errors.New("delete error")

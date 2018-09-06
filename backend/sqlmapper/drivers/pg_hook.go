@@ -65,7 +65,7 @@ func (s *pgHookStore) Create(tableName string, d sqlmapper.RowData) (sqlmapper.R
 	return res, nil
 }
 
-func (s *pgHookStore) Delete(tableName string, id int) error {
+func (s *pgHookStore) Delete(tableName string, fields, data []interface{}) error {
 	model := s.modelMap[tableName]
 	if model.IsBeforeDeleteEnable() {
 		err := s.hookEngine.Eval(nil, model.Hooks.BeforeDelete.Content)
@@ -74,7 +74,7 @@ func (s *pgHookStore) Delete(tableName string, id int) error {
 		}
 	}
 
-	res := s.pgStore.Delete(tableName, id)
+	res := s.pgStore.Delete(tableName, fields, data)
 
 	if model.IsAfterDeleteEnable() {
 		err := s.hookEngine.Eval(nil, model.Hooks.AfterDelete.Content)

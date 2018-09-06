@@ -15,7 +15,7 @@ import (
 type Mapper interface {
 	Create(tableName string, d RowData) (RowData, error)
 	Update(tableName string, d RowData, id int) (RowData, error)
-	Delete(tableName string, id int) error
+	Delete(tableName string, fields, data []interface{}) error
 	Query(Query) ([]string, []interface{}, error)
 	ColumnMetadata(Query) ([]database.Column, error)
 }

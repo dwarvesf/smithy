@@ -13,14 +13,14 @@
 ```javascript
 {
     "filter": {
-        "fields": {Tên những fields cần filter},
-        "data": {Giá trị tương ứng của những fields cần filter}
+        "fields": {fields name need to fill},
+        "data": {data of fields need to fill}
     }
 }
 ```
 
 #### Sample
-Xóa những trường trong bảng có id = 1
+Delete record have id = 1
 ```javascript
 {
    "filter": {
@@ -30,7 +30,7 @@ Xóa những trường trong bảng có id = 1
 }
 ```
 
-Xóa những trường trong bảng có id = 1 và name = meo con
+Delete record have id = 1 and name = "Mèo con"
 ```javascript
 {
     "filter": {
@@ -48,5 +48,5 @@ Xóa những trường trong bảng có id = 1 và name = meo con
 
 #### Fail
 ```javascript
-{"error": "chi tiết lỗi"}
+{"error": "error detail"}
 

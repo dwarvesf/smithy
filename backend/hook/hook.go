@@ -52,7 +52,10 @@ func getJSONAPI(headers map[interface{}]interface{}, url string) (map[string]int
 
 	// add json header
 	req.Header.Set("Content-Type", "application/json")
-	addHeader(headers, req)
+	err = addHeader(headers, req)
+	if err != nil {
+		return nil, err
+	}
 
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -84,7 +87,10 @@ func postJSONAPI(data map[interface{}]interface{}, headers map[interface{}]inter
 
 	// add json header
 	req.Header.Set("Content-Type", "application/json")
-	addHeader(headers, req)
+	err = addHeader(headers, req)
+	if err != nil {
+		return nil, err
+	}
 
 	client := &http.Client{}
 	resp, err := client.Do(req)

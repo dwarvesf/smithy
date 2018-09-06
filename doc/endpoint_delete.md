@@ -4,7 +4,7 @@
 <url>/tables/{table_name}/delete
 ```
 ### Headers
-| | |
+| Key|Value |
 |--|--|
 | Content-Type | application/json
 | Authorization | Bearer {jwt_token}|

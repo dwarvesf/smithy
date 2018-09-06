@@ -149,7 +149,7 @@ func (s *pgStore) Delete(tableName string, fields, data []interface{}) error {
 	exec := fmt.Sprintf("%s %s", execPostfix, strings.Join(param, " AND "))
 
 	if _, err := s.db.DB().Exec(exec); err != nil {
-		return errors.New("delete error")
+		return fmt.Errorf("%v", err.Error())
 	}
 	return nil
 }

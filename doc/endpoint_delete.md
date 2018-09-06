@@ -26,7 +26,7 @@ Xóa những trường trong bảng có id = 1
    "filter": {
         "fields": ["id"],
         "data": ["1"]
-	}
+   }
 }
 ```
 

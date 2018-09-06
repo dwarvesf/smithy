@@ -103,19 +103,19 @@ func (s *pgStore) ColumnMetadata(q sqlmapper.Query) ([]database.Column, error) {
 	return q.ColumnMetadata(m.Columns)
 }
 
-func (s *pgStore) getRelationship(tableName string, relateTableName string) string {
+func (s *pgStore) getRelationshipType(tableName string, relateTableName string) string {
 	relationships := s.modelMap[tableName].Relationship
-	var relationship string
+	var relationshipType string
 	for _, rel := range relationships {
 		if rel.Table == relateTableName {
-			relationship = rel.Type
+			relationshipType = rel.Type
 		}
 	}
 
-	return relationship
+	return relationshipType
 }
 
-func (s *pgStore) getRelateColumn(tableName string, relateTableName string) (*database.Column, error) {
+func (s *pgStore) getForeignKeyColumn(tableName string, relateTableName string) (*database.Column, error) {
 	cs := s.modelMap[relateTableName].Columns
 	var c *database.Column
 	for i := 0; i < len(cs); i++ {
@@ -126,7 +126,7 @@ func (s *pgStore) getRelateColumn(tableName string, relateTableName string) (*da
 	}
 
 	if c == nil {
-		return nil, errors.New("Can't find relate column")
+		return nil, errors.New("Can't find foreign key column")
 	}
 
 	return c, nil
@@ -169,7 +169,7 @@ func (s *pgStore) Create(tableName string, row sqlmapper.RowData) (sqlmapper.Row
 	// create relation data
 	relateRowData := row.RelateData()
 	for relateTableName, rows := range relateRowData {
-		relationship := s.getRelationship(tableName, relateTableName)
+		relationship := s.getRelationshipType(tableName, relateTableName)
 
 		switch relationship {
 		case "has_many":
@@ -190,21 +190,21 @@ func (s *pgStore) Create(tableName string, row sqlmapper.RowData) (sqlmapper.Row
 	return row, nil
 }
 
-func (s *pgStore) createWithHasMany(tx *sql.Tx, tableName string, id int, relateTableName string, rows []sqlmapper.RowData) error {
-	for _, row := range rows {
+func (s *pgStore) createWithHasMany(tx *sql.Tx, parentTableName string, parentID int, tableName string, datas []sqlmapper.RowData) error {
+	for _, row := range datas {
 		// find relate column
-		c, err := s.getRelateColumn(tableName, relateTableName)
+		c, err := s.getForeignKeyColumn(parentTableName, tableName)
 		if c == nil {
 			return err
 		}
 
 		cols, data := row.ColumnsAndData()
 		cols = append(cols, c.Name)
-		data = append(data, id)
+		data = append(data, parentID)
 
 		phs := strmangle.Placeholders(true, len(cols), 1, 1)
 		sqlQuery := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s) RETURNING id;",
-			relateTableName,
+			tableName,
 			strings.Join(cols, ","),
 			phs)
 

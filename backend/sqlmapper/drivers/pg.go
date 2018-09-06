@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/jinzhu/gorm"
@@ -313,17 +314,28 @@ func filterRowData(d sqlmapper.RowData) sqlmapper.RowData {
 	return d
 }
 
-func (s *pgStore) Update(tableName string, d sqlmapper.RowData, id int) (sqlmapper.RowData, error) {
+func (s *pgStore) Update(tableName string, row sqlmapper.RowData, id int) (sqlmapper.RowData, error) {
 	if notExist, _ := s.isIDNotExist(tableName, id); !notExist {
 		return nil, errors.New("primary key is not exist")
 	}
 
-	if err := verifyInput(d, tableName, s.modelMap); err != nil {
+	if err := verifyInput(row, tableName, s.modelMap); err != nil {
 		return nil, err
 	}
 
-	db := s.db.DB()
-	cols, data := d.ColumnsAndData()
+	tx, err := s.db.DB().Begin()
+	if err != nil {
+		return nil, err
+	}
+
+	cols, data := row.ColumnsAndData()
+
+	foreignColumns := s.getRelationalColumn(tableName)
+	if foreignColumns != nil {
+		if err = s.isForeignKeyExist(cols, data, foreignColumns); err != nil {
+			return nil, err
+		}
+	}
 
 	rowQuery := make([]string, len(cols))
 
@@ -336,10 +348,39 @@ func (s *pgStore) Update(tableName string, d sqlmapper.RowData, id int) (sqlmapp
 		strings.Join(rowQuery, ","),
 		id)
 
-	if _, err := db.Exec(execQuery, data...); err != nil {
+	stmt, err := tx.Prepare(execQuery)
+	if err != nil {
 		return nil, err
 	}
-	return d, nil
+	defer stmt.Close()
+
+	if _, err := stmt.Exec(data...); err != nil {
+		return nil, err
+	}
+
+	relateRowData := row.RelateData()
+	primaryKeyList := s.ignorePrimaryKey(tableName, relateRowData)
+
+	for relateTableName, rows := range relateRowData {
+		relationship := s.getRelationshipType(tableName, relateTableName)
+		switch relationship {
+		case "has_many":
+			err = s.updateWithHasMany(tx, tableName, relateTableName, rows, primaryKeyList)
+			if err != nil {
+				if errRoolBack := tx.Rollback(); errRoolBack != nil {
+					return nil, errRoolBack
+				}
+				return nil, err
+			}
+		default:
+		}
+	}
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return row, nil
 }
 func (s *pgStore) isIDNotExist(tableName string, id int) (bool, error) {
 	data := struct {
@@ -349,4 +390,113 @@ func (s *pgStore) isIDNotExist(tableName string, id int) (bool, error) {
 	execQuery := fmt.Sprintf("SELECT EXISTS(SELECT 1 FROM %s WHERE id = %d) as result", tableName, id)
 
 	return data.Result, s.db.Raw(execQuery).Scan(&data).Error
+}
+
+func (s *pgStore) isPrimaryKey(colName, tableName string) bool {
+	columns := s.modelMap[tableName].Columns
+	for _, col := range columns {
+		if col.IsPrimary && col.Name == colName {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *pgStore) ignorePrimaryKey(tableName string, relateRowData map[string][]sqlmapper.RowData) []int {
+	primaryKeyList := []int{}
+	for _, rowList := range relateRowData {
+		for _, rowData := range rowList {
+			for _, colData := range rowData {
+				if ok := s.isPrimaryKey(colData.Name, tableName); ok {
+					primaryKeyList = append(primaryKeyList, int(colData.Data.(float64)))
+					delete(rowData, colData.Name)
+				}
+			}
+		}
+	}
+	return primaryKeyList
+}
+
+func (s *pgStore) getRelationalColumn(tableName string) []database.Column {
+	cs := s.modelMap[tableName].Columns
+	c := []database.Column{}
+	for i := 0; i < len(cs); i++ {
+		if cs[i].ForeignKey.Table != "" {
+			c = append(c, cs[i])
+			break
+		}
+	}
+	return c
+}
+
+func (s *pgStore) isForeignKeyExist(cols []string, data []interface{}, foreignColumns []database.Column) error {
+	for index, colName := range cols {
+		for _, foreignColumn := range foreignColumns {
+			if colName == foreignColumn.Name {
+				var (
+					id  int
+					err error
+				)
+				if id, err = strconv.Atoi(data[index].(string)); err != nil {
+					return err
+				}
+				if notExist, _ := s.isIDNotExist(foreignColumn.ForeignKey.Table, id); !notExist {
+					return fmt.Errorf("primary key of %s is not exist", colName)
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func (s *pgStore) updateWithHasMany(tx *sql.Tx, parentTableName string, tableName string, rows []sqlmapper.RowData, primaryKeyList []int) error {
+	for i, row := range rows {
+		// find relate column
+		if notExist, _ := s.isIDNotExist(tableName, primaryKeyList[i]); !notExist {
+			if _, err := s.Create(tableName, row); err != nil {
+				return err
+			}
+		}
+
+		if err := verifyInput(row, tableName, s.modelMap); err != nil {
+			return err
+		}
+
+		c, err := s.getForeignKeyColumn(parentTableName, tableName)
+		if c == nil {
+			return err
+		}
+
+		cols, data := row.ColumnsAndData()
+		for index, name := range cols {
+			if name == c.Name {
+				if notExist, _ := s.isIDNotExist(parentTableName, int(data[index].(float64))); !notExist {
+					return fmt.Errorf("primary key of %s is not exist", name)
+				}
+			}
+		}
+
+		rowQuery := make([]string, len(cols))
+
+		for j := 0; j < len(cols); j++ {
+			rowQuery[j] = fmt.Sprintf("%s = $%d", cols[j], j+1)
+		}
+
+		execQuery := fmt.Sprintf("UPDATE %s SET %s WHERE id = %d",
+			tableName,
+			strings.Join(rowQuery, ","),
+			primaryKeyList[i])
+
+		stmt, err := tx.Prepare(execQuery)
+		if err != nil {
+			return err
+		}
+
+		if _, err := stmt.Exec(data...); err != nil {
+			return err
+		}
+		defer stmt.Close()
+	}
+
+	return nil
 }

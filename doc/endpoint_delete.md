@@ -10,7 +10,7 @@
 | Authorization | Bearer {jwt_token}|
 
 ### Body
-```javascript
+```
 {
     "filter": {
         "fields": {fields name need to fill},
@@ -21,7 +21,7 @@
 
 #### Sample
 Delete record have id = 1
-```javascript
+```
 {
    "filter": {
         "fields": ["id"],
@@ -31,7 +31,7 @@ Delete record have id = 1
 ```
 
 Delete record have id = 1 and name = "Mèo con"
-```javascript
+```
 {
     "filter": {
         "fields": ["id", "name"],

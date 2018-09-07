@@ -1,25 +1,19 @@
 language: go
-
-go: "1.10"
-
+go: '1.10'
 git:
   depth: 1
-
 services:
-  - docker
-
+- docker
 before_script:
-  - echo $SLACK_KEY
-  - docker run -d --rm --name pg_test -p 5439:5432 --env POSTGRES_PASSWORD=example --env POSTGRES_DB=test postgres:10.4
-  - |
-    while ! docker exec pg_test pg_isready -h localhost -p 5432 > /dev/null; do\
-      sleep 1; \
-    done
-
+- docker run -d --rm --name pg_test -p 5439:5432 --env POSTGRES_PASSWORD=example --env
+  POSTGRES_DB=test postgres:10.4
+- |
+  while ! docker exec pg_test pg_isready -h localhost -p 5432 > /dev/null; do\
+    sleep 1; \
+  done
 script:
-  - make test
-  - make build
-
+- make test
+- make build
 notifications:
-  slack: $SLACK_KEY
-
+  slack:
+    secure: UhvVX7eiXmabzW8FFamIKVCpmmPBMVs89WDyXJFYpwgcMdfZSUf1rE443/cEgXZ23kpu+ERswJnw11Oih+WHt1OK8u6c8/FG7A9uEN6ANJfY+FvJCiAr7eBgftoowANxslULW4PYatNKzcKgc8224/ktiho9KtKNj0YoYwf8tC/JE3gIVtZggkMEhD4yUORjIYXvt8lN+0BRHBx9lufUVzhPrGjwv4wVVrRZLTiMpufzjkvan2CpoeWmSEC/paUiPosnGSKHISARLYFDM/B5YQOnCs3YYI2K8v1LTmTt/rHoJ23w3D/3MN6CbYFqUGGO9Mh49NgsOx8tFIxH2DhE+cZDnHYmlfnIT44qUqrAF4C4nos8zq0EWgKRt2vvc2V9AGQs3Qod/RwOFWPLeSGaH5PWF7lMxuny1SbW1vwoWxmaDJEu2Qc31QkDMYKoVl08EVAb4VsnJqwOIS9HZrSPmw5ddYyCyU7OH/kRQvhQWMeAEdRioLm1/8n5WDPX4V/x8SQ0L9iOjeUKjThzfj8POyTLnDUqEAHgBVsXka0Vc8/B4XodgC1h0scGamlExHs5KOkz4m42Eir0BPiBGjAZhrHbfGUbjkfRwZm9I1Qk8bkP/v3dzlqNo7+FRD+etoybyq6Dod6CqMYJaxlXMRwwgSL/kv2isjgwkERssb/Sjq4=

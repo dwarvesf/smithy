@@ -329,7 +329,6 @@ func (s *pgStore) Update(tableName string, row sqlmapper.RowData, id int) (sqlma
 	}
 
 	cols, data := row.ColumnsAndData()
-
 	foreignColumns := s.getRelationalColumn(tableName)
 	if foreignColumns != nil {
 		if err = s.isForeignKeyExist(cols, data, foreignColumns); err != nil {
@@ -337,31 +336,14 @@ func (s *pgStore) Update(tableName string, row sqlmapper.RowData, id int) (sqlma
 		}
 	}
 
-	rowQuery := make([]string, len(cols))
-
-	for i := 0; i < len(cols); i++ {
-		rowQuery[i] = fmt.Sprintf("%s = $%d", cols[i], i+1)
-	}
-
-	execQuery := fmt.Sprintf("UPDATE %s SET %s WHERE id = %d",
-		tableName,
-		strings.Join(rowQuery, ","),
-		id)
-
-	stmt, err := tx.Prepare(execQuery)
-	if err != nil {
-		return nil, err
-	}
-	defer stmt.Close()
-
-	if _, err := stmt.Exec(data...); err != nil {
+	if err = s.execUpdateSQL(tx, id, data, cols, tableName); err != nil {
 		return nil, err
 	}
 
-	relateRowData := row.RelateData()
-	primaryKeyList := s.ignorePrimaryKey(tableName, relateRowData)
+	relationalRowData := row.RelateData()
+	primaryKeyList := s.ignorePrimaryKey(tableName, relationalRowData)
 
-	for relateTableName, rows := range relateRowData {
+	for relateTableName, rows := range relationalRowData {
 		relationship := s.getRelationshipType(tableName, relateTableName)
 		switch relationship {
 		case "has_many":
@@ -423,7 +405,6 @@ func (s *pgStore) getRelationalColumn(tableName string) []database.Column {
 	for i := 0; i < len(cs); i++ {
 		if cs[i].ForeignKey.Table != "" {
 			c = append(c, cs[i])
-			break
 		}
 	}
 	return c
@@ -446,6 +427,32 @@ func (s *pgStore) isForeignKeyExist(cols []string, data []interface{}, foreignCo
 			}
 		}
 	}
+	return nil
+}
+
+func (s *pgStore) execUpdateSQL(tx *sql.Tx, id int, data []interface{}, cols []string, tableName string) error {
+	rowQuery := make([]string, len(cols))
+
+	for j := 0; j < len(cols); j++ {
+		rowQuery[j] = fmt.Sprintf("%s = $%d", cols[j], j+1)
+	}
+
+	execQuery := fmt.Sprintf("UPDATE %s SET %s WHERE id = %d",
+		tableName,
+		strings.Join(rowQuery, ","),
+		id)
+
+	stmt, err := tx.Prepare(execQuery)
+
+	if err != nil {
+		return err
+	}
+
+	if _, err := stmt.Exec(data...); err != nil {
+		return err
+	}
+	defer stmt.Close()
+
 	return nil
 }
 
@@ -476,26 +483,9 @@ func (s *pgStore) updateWithHasMany(tx *sql.Tx, parentTableName string, tableNam
 			}
 		}
 
-		rowQuery := make([]string, len(cols))
-
-		for j := 0; j < len(cols); j++ {
-			rowQuery[j] = fmt.Sprintf("%s = $%d", cols[j], j+1)
-		}
-
-		execQuery := fmt.Sprintf("UPDATE %s SET %s WHERE id = %d",
-			tableName,
-			strings.Join(rowQuery, ","),
-			primaryKeyList[i])
-
-		stmt, err := tx.Prepare(execQuery)
-		if err != nil {
+		if err = s.execUpdateSQL(tx, primaryKeyList[i], data, cols, tableName); err != nil {
 			return err
 		}
-
-		if _, err := stmt.Exec(data...); err != nil {
-			return err
-		}
-		defer stmt.Close()
 	}
 
 	return nil

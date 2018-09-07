@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 	"time"
 
@@ -15,7 +16,7 @@ import (
 type Mapper interface {
 	Create(tableName string, d RowData) (RowData, error)
 	Update(tableName string, d RowData, id int) (RowData, error)
-	Delete(tableName string, id int) error
+	Delete(tableName string, fields, data []interface{}) error
 	Query(Query) ([]string, []interface{}, error)
 	ColumnMetadata(Query) ([]database.Column, error)
 }
@@ -88,11 +89,27 @@ func (r RowData) ColumnsAndData() ([]string, []interface{}) {
 	cols := []string{}
 	data := []interface{}{}
 	for k, v := range r {
-		cols = append(cols, k)
-		data = append(data, v.Data)
+		t := reflect.TypeOf(v.Data).String()
+		if t != "[]sqlmapper.RowData" {
+			cols = append(cols, k)
+			data = append(data, v.Data)
+		}
 	}
 
 	return cols, data
+}
+
+// RelateData get all relate-data
+func (r RowData) RelateData() map[string][]RowData {
+	relateRows := make(map[string][]RowData)
+	for k, v := range r {
+		t := reflect.TypeOf(v.Data).String()
+		if t == "[]sqlmapper.RowData" {
+			relateRows[k] = v.Data.([]RowData)
+		}
+	}
+
+	return relateRows
 }
 
 // Ctx for current sqlmapper data context
@@ -126,14 +143,42 @@ type ColData struct {
 }
 
 // MakeRowData make row_data from fields([]string) and data([]{}interface)
-func MakeRowData(fields []string, data []interface{}) (RowData, error) {
+func MakeRowData(fields []interface{}, data []interface{}) (RowData, error) {
 	if len(fields) != len(data) {
 		return nil, errors.New("length of fields and data is not the same")
 	}
 	res := make(map[string]ColData)
 
 	for i := range fields {
-		res[fields[i]] = ColData{Data: data[i], Name: fields[i]}
+		t := reflect.TypeOf(fields[i]).String()
+		if t == "string" {
+			f := fields[i].(string)
+			res[f] = ColData{Data: data[i], Name: f}
+		} else if t == "map[string]interface {}" {
+			relateFields := fields[i].(map[string]interface{})
+			for tableName, f := range relateFields {
+				datas := data[i].([]interface{})
+
+				relateData := []RowData{}
+				// for each relate-row
+				for j := 0; j < len(datas); j++ {
+					d := datas[j].([]interface{})
+					fs := f.([]interface{})
+
+					relateRow := RowData{}
+
+					// for each col in a relate-row
+					for k := 0; k < len(fs); k++ {
+						f := fs[k].(string)
+						relateRow[f] = ColData{Data: d[k], Name: f}
+					}
+
+					relateData = append(relateData, relateRow)
+				}
+
+				res[tableName] = ColData{Name: tableName, Data: relateData}
+			}
+		}
 	}
 
 	return res, nil

@@ -32,7 +32,7 @@ type DBLib interface {
 	Where(tableName string, condition string) ([]map[interface{}]interface{}, error)
 	Create(tableName string, data map[interface{}]interface{}) (map[interface{}]interface{}, error)
 	Update(tableName string, primaryKey interface{}, data map[interface{}]interface{}) (map[interface{}]interface{}, error)
-	Delete(tableName string, primaryKey interface{}) error
+	Delete(tableName string, fields, data []interface{}) error
 }
 
 func toRowData(data map[interface{}]interface{}) sqlmapper.RowData {

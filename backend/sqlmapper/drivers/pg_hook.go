@@ -36,8 +36,8 @@ func (s *pgHookStore) ColumnMetadata(q sqlmapper.Query) ([]database.Column, erro
 	return s.pgStore.ColumnMetadata(q)
 }
 
-func (s *pgHookStore) Create(tableName string, d sqlmapper.RowData) (sqlmapper.RowData, error) {
-	ctx := d.ToCtx()
+func (s *pgHookStore) Create(tableName string, row sqlmapper.RowData) (sqlmapper.RowData, error) {
+	ctx := row.ToCtx()
 
 	model := s.modelMap[tableName]
 	if model.IsBeforeCreateEnable() {
@@ -45,10 +45,10 @@ func (s *pgHookStore) Create(tableName string, d sqlmapper.RowData) (sqlmapper.R
 		if err != nil {
 			return nil, err
 		}
-		d = sqlmapper.Ctx(ctx).ToRowData()
+		row = sqlmapper.Ctx(ctx).ToRowData()
 	}
 
-	res, err := s.pgStore.Create(tableName, d)
+	res, err := s.pgStore.Create(tableName, row)
 	if err != nil {
 		return nil, err
 	}
@@ -65,7 +65,7 @@ func (s *pgHookStore) Create(tableName string, d sqlmapper.RowData) (sqlmapper.R
 	return res, nil
 }
 
-func (s *pgHookStore) Delete(tableName string, id int) error {
+func (s *pgHookStore) Delete(tableName string, fields, data []interface{}) error {
 	model := s.modelMap[tableName]
 	if model.IsBeforeDeleteEnable() {
 		err := s.hookEngine.Eval(nil, model.Hooks.BeforeDelete.Content)
@@ -74,7 +74,7 @@ func (s *pgHookStore) Delete(tableName string, id int) error {
 		}
 	}
 
-	res := s.pgStore.Delete(tableName, id)
+	res := s.pgStore.Delete(tableName, fields, data)
 
 	if model.IsAfterDeleteEnable() {
 		err := s.hookEngine.Eval(nil, model.Hooks.AfterDelete.Content)

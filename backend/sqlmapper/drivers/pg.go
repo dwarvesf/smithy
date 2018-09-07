@@ -443,7 +443,6 @@ func (s *pgStore) execUpdateSQL(tx *sql.Tx, id int, data []interface{}, cols []s
 		id)
 
 	stmt, err := tx.Prepare(execQuery)
-
 	if err != nil {
 		return err
 	}

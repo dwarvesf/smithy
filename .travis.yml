@@ -20,5 +20,5 @@ script:
   - make build
 
 notifications:
-  slack: dwarvesv:vUNqaDxaw0OJeq9Rf8dTOdXI
+  slack: $SECRET_KEY
 

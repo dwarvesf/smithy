@@ -54,14 +54,21 @@ type ConnectionInfo struct {
 
 // Model store information of model can manage
 type Model struct {
-	ACL               string    `yaml:"acl" json:"acl"`
-	ACLDetail         ACLDetail `yaml:"-" json:"-"`
-	TableName         string    `yaml:"table_name" json:"table_name"`
-	Columns           []Column  `yaml:"columns" json:"columns"`
-	AutoMigration     bool      `yaml:"auto_migration" json:"auto_migration"` // auto_migration if table not exist or misisng column
-	DisplayName       string    `yaml:"display_name" json:"display_name"`
-	NameDisplayColumn string    `yaml:"name_display_column" json:"name_display_column"`
-	Hooks             Hooks     `yaml:"hooks" json:"hooks"`
+	ACL               string         `yaml:"acl" json:"acl"`
+	ACLDetail         ACLDetail      `yaml:"-" json:"-"`
+	TableName         string         `yaml:"table_name" json:"table_name"`
+	Columns           []Column       `yaml:"columns" json:"columns"`
+	AutoMigration     bool           `yaml:"auto_migration" json:"auto_migration"` // auto_migration if table not exist or misisng column
+	DisplayName       string         `yaml:"display_name" json:"display_name"`
+	NameDisplayColumn string         `yaml:"name_display_column" json:"name_display_column"`
+	Hooks             Hooks          `yaml:"hooks" json:"hooks"`
+	Relationship      []Relationship `yaml:"relationships" json:"relationships"`
+}
+
+// Relationship relationship between tables
+type Relationship struct {
+	Table string `yaml:"table" json:"table"`
+	Type  string `yaml:"type" json:"type"`
 }
 
 // AddHook add hook to model base on hookType
@@ -207,12 +214,19 @@ func (ms Models) ModelByTableName() map[string]Model {
 
 // Column store information of a column
 type Column struct {
-	Name         string `yaml:"name" json:"name"`
-	Type         string `yaml:"type" json:"type"`
-	Tags         string `yaml:"tags" json:"tags"`
-	IsNullable   bool   `yaml:"is_nullable" json:"is_nullable"`
-	IsPrimary    bool   `yaml:"is_primary" json:"is_primary"`
-	DefaultValue string `yaml:"default_value" json:"default_value"`
+	Name         string     `yaml:"name" json:"name"`
+	Type         string     `yaml:"type" json:"type"`
+	Tags         string     `yaml:"tags" json:"tags"`
+	IsNullable   bool       `yaml:"is_nullable" json:"is_nullable"`
+	IsPrimary    bool       `yaml:"is_primary" json:"is_primary"`
+	DefaultValue string     `yaml:"default_value" json:"default_value"`
+	ForeignKey   ForeignKey `yaml:"foreign_key" json:"foreign_key"`
+}
+
+// ForeignKey foreign key of a column
+type ForeignKey struct {
+	Table         string `yaml:"table" json:"table"`
+	ForeignColumn string `yaml:"foreign_column" json:"foreign_column"`
 }
 
 // Columns array of column

@@ -13,7 +13,7 @@ import (
 // DBCreateRequest request for db create data
 type DBCreateRequest struct {
 	TableName string        `json:"-"`
-	Fields    []string      `json:"fields"`
+	Fields    []interface{} `json:"fields"`
 	Data      []interface{} `json:"data"`
 }
 

@@ -48,8 +48,11 @@ model_list:
       - name: age
         type: int
         is_nullable: true
+    relationships:
+      - type: has_many
+        table: books
   - table_name: "books"
-    display_name: "users"
+    display_name: "books"
     name_display_column: "name"
     acl: "cru"
     auto_migration: true
@@ -75,6 +78,9 @@ model_list:
       - name: description
         type: string
         is_nullable: true
-      - name: age
+      - name: author_id
         type: int
         is_nullable: true
+        foreign_key:
+          table: users
+          foreign_column: id

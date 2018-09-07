@@ -1,8 +1,10 @@
 package drivers
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/jinzhu/gorm"
@@ -102,34 +104,128 @@ func (s *pgStore) ColumnMetadata(q sqlmapper.Query) ([]database.Column, error) {
 	return q.ColumnMetadata(m.Columns)
 }
 
-func (s *pgStore) Create(tableName string, d sqlmapper.RowData) (sqlmapper.RowData, error) {
-	if err := verifyInput(d, tableName, s.modelMap); err != nil {
+func (s *pgStore) getRelationshipType(tableName string, relateTableName string) string {
+	relationships := s.modelMap[tableName].Relationship
+	var relationshipType string
+	for _, rel := range relationships {
+		if rel.Table == relateTableName {
+			relationshipType = rel.Type
+		}
+	}
+
+	return relationshipType
+}
+
+func (s *pgStore) getForeignKeyColumn(tableName string, relateTableName string) (*database.Column, error) {
+	cs := s.modelMap[relateTableName].Columns
+	var c *database.Column
+	for i := 0; i < len(cs); i++ {
+		if cs[i].ForeignKey.Table == tableName {
+			c = &cs[i]
+			break
+		}
+	}
+
+	if c == nil {
+		return nil, errors.New("Can't find foreign key column")
+	}
+
+	return c, nil
+}
+
+func (s *pgStore) Create(tableName string, row sqlmapper.RowData) (sqlmapper.RowData, error) {
+	if err := verifyInput(row, tableName, s.modelMap); err != nil {
 		return nil, err
 	}
 
-	db := s.db.DB()
-
-	cols, data := d.ColumnsAndData()
-
-	phs := strmangle.Placeholders(true, len(cols), 1, 1)
-
-	execQuery := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s) RETURNING id;",
-		tableName,
-		strings.Join(cols, ","),
-		phs)
-
-	res := db.QueryRow(execQuery, data...)
-
-	var id int
-	err := res.Scan(&id)
+	tx, err := s.db.DB().Begin()
 	if err != nil {
 		return nil, err
 	}
 
-	// update id if create success
-	d["id"] = sqlmapper.ColData{Data: id}
+	cols, data := row.ColumnsAndData()
 
-	return d, nil
+	phs := strmangle.Placeholders(true, len(cols), 1, 1)
+	sqlQuery := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s) RETURNING id;",
+		tableName,
+		strings.Join(cols, ","),
+		phs)
+
+	stmt, err := tx.Prepare(sqlQuery)
+	if err != nil {
+		return nil, err
+	}
+	defer stmt.Close()
+
+	// update id if create success
+	var id int
+	err = stmt.QueryRow(data...).Scan(&id)
+	if err != nil {
+		err = tx.Rollback()
+		return nil, err
+	}
+
+	row["id"] = sqlmapper.ColData{Data: id}
+
+	// create relation data
+	relateRowData := row.RelateData()
+	for relateTableName, rows := range relateRowData {
+		relationship := s.getRelationshipType(tableName, relateTableName)
+
+		switch relationship {
+		case "has_many":
+			err = s.createWithHasMany(tx, tableName, id, relateTableName, rows)
+			if err != nil {
+				err = tx.Rollback()
+				return nil, err
+			}
+		default:
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return row, nil
+}
+
+func (s *pgStore) createWithHasMany(tx *sql.Tx, parentTableName string, parentID int, tableName string, datas []sqlmapper.RowData) error {
+	for _, row := range datas {
+		// find relate column
+		c, err := s.getForeignKeyColumn(parentTableName, tableName)
+		if c == nil {
+			return err
+		}
+
+		cols, data := row.ColumnsAndData()
+		cols = append(cols, c.Name)
+		data = append(data, parentID)
+
+		phs := strmangle.Placeholders(true, len(cols), 1, 1)
+		sqlQuery := fmt.Sprintf("INSERT INTO %s (%s) VALUES (%s) RETURNING id;",
+			tableName,
+			strings.Join(cols, ","),
+			phs)
+
+		stmt, err := tx.Prepare(sqlQuery)
+		if err != nil {
+			return err
+		}
+		defer stmt.Close()
+
+		// update id if create success
+		var id int
+		err = stmt.QueryRow(data...).Scan(&id)
+		if err != nil {
+			return err
+		}
+
+		row["id"] = sqlmapper.ColData{Data: id}
+	}
+
+	return nil
 }
 
 func (s *pgStore) Delete(tableName string, fields, data []interface{}) error {
@@ -224,33 +320,55 @@ func filterRowData(d sqlmapper.RowData) sqlmapper.RowData {
 	return d
 }
 
-func (s *pgStore) Update(tableName string, d sqlmapper.RowData, id int) (sqlmapper.RowData, error) {
+func (s *pgStore) Update(tableName string, row sqlmapper.RowData, id int) (sqlmapper.RowData, error) {
 	if notExist, _ := s.isIDNotExist(tableName, id); !notExist {
 		return nil, errors.New("primary key is not exist")
 	}
 
-	if err := verifyInput(d, tableName, s.modelMap); err != nil {
+	if err := verifyInput(row, tableName, s.modelMap); err != nil {
 		return nil, err
 	}
 
-	db := s.db.DB()
-	cols, data := d.ColumnsAndData()
-
-	rowQuery := make([]string, len(cols))
-
-	for i := 0; i < len(cols); i++ {
-		rowQuery[i] = fmt.Sprintf("%s = $%d", cols[i], i+1)
-	}
-
-	execQuery := fmt.Sprintf("UPDATE %s SET %s WHERE id = %d",
-		tableName,
-		strings.Join(rowQuery, ","),
-		id)
-
-	if _, err := db.Exec(execQuery, data...); err != nil {
+	tx, err := s.db.DB().Begin()
+	if err != nil {
 		return nil, err
 	}
-	return d, nil
+
+	cols, data := row.ColumnsAndData()
+	foreignColumns := s.getRelationalColumn(tableName)
+	if foreignColumns != nil {
+		if err = s.isForeignKeyExist(cols, data, foreignColumns); err != nil {
+			return nil, err
+		}
+	}
+
+	if err = s.execUpdateSQL(tx, id, data, cols, tableName); err != nil {
+		return nil, err
+	}
+
+	relationalRowData := row.RelateData()
+	primaryKeyList := s.ignorePrimaryKey(tableName, relationalRowData)
+
+	for relateTableName, rows := range relationalRowData {
+		relationship := s.getRelationshipType(tableName, relateTableName)
+		switch relationship {
+		case "has_many":
+			err = s.updateWithHasMany(tx, tableName, relateTableName, rows, primaryKeyList)
+			if err != nil {
+				if errRoolBack := tx.Rollback(); errRoolBack != nil {
+					return nil, errRoolBack
+				}
+				return nil, err
+			}
+		default:
+		}
+	}
+	err = tx.Commit()
+	if err != nil {
+		return nil, err
+	}
+
+	return row, nil
 }
 func (s *pgStore) isIDNotExist(tableName string, id int) (bool, error) {
 	data := struct {
@@ -260,4 +378,120 @@ func (s *pgStore) isIDNotExist(tableName string, id int) (bool, error) {
 	execQuery := fmt.Sprintf("SELECT EXISTS(SELECT 1 FROM %s WHERE id = %d) as result", tableName, id)
 
 	return data.Result, s.db.Raw(execQuery).Scan(&data).Error
+}
+
+func (s *pgStore) isPrimaryKey(colName, tableName string) bool {
+	columns := s.modelMap[tableName].Columns
+	for _, col := range columns {
+		if col.IsPrimary && col.Name == colName {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *pgStore) ignorePrimaryKey(tableName string, relateRowData map[string][]sqlmapper.RowData) []int {
+	primaryKeyList := []int{}
+	for _, rowList := range relateRowData {
+		for _, rowData := range rowList {
+			for _, colData := range rowData {
+				if ok := s.isPrimaryKey(colData.Name, tableName); ok {
+					primaryKeyList = append(primaryKeyList, int(colData.Data.(float64)))
+					delete(rowData, colData.Name)
+				}
+			}
+		}
+	}
+	return primaryKeyList
+}
+
+func (s *pgStore) getRelationalColumn(tableName string) []database.Column {
+	cs := s.modelMap[tableName].Columns
+	c := []database.Column{}
+	for i := 0; i < len(cs); i++ {
+		if cs[i].ForeignKey.Table != "" {
+			c = append(c, cs[i])
+		}
+	}
+	return c
+}
+
+func (s *pgStore) isForeignKeyExist(cols []string, data []interface{}, foreignColumns []database.Column) error {
+	for index, colName := range cols {
+		for _, foreignColumn := range foreignColumns {
+			if colName == foreignColumn.Name {
+				var (
+					id  int
+					err error
+				)
+				if id, err = strconv.Atoi(data[index].(string)); err != nil {
+					return err
+				}
+				if notExist, _ := s.isIDNotExist(foreignColumn.ForeignKey.Table, id); !notExist {
+					return fmt.Errorf("primary key of %s is not exist", colName)
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func (s *pgStore) execUpdateSQL(tx *sql.Tx, id int, data []interface{}, cols []string, tableName string) error {
+	rowQuery := make([]string, len(cols))
+
+	for j := 0; j < len(cols); j++ {
+		rowQuery[j] = fmt.Sprintf("%s = $%d", cols[j], j+1)
+	}
+
+	execQuery := fmt.Sprintf("UPDATE %s SET %s WHERE id = %d",
+		tableName,
+		strings.Join(rowQuery, ","),
+		id)
+
+	stmt, err := tx.Prepare(execQuery)
+	if err != nil {
+		return err
+	}
+
+	if _, err := stmt.Exec(data...); err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	return nil
+}
+
+func (s *pgStore) updateWithHasMany(tx *sql.Tx, parentTableName string, tableName string, rows []sqlmapper.RowData, primaryKeyList []int) error {
+	for i, row := range rows {
+		// find relate column
+		if notExist, _ := s.isIDNotExist(tableName, primaryKeyList[i]); !notExist {
+			if _, err := s.Create(tableName, row); err != nil {
+				return err
+			}
+		}
+
+		if err := verifyInput(row, tableName, s.modelMap); err != nil {
+			return err
+		}
+
+		c, err := s.getForeignKeyColumn(parentTableName, tableName)
+		if c == nil {
+			return err
+		}
+
+		cols, data := row.ColumnsAndData()
+		for index, name := range cols {
+			if name == c.Name {
+				if notExist, _ := s.isIDNotExist(parentTableName, int(data[index].(float64))); !notExist {
+					return fmt.Errorf("primary key of %s is not exist", name)
+				}
+			}
+		}
+
+		if err = s.execUpdateSQL(tx, primaryKeyList[i], data, cols, tableName); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

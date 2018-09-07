@@ -14,7 +14,7 @@ import (
 // DBUpdateRequest request for db Update data
 type DBUpdateRequest struct {
 	TableName  string        `json:"-"`
-	Fields     []string      `json:"fields"`
+	Fields     []interface{} `json:"fields"`
 	Data       []interface{} `json:"data"`
 	PrimaryKey string        `json:"primary_key" schema:"primary_key"`
 }

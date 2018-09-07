@@ -228,20 +228,39 @@ func (s *pgStore) createWithHasMany(tx *sql.Tx, parentTableName string, parentID
 	return nil
 }
 
-func (s *pgStore) Delete(tableName string, id int) error {
-	if notExist, _ := s.isIDNotExist(tableName, id); !notExist {
-		return errors.New("primary key is not exist")
+func (s *pgStore) Delete(tableName string, fields, data []interface{}) error {
+	if !tableExisted(tableName, s.modelMap) {
+		return fmt.Errorf("Table not exists")
 	}
 
-	exec := fmt.Sprintf("DELETE FROM %s WHERE %s=%v",
-		tableName,
-		"id",
-		id)
+	execPostfix := fmt.Sprintf("DELETE FROM %s WHERE", tableName)
+
+	if len(fields) != len(data) {
+		return errors.New("Fields and data isn't match")
+	}
+
+	param := []string{}
+
+	numberOfParam := len(fields)
+	for i := 0; i < numberOfParam; i++ {
+		param = append(param, fmt.Sprintf("%v='%v'", fields[i], data[i]))
+	}
+
+	exec := fmt.Sprintf("%s %s", execPostfix, strings.Join(param, " AND "))
 
 	if _, err := s.db.DB().Exec(exec); err != nil {
-		return errors.New("delete error")
+		return fmt.Errorf("%v", err)
 	}
 	return nil
+}
+
+func tableExisted(tableName string, modalList map[string]database.Model) bool {
+	for _, table := range modalList {
+		if table.TableName == tableName {
+			return true
+		}
+	}
+	return false
 }
 
 func verifyInput(d sqlmapper.RowData, tableName string, modelList map[string]database.Model) error {

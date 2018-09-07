@@ -362,8 +362,9 @@ func Test_pgLibImpl_Delete(t *testing.T) {
 	}
 
 	type args struct {
-		tableName  string
-		primaryKey interface{}
+		tableName string
+		fields    []interface{}
+		data      []interface{}
 	}
 	tests := []struct {
 		name        string
@@ -374,25 +375,42 @@ func Test_pgLibImpl_Delete(t *testing.T) {
 		{
 			name: "correct",
 			args: args{
-				tableName:  "users",
-				primaryKey: 1,
+				tableName: "users",
+				fields: []interface{}{
+					"id",
+				},
+				data: []interface{}{
+					"1",
+				},
 			},
 			wantErr:     false,
 			testCorrect: true,
 		},
 		{
-			name: "primary key is not exist",
+			name: "id and name exist",
 			args: args{
-				tableName:  "users",
-				primaryKey: 10000,
+				tableName: "users",
+				fields: []interface{}{
+					"id",
+					"name",
+				},
+				data: []interface{}{
+					"1",
+					"hieudeptrai1",
+				},
 			},
-			wantErr: true,
+			wantErr: false,
 		},
 		{
 			name: "table not exist",
 			args: args{
-				tableName:  "userss",
-				primaryKey: 1,
+				tableName: "userss",
+				fields: []interface{}{
+					"id",
+				},
+				data: []interface{}{
+					"1",
+				},
 			},
 			wantErr: true,
 		},
@@ -401,7 +419,7 @@ func Test_pgLibImpl_Delete(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			s := NewPGLib(cfg.DB(), cfg.ModelMap)
 
-			if err := s.Delete(tt.args.tableName, tt.args.primaryKey); (err != nil) != tt.wantErr {
+			if err := s.Delete(tt.args.tableName, tt.args.fields, tt.args.data); (err != nil) != tt.wantErr {
 				t.Errorf("pgLibImpl.Delete() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if tt.testCorrect {

@@ -1,7 +1,13 @@
 package hook
 
 import (
+	"bytes"
+	"encoding/json"
+	"errors"
 	"fmt"
+	"io/ioutil"
+	"net/http"
+	"strconv"
 
 	"github.com/jinzhu/gorm"
 	"github.com/mattn/anko/vm"
@@ -38,6 +44,116 @@ func toRowData(data map[interface{}]interface{}) sqlmapper.RowData {
 	return res
 }
 
+func getJSONAPI(headers map[interface{}]interface{}, url string) (map[string]interface{}, error) {
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	// add json header
+	req.Header.Set("Content-Type", "application/json")
+	err = addHeader(headers, req)
+	if err != nil {
+		return nil, err
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	buf, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	res := map[string]interface{}{}
+	err = json.Unmarshal(buf, &res)
+	return res, err
+}
+
+func postJSONAPI(data map[interface{}]interface{}, headers map[interface{}]interface{}, url string) (map[string]interface{}, error) {
+	buf, err := convertAnkoMapToJSON(data)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", url, bytes.NewReader(buf))
+	if err != nil {
+		return nil, err
+	}
+
+	// add json header
+	req.Header.Set("Content-Type", "application/json")
+	err = addHeader(headers, req)
+	if err != nil {
+		return nil, err
+	}
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	buf, err = ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	res := map[string]interface{}{}
+	err = json.Unmarshal(buf, &res)
+	return res, err
+}
+
+func addHeader(headers map[interface{}]interface{}, req *http.Request) error {
+	for k, v := range headers {
+		header, ok := k.(string)
+		if !ok {
+			return fmt.Errorf("format of header was wrong")
+		}
+		value, ok := v.(string)
+		if !ok {
+			return fmt.Errorf("format of header key was wrong")
+		}
+
+		req.Header.Set(header, value)
+	}
+
+	return nil
+}
+
+func convertAnkoMapToJSON(m map[interface{}]interface{}) ([]byte, error) {
+	tmp := map[string]interface{}{}
+	for k, v := range m {
+		var key string
+		switch val := k.(type) {
+		case int:
+			key = strconv.Itoa(val)
+		case string:
+			key = val
+		default:
+			return nil, errors.New("unknown json format")
+		}
+
+		tmp[key] = v
+	}
+
+	return json.Marshal(tmp)
+}
+
+func defineAPICallLib(env *vm.Env) error {
+	err := env.Define("json_post", postJSONAPI)
+	if err != nil {
+		return err
+	}
+
+	return env.Define("json_get", getJSONAPI)
+}
+
 func defineAnkoDBLib(env *vm.Env, lib DBLib) error {
 	err := env.Define("db_first", lib.First)
 	if err != nil {
@@ -69,6 +185,11 @@ func NewAnkoScriptEngine(db *gorm.DB, modelMap map[string]database.Model) (Scrip
 
 	lib := NewPGLib(db, modelMap)
 	err = defineAnkoDBLib(env, lib)
+	if err != nil {
+		return nil, fmt.Errorf("define error: %v", err)
+	}
+
+	err = defineAPICallLib(env)
 	if err != nil {
 		return nil, fmt.Errorf("define error: %v", err)
 	}

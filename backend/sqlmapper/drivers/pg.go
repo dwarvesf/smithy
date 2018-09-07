@@ -229,6 +229,10 @@ func (s *pgStore) createWithHasMany(tx *sql.Tx, parentTableName string, parentID
 }
 
 func (s *pgStore) Delete(tableName string, fields, data []interface{}) error {
+	if !tableExisted(tableName, s.modelMap) {
+		return fmt.Errorf("Table not exists")
+	}
+
 	execPostfix := fmt.Sprintf("DELETE FROM %s WHERE", tableName)
 
 	if len(fields) != len(data) {
@@ -245,9 +249,18 @@ func (s *pgStore) Delete(tableName string, fields, data []interface{}) error {
 	exec := fmt.Sprintf("%s %s", execPostfix, strings.Join(param, " AND "))
 
 	if _, err := s.db.DB().Exec(exec); err != nil {
-		return fmt.Errorf("%v", err.Error())
+		return fmt.Errorf("%v", err)
 	}
 	return nil
+}
+
+func tableExisted(tableName string, modalList map[string]database.Model) bool {
+	for _, table := range modalList {
+		if table.TableName == tableName {
+			return true
+		}
+	}
+	return false
 }
 
 func verifyInput(d sqlmapper.RowData, tableName string, modelList map[string]database.Model) error {

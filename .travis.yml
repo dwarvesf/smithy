@@ -20,5 +20,5 @@ script:
   - make build
 
 notifications:
-  slack: $SECRET_KEY
+  slack: $SLACK_KEY
 

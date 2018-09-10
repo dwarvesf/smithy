@@ -46,9 +46,9 @@ type Config struct {
 	PersistenceFileName string `yaml:"persistence_file_name"`
 
 	database.ConnectionInfo `yaml:"-"`
-	Databases               []database.Databases      `yaml:"databases_list" json:"databases_list"`
-	ModelMap                map[string]database.Model `yaml:"-" json:"-"`
-	Version                 Version                   `yaml:"-" json:"version"`
+	Databases               []database.Databases                 `yaml:"databases_list" json:"databases_list"`
+	ModelMap                map[string]map[string]database.Model `yaml:"-" json:"-"`
+	Version                 Version                              `yaml:"-" json:"version"`
 	db                      *gorm.DB
 	Authentication          Authentication `yaml:"authentication" json:"authentication"`
 
@@ -127,7 +127,7 @@ func (c *Config) UpdateConfigFromAgentConfig(agentCfg *agentConfig.Config) error
 	tempCfg.ConnectionInfo = agentCfg.ConnectionInfo
 	tempCfg.DBUsername = agentCfg.UserWithACL.Username
 	tempCfg.DBPassword = agentCfg.UserWithACL.Password
-	tempCfg.ModelList = agentCfg.ModelList
+	tempCfg.Databases = agentCfg.Databases
 
 	// If available new version, update config then save it into persistence
 	checksum, err := tempCfg.CheckSum()
@@ -176,16 +176,18 @@ func (c *Config) UpdateConfig(cfg *Config) error {
 	c.ConnectionInfo = cfg.ConnectionInfo
 	c.DBUsername = cfg.DBUsername
 	c.DBPassword = cfg.DBPassword
-	c.ModelList = cfg.ModelList
+	c.Databases = cfg.Databases
 	c.Version = cfg.Version
 
 	for k := range c.ModelMap {
 		delete(c.ModelMap, k)
 	}
 
-	tmp := database.Models(c.ModelList).GroupByName()
-	for k := range tmp {
-		c.ModelMap[k] = tmp[k]
+	for _, db := range c.Databases {
+		tmp := database.Models(db.ModelList).GroupByName()
+		for k := range tmp {
+			c.ModelMap[db.DBName][k] = tmp[k]
+		}
 	}
 
 	return c.UpdateDB()

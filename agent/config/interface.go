@@ -21,14 +21,8 @@ type Config struct {
 	SerectKey               string `yaml:"serect_key" json:"-"`
 	VerifyConfig            bool   `yaml:"verify_config" json:"-"`
 	database.ConnectionInfo `yaml:"database_connection_info" json:"database_connection_info"`
-	ForceRecreate           bool      `yaml:"force_recreate" json:"force_recreate"`
-	Databases               Databases `yaml:"databases_list" json:"databases_list"`
-}
-
-// Databases contains list of databases
-type Databases struct {
-	Name      string           `yaml:"db_name" json:"db_name"`
-	ModelList []database.Model `yaml:"model_list" json:"model_list"`
+	ForceRecreate           bool               `yaml:"force_recreate" json:"force_recreate"`
+	Databases               database.Databases `yaml:"databases_list" json:"databases_list"`
 }
 
 // DBConnectionString get pg connection string

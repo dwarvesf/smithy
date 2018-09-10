@@ -52,6 +52,12 @@ type ConnectionInfo struct {
 	UserWithACL     User   `yaml:"user_with_acl" json:"user_with_acl"`
 }
 
+// Databases list all databases
+type Databases struct {
+	DBName    string  `yaml:"db_name" json:"db_name"`
+	ModelList []Model `yaml:"model_list" json:"model_list"`
+}
+
 // Model store information of model can manage
 type Model struct {
 	ACL               string         `yaml:"acl" json:"acl"`

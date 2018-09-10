@@ -13,50 +13,124 @@ database_connection_info:
   user_with_acl:
     username: agent_db_manager
     password: this_is_password
-model_list:
-  - table_name: "users"
-    display_name: "users"
-    name_display_column: "name"
-    acl: "crud"
-    auto_migration: true
-    hooks:
-      before_create:
-        enable: true
-        content: "println(\"it run on before create config\")"
-      after_create:
-        enable: false
-        content: "println(\"it run on after create config\")"
-      before_update:
-        enable: false
-        content: "println(\"it run on before update config\")"
-      after_update:
-        enable: false
-        content: "println(\"it run on after update config\")"
-    columns:
+databases_list:
+  - db_name: "example_1"   
+    model_list:
+      - table_name: "users"
+        display_name: "users"
+        name_display_column: "name"
+        acl: "crud"
+        auto_migration: true
+        hooks:
+          before_create:
+            enable: true
+            content: "println(\"it run on before create config\")"
+          after_create:
+            enable: false
+            content: "println(\"it run on after create config\")"
+          before_update:
+            enable: false
+            content: "println(\"it run on before update config\")"
+          after_update:
+            enable: false
+            content: "println(\"it run on after update config\")"
+        columns:
+          - name: id
+            type: int
+            is_primary: true
+          - name: name
+            type: string
+            is_nullable: true
+          - name: title
+            type: string
+            is_nullable: true
+          - name: description
+            type: string
+            is_nullable: true
+          - name: age
+            type: int
+            is_nullable: true
+        relationships:
+          - type: has_many
+            table: books
+      - table_name: "books"
+      display_name: "books"
+      name_display_column: "name"
+      acl: "cru"
+      auto_migration: true
+      columns:
       - name: id
         type: int
         is_primary: true
+      - name: created_at
+        type: timestamp
+        is_nullable: true
+      - name: updated_at
+        type: timestamp
+        is_nullable: true
+      - name: deleted_at
+        type: timestamp
+        is_nullable: true
       - name: name
         type: string
-        is_nullable: true
+        is_nullable: false
       - name: title
         type: string
         is_nullable: true
       - name: description
         type: string
         is_nullable: true
-      - name: age
+      - name: author_id
         type: int
         is_nullable: true
-    relationships:
-      - type: has_many
-        table: books
-  - table_name: "books"
-    display_name: "books"
-    name_display_column: "name"
-    acl: "cru"
-    auto_migration: true
-    columns:
+        foreign_key:
+          table: users
+          foreign_column: id
+  - db_name: "example_2"   
+    model_list:
+      - table_name: "cars"
+        display_name: "cars"
+        name_display_column: "name"
+        acl: "crud"
+        auto_migration: true
+        hooks:
+          before_create:
+            enable: true
+            content: "println(\"it run on before create config\")"
+          after_create:
+            enable: false
+            content: "println(\"it run on after create config\")"
+          before_update:
+            enable: false
+            content: "println(\"it run on before update config\")"
+          after_update:
+            enable: false
+            content: "println(\"it run on after update config\")"
+        columns:
+          - name: id
+            type: int
+            is_primary: true
+          - name: name
+            type: string
+            is_nullable: true
+          - name: title
+            type: string
+            is_nullable: true
+          - name: description
+            type: string
+            is_nullable: true
+          - name: age
+            type: int
+            is_nullable: true
+        relationships:
+          - type: has_many
+            table: books
+      - table_name: "houses"
+      display_name: "houses"
+      name_display_column: "name"
+      acl: "cru"
+      auto_migration: true
+      columns:
       - name: id
         type: int
         is_primary: true

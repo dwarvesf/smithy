@@ -46,7 +46,7 @@ type Config struct {
 	PersistenceFileName string `yaml:"persistence_file_name"`
 
 	database.ConnectionInfo `yaml:"-"`
-	ModelList               []database.Model          `yaml:"-"`
+	Databases               []database.Databases      `yaml:"databases_list" json:"databases_list"`
 	ModelMap                map[string]database.Model `yaml:"-" json:"-"`
 	Version                 Version                   `yaml:"-" json:"version"`
 	db                      *gorm.DB
@@ -233,7 +233,7 @@ func (c *Config) openNewDBConnection() (*gorm.DB, error) {
 	return gorm.Open("postgres", dbstring)
 }
 
-// convert user list to user map
+// ConvertUserListToMap convert user list to user map
 func (c *Config) ConvertUserListToMap() map[string]User {
 	userMap := make(map[string]User)
 
@@ -243,11 +243,13 @@ func (c *Config) ConvertUserListToMap() map[string]User {
 	return userMap
 }
 
+// Authentication use to authenticate
 type Authentication struct {
 	SerectKey string `yaml:"secret_key" json:"secret_key"`
 	UserList  []User `yaml:"users" json:"users"`
 }
 
+// User .
 type User struct {
 	Username string `yaml:"username" json:"username"`
 	Password string `yaml:"password" json:"password"`

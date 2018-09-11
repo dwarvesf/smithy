@@ -46,12 +46,20 @@ func checkModelList(c *agentConfig.Config) error {
 }
 
 func checkModelListPG(c *agentConfig.Config) error {
-	db, err := gorm.Open("postgres", c.DBConnectionString())
-	if err != nil {
-		return err
+	for _, dbase := range c.Databases {
+		db, err := gorm.Open("postgres", c.DBConnectionString(dbase.DBName))
+		if err != nil {
+			return err
+		}
+		defer db.Close()
+
+		err = drivers.NewPGStore(dbase.DBName, c.DBSchemaName, db).Verify(dbase.ModelList)
+		if err != nil {
+			return err
+		}
 	}
 
-	return drivers.NewPGStore(c.DBName, c.DBSchemaName, db).Verify(c.ModelList)
+	return nil
 }
 
 // CreateUserWithACL using config to auto migrate missing columns and table
@@ -66,18 +74,57 @@ func CreateUserWithACL(cfg *agentConfig.Config, forceCreate bool) (*database.Use
 
 // createUserWithACLPG create user with access list in model
 func createUserWithACLPG(cfg *agentConfig.Config, forceCreate bool) (*database.User, error) {
-	db, err := gorm.Open("postgres", cfg.DBConnectionString())
-	if err != nil {
-		return nil, err
+	user := &database.User{
+		Username: cfg.UserWithACL.Username,
+		Password: cfg.UserWithACL.Password,
 	}
 
-	s := drivers.NewPGStore(cfg.DBName, cfg.DBSchemaName, db)
-	// priority passing argument than config file
-	if forceCreate {
-		return s.CreateUserWithACL(cfg.ModelList, cfg.UserWithACL.Username, cfg.UserWithACL.Password, true)
+	// delete user permission
+	force := forceCreate || cfg.ForceRecreate
+	if force {
+		for _, dbase := range cfg.Databases {
+			db, err := gorm.Open("postgres", cfg.DBConnectionString(dbase.DBName))
+			if err != nil {
+				return nil, err
+			}
+			defer db.Close()
+
+			s := drivers.NewPGStore(cfg.DBName, cfg.DBSchemaName, db)
+			err = s.RemoveACLUser(user.Username)
+			if err != nil {
+				return nil, err
+			}
+		}
 	}
 
-	return s.CreateUserWithACL(cfg.ModelList, cfg.UserWithACL.Username, cfg.UserWithACL.Password, cfg.ForceRecreate)
+	// create user & grant permision
+	isCreateUser := false
+	for _, dbase := range cfg.Databases {
+		db, err := gorm.Open("postgres", cfg.DBConnectionString(dbase.DBName))
+		if err != nil {
+			return nil, err
+		}
+		defer db.Close()
+
+		s := drivers.NewPGStore(cfg.DBName, cfg.DBSchemaName, db)
+
+		// priority passing argument than config file
+		if !isCreateUser {
+			if err = s.CreateACLUser(user, force); err != nil {
+				return nil, err
+			}
+			isCreateUser = true
+		}
+
+		// gran permission
+		err = s.CreateUserWithACL(dbase.ModelList, user, true)
+
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return user, nil
 }
 
 // AutoMigrate using config to auto migrate missing columns and table
@@ -91,27 +138,30 @@ func AutoMigrate(cfg *agentConfig.Config) error {
 }
 
 func autoMigrationPG(cfg *agentConfig.Config) error {
-	db, err := gorm.Open("postgres", cfg.DBConnectionString())
-	if err != nil {
-		return err
-	}
-
-	models := []database.Model{}
-	for _, m := range cfg.ModelList {
-		if m.AutoMigration {
-			models = append(models, m)
+	for _, d := range cfg.Databases {
+		db, err := gorm.Open("postgres", cfg.DBConnectionString(d.DBName))
+		if err != nil {
+			return err
 		}
-	}
+		defer db.Close()
 
-	s := drivers.NewPGStore(cfg.DBName, cfg.DBSchemaName, db)
-	missmap, err := s.MissingColumns(models)
-	if err != nil {
-		return err
-	}
+		models := []database.Model{}
+		for _, m := range d.ModelList {
+			if m.AutoMigration {
+				models = append(models, m)
+			}
+		}
 
-	err = s.AutoMigrate(missmap)
-	if err != nil {
-		return err
+		s := drivers.NewPGStore(d.DBName, cfg.DBSchemaName, db)
+		missmap, err := s.MissingColumns(models)
+		if err != nil {
+			return err
+		}
+
+		err = s.AutoMigrate(missmap)
+		if err != nil {
+			return err
+		}
 	}
 
 	return nil

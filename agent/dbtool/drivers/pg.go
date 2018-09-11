@@ -302,31 +302,43 @@ func (a aclByTableName) GrantToUserSQL(username string) string {
 	return fmt.Sprintf("GRANT %s ON %s TO %s", strings.Join(query, ","), a.TableName, username)
 }
 
-func (s *pgStore) createACLUser(username, password string, forceCreate bool) error {
-	if forceCreate {
-		s.db.Exec(fmt.Sprintf("REASSIGN OWNED BY %s TO postgres;", username))
-		s.db.Exec(fmt.Sprintf("DROP OWNED BY %s;", username))
+func (s *pgStore) RemoveACLUser(username string) error {
+	err := s.db.Exec(fmt.Sprintf("REASSIGN OWNED BY %s TO postgres;", username)).Error
+	if err != nil {
+		return err
+	}
 
-		err := s.db.Exec(fmt.Sprintf("DROP ROLE IF EXISTS %s;", username)).Error
+	err = s.db.Exec(fmt.Sprintf("DROP OWNED BY %s;", username)).Error
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *pgStore) CreateACLUser(user *database.User, forceCreate bool) error {
+	if user.Username == "" || user.Password == "" {
+		return errors.New("missing username, password for acl user")
+	}
+
+	if forceCreate {
+		err := s.db.Exec(fmt.Sprintf("DROP ROLE IF EXISTS %s;", user.Username)).Error
 		if err != nil {
 			return err
 		}
 	}
-	if err := s.db.Exec(fmt.Sprintf("CREATE ROLE %s LOGIN PASSWORD '%s';", username, password)).Error; err != nil {
+
+	if err := s.db.Exec(fmt.Sprintf("CREATE ROLE %s LOGIN PASSWORD '%s';", user.Username, user.Password)).Error; err != nil {
 		return err
 	}
 
-	return s.db.Exec(fmt.Sprintf("GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO %s;", username)).Error
+	return nil
 }
 
-func (s *pgStore) CreateUserWithACL(models []database.Model, username, password string, forceCreate bool) (*database.User, error) {
-	if username == "" || password == "" {
-		return nil, errors.New("missing username, password for acl user")
-	}
-
-	err := s.createACLUser(username, password, forceCreate)
+func (s *pgStore) CreateUserWithACL(models []database.Model, user *database.User, forceCreate bool) error {
+	err := s.db.Exec(fmt.Sprintf("GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA public TO %s;", user.Username)).Error
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	for _, m := range models {
@@ -334,15 +346,15 @@ func (s *pgStore) CreateUserWithACL(models []database.Model, username, password 
 		acl := aclByTableName{}
 		acl.TableName = m.TableName
 		acl.ACL = m.ACLDetail
-		execSQL := acl.GrantToUserSQL(username)
+		execSQL := acl.GrantToUserSQL(user.Username)
 		if execSQL == "" {
 			continue
 		}
-		err = s.db.Exec(execSQL).Error
+		err := s.db.Exec(execSQL).Error
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}
 
-	return &database.User{Username: username, Password: password}, nil
+	return nil
 }

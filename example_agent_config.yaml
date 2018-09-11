@@ -14,7 +14,7 @@ database_connection_info:
     username: agent_db_manager
     password: this_is_password
 databases_list:
-  - db_name: "example_1"   
+  - db_name: "fortress"   
     model_list:
       - table_name: "users"
         display_name: "users"
@@ -54,39 +54,39 @@ databases_list:
           - type: has_many
             table: books
       - table_name: "books"
-      display_name: "books"
-      name_display_column: "name"
-      acl: "cru"
-      auto_migration: true
-      columns:
-      - name: id
-        type: int
-        is_primary: true
-      - name: created_at
-        type: timestamp
-        is_nullable: true
-      - name: updated_at
-        type: timestamp
-        is_nullable: true
-      - name: deleted_at
-        type: timestamp
-        is_nullable: true
-      - name: name
-        type: string
-        is_nullable: false
-      - name: title
-        type: string
-        is_nullable: true
-      - name: description
-        type: string
-        is_nullable: true
-      - name: author_id
-        type: int
-        is_nullable: true
-        foreign_key:
-          table: users
-          foreign_column: id
-  - db_name: "example_2"   
+        display_name: "books"
+        name_display_column: "name"
+        acl: "cru"
+        auto_migration: true
+        columns:
+        - name: id
+          type: int
+          is_primary: true
+        - name: created_at
+          type: timestamp
+          is_nullable: true
+        - name: updated_at
+          type: timestamp
+          is_nullable: true
+        - name: deleted_at
+          type: timestamp
+          is_nullable: true
+        - name: name
+          type: string
+          is_nullable: false
+        - name: title
+          type: string
+          is_nullable: true
+        - name: description
+          type: string
+          is_nullable: true
+        - name: author_id
+          type: int
+          is_nullable: true
+          foreign_key:
+            table: users
+            foreign_column: id
+  - db_name: "xxx"   
     model_list:
       - table_name: "cars"
         display_name: "cars"
@@ -126,35 +126,35 @@ databases_list:
           - type: has_many
             table: books
       - table_name: "houses"
-      display_name: "houses"
-      name_display_column: "name"
-      acl: "cru"
-      auto_migration: true
-      columns:
-      - name: id
-        type: int
-        is_primary: true
-      - name: created_at
-        type: timestamp
-        is_nullable: true
-      - name: updated_at
-        type: timestamp
-        is_nullable: true
-      - name: deleted_at
-        type: timestamp
-        is_nullable: true
-      - name: name
-        type: string
-        is_nullable: false
-      - name: title
-        type: string
-        is_nullable: true
-      - name: description
-        type: string
-        is_nullable: true
-      - name: author_id
-        type: int
-        is_nullable: true
-        foreign_key:
-          table: users
-          foreign_column: id
+        display_name: "houses"
+        name_display_column: "name"
+        acl: "cru"
+        auto_migration: true
+        columns:
+        - name: id
+          type: int
+          is_primary: true
+        - name: created_at
+          type: timestamp
+          is_nullable: true
+        - name: updated_at
+          type: timestamp
+          is_nullable: true
+        - name: deleted_at
+          type: timestamp
+          is_nullable: true
+        - name: name
+          type: string
+          is_nullable: false
+        - name: title
+          type: string
+          is_nullable: true
+        - name: description
+          type: string
+          is_nullable: true
+        - name: author_id
+          type: int
+          is_nullable: true
+          foreign_key:
+            table: users
+            foreign_column: id

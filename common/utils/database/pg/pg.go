@@ -14,6 +14,7 @@ import (
 // CreateDatabase create pg db for test
 func CreateDatabase(t *testing.T, cfg *backendConfig.Config) func() {
 	rand.Seed(time.Now().UnixNano())
+
 	schemaName := "test" + strconv.FormatInt(rand.Int63(), 10)
 
 	err := cfg.DB().Exec("CREATE SCHEMA " + schemaName).Error

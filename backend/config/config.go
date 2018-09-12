@@ -46,10 +46,10 @@ type Config struct {
 	PersistenceFileName string `yaml:"persistence_file_name"`
 
 	database.ConnectionInfo `yaml:"-"`
-	Databases               []database.Databases                 `yaml:"databases_list" json:"databases_list"`
+	Databases               []database.Database                  `yaml:"databases_list" json:"databases_list"`
 	ModelMap                map[string]map[string]database.Model `yaml:"-" json:"-"`
 	Version                 Version                              `yaml:"-" json:"version"`
-	db                      *gorm.DB
+	db                      map[string]*gorm.DB
 	Authentication          Authentication `yaml:"authentication" json:"authentication"`
 
 	sync.Mutex
@@ -80,7 +80,12 @@ func (w *Wrapper) SyncConfig() *Config {
 }
 
 // DB get db connection from config
-func (c *Config) DB() *gorm.DB {
+func (c *Config) DB(dbName string) *gorm.DB {
+	return c.db[dbName]
+}
+
+// DBs get db connection from config
+func (c *Config) DBs() map[string]*gorm.DB {
 	return c.db
 }
 
@@ -152,15 +157,16 @@ func (c *Config) UpdateConfigFromAgentConfig(agentCfg *agentConfig.Config) error
 
 // AddHook add hook to configuration
 func (c *Config) AddHook(tableName, hookType, content string) error {
-	models := c.ModelList
-
-	for i := range models {
-		if models[i].TableName == tableName {
-			err := models[i].AddHook(hookType, content)
-			if err != nil {
-				return err
+	for i := range c.Databases {
+		models := c.Databases[i].ModelList
+		for i := range models {
+			if models[i].TableName == tableName {
+				err := models[i].AddHook(hookType, content)
+				if err != nil {
+					return err
+				}
+				return nil
 			}
-			return nil
 		}
 	}
 
@@ -185,6 +191,7 @@ func (c *Config) UpdateConfig(cfg *Config) error {
 
 	for _, db := range c.Databases {
 		tmp := database.Models(db.ModelList).GroupByName()
+		c.ModelMap[db.DBName] = make(map[string]database.Model)
 		for k := range tmp {
 			c.ModelMap[db.DBName][k] = tmp[k]
 		}
@@ -206,18 +213,21 @@ func (c *Config) ChangeVersion(id int) error {
 
 // UpdateDB update db connection
 func (c *Config) UpdateDB() error {
-	newDB, err := c.openNewDBConnection()
-	if err != nil {
-		// TODO: add nicer error
-		return err
+	c.db = make(map[string]*gorm.DB)
+	for i := range c.Databases {
+		newDB, err := c.openNewDBConnection(c.Databases[i].DBName)
+		if err != nil {
+			// TODO: add nicer error
+			return err
+		}
+		c.db[c.Databases[i].DBName] = newDB
 	}
-	c.db = newDB
 
 	return nil
 }
 
 // TODO: extend for using mutiple DB
-func (c *Config) openNewDBConnection() (*gorm.DB, error) {
+func (c *Config) openNewDBConnection(dbName string) (*gorm.DB, error) {
 	sslmode := "disable"
 	if c.DBSSLModeOption == "enable" {
 		sslmode = "require"
@@ -225,7 +235,7 @@ func (c *Config) openNewDBConnection() (*gorm.DB, error) {
 
 	dbstring := fmt.Sprintf("user=%s dbname=%s sslmode=%s password=%s host=%s port=%s",
 		c.DBUsername,
-		c.DBName,
+		dbName,
 		sslmode,
 		c.DBPassword,
 		c.DBHostname,

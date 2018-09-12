@@ -12,26 +12,26 @@ import (
 )
 
 type pgLibImpl struct {
-	db       *gorm.DB
-	modelMap map[string]database.Model
+	db       map[string]*gorm.DB
+	modelMap map[string]map[string]database.Model
 }
 
 // NewPGLib dblib implement by postgres
-func NewPGLib(db *gorm.DB, modelMap map[string]database.Model) DBLib {
+func NewPGLib(db map[string]*gorm.DB, modelMap map[string]map[string]database.Model) DBLib {
 	return &pgLibImpl{
 		db:       db,
 		modelMap: modelMap,
 	}
 }
 
-func (s *pgLibImpl) First(tableName string, condition string) (map[interface{}]interface{}, error) {
-	model, ok := s.modelMap[tableName]
+func (s *pgLibImpl) First(dbName string, tableName string, condition string) (map[interface{}]interface{}, error) {
+	model, ok := s.modelMap[dbName][tableName]
 	if !ok {
 		return nil, fmt.Errorf("uknown table_name %s", tableName)
 	}
 	cols := database.Columns(model.Columns).Names()
 	colNames := strings.Join(cols, ",")
-	rows, err := s.db.Table(tableName).Select(colNames).Where(condition).Limit(1).Rows()
+	rows, err := s.db[dbName].Table(tableName).Select(colNames).Where(condition).Limit(1).Rows()
 	if err != nil {
 		return nil, err
 	}
@@ -54,14 +54,14 @@ func (s *pgLibImpl) First(tableName string, condition string) (map[interface{}]i
 	return res, nil
 }
 
-func (s *pgLibImpl) Where(tableName string, condition string) ([]map[interface{}]interface{}, error) {
-	model, ok := s.modelMap[tableName]
+func (s *pgLibImpl) Where(dbName string, tableName string, condition string) ([]map[interface{}]interface{}, error) {
+	model, ok := s.modelMap[dbName][tableName]
 	if !ok {
 		return nil, fmt.Errorf("uknown table_name %s", tableName)
 	}
 	cols := database.Columns(model.Columns).Names()
 	colNames := strings.Join(cols, ",")
-	rows, err := s.db.Table(tableName).Select(colNames).Where(condition).Rows()
+	rows, err := s.db[dbName].Table(tableName).Select(colNames).Where(condition).Rows()
 	if err != nil {
 		return nil, err
 	}
@@ -88,8 +88,8 @@ func (s *pgLibImpl) Where(tableName string, condition string) ([]map[interface{}
 	return res, nil
 }
 
-func (s *pgLibImpl) Create(tableName string, d map[interface{}]interface{}) (map[interface{}]interface{}, error) {
-	db := s.db.DB()
+func (s *pgLibImpl) Create(dbName string, tableName string, d map[interface{}]interface{}) (map[interface{}]interface{}, error) {
+	db := s.db[dbName].DB()
 	row := toRowData(d)
 
 	cols, data := row.ColumnsAndData()
@@ -115,9 +115,9 @@ func (s *pgLibImpl) Create(tableName string, d map[interface{}]interface{}) (map
 	return d, nil
 }
 
-func (s *pgLibImpl) Update(tableName string, primaryKey interface{}, d map[interface{}]interface{}) (map[interface{}]interface{}, error) {
-	db := s.db.DB()
-	if notExist, _ := s.isIDNotExist(tableName, primaryKey); !notExist {
+func (s *pgLibImpl) Update(dbName string, tableName string, primaryKey interface{}, d map[interface{}]interface{}) (map[interface{}]interface{}, error) {
+	db := s.db[dbName].DB()
+	if notExist, _ := s.isIDNotExist(dbName, tableName, primaryKey); !notExist {
 		return nil, errors.New("primary key is not exist")
 	}
 
@@ -140,7 +140,7 @@ func (s *pgLibImpl) Update(tableName string, primaryKey interface{}, d map[inter
 	}
 	return d, nil
 }
-func (s *pgLibImpl) Delete(tableName string, fields, data []interface{}) error {
+func (s *pgLibImpl) Delete(dbName string, tableName string, fields, data []interface{}) error {
 	execPostfix := fmt.Sprintf("DELETE FROM %s WHERE", tableName)
 
 	if len(fields) != len(data) {
@@ -156,18 +156,18 @@ func (s *pgLibImpl) Delete(tableName string, fields, data []interface{}) error {
 
 	exec := fmt.Sprintf("%s %s", execPostfix, strings.Join(param, " AND "))
 
-	if _, err := s.db.DB().Exec(exec); err != nil {
+	if _, err := s.db[dbName].DB().Exec(exec); err != nil {
 		return errors.New("delete error")
 	}
 	return nil
 }
 
-func (s *pgLibImpl) isIDNotExist(tableName string, primaryKey interface{}) (bool, error) {
+func (s *pgLibImpl) isIDNotExist(dbName string, tableName string, primaryKey interface{}) (bool, error) {
 	data := struct {
 		Result bool
 	}{}
 
 	execQuery := fmt.Sprintf("SELECT EXISTS(SELECT 1 FROM %s WHERE id = %v) as result", tableName, primaryKey)
 
-	return data.Result, s.db.Raw(execQuery).Scan(&data).Error
+	return data.Result, s.db[dbName].Raw(execQuery).Scan(&data).Error
 }

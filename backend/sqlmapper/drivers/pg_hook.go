@@ -11,11 +11,11 @@ import (
 type pgHookStore struct {
 	pgStore    sqlmapper.Mapper
 	hookEngine hook.ScriptEngine
-	modelMap   map[string]database.Model
+	modelMap   map[string]map[string]database.Model
 }
 
 // NewPGHookStore new pg implement for hook
-func NewPGHookStore(store sqlmapper.Mapper, modelMap map[string]database.Model, db *gorm.DB) (sqlmapper.Mapper, error) {
+func NewPGHookStore(store sqlmapper.Mapper, modelMap map[string]map[string]database.Model, db map[string]*gorm.DB) (sqlmapper.Mapper, error) {
 	scriptEngine, err := hook.NewAnkoScriptEngine(db, modelMap)
 	if err != nil {
 		return nil, err
@@ -36,10 +36,10 @@ func (s *pgHookStore) ColumnMetadata(q sqlmapper.Query) ([]database.Column, erro
 	return s.pgStore.ColumnMetadata(q)
 }
 
-func (s *pgHookStore) Create(tableName string, row sqlmapper.RowData) (sqlmapper.RowData, error) {
+func (s *pgHookStore) Create(dbName string, tableName string, row sqlmapper.RowData) (sqlmapper.RowData, error) {
 	ctx := row.ToCtx()
 
-	model := s.modelMap[tableName]
+	model := s.modelMap[dbName][tableName]
 	if model.IsBeforeCreateEnable() {
 		err := s.hookEngine.Eval(ctx, model.Hooks.BeforeCreate.Content)
 		if err != nil {
@@ -48,7 +48,7 @@ func (s *pgHookStore) Create(tableName string, row sqlmapper.RowData) (sqlmapper
 		row = sqlmapper.Ctx(ctx).ToRowData()
 	}
 
-	res, err := s.pgStore.Create(tableName, row)
+	res, err := s.pgStore.Create(dbName, tableName, row)
 	if err != nil {
 		return nil, err
 	}
@@ -65,8 +65,8 @@ func (s *pgHookStore) Create(tableName string, row sqlmapper.RowData) (sqlmapper
 	return res, nil
 }
 
-func (s *pgHookStore) Delete(tableName string, fields, data []interface{}) error {
-	model := s.modelMap[tableName]
+func (s *pgHookStore) Delete(dbName string, tableName string, fields, data []interface{}) error {
+	model := s.modelMap[dbName][tableName]
 	if model.IsBeforeDeleteEnable() {
 		err := s.hookEngine.Eval(nil, model.Hooks.BeforeDelete.Content)
 		if err != nil {
@@ -74,7 +74,7 @@ func (s *pgHookStore) Delete(tableName string, fields, data []interface{}) error
 		}
 	}
 
-	res := s.pgStore.Delete(tableName, fields, data)
+	res := s.pgStore.Delete(dbName, tableName, fields, data)
 
 	if model.IsAfterDeleteEnable() {
 		err := s.hookEngine.Eval(nil, model.Hooks.AfterDelete.Content)
@@ -86,8 +86,8 @@ func (s *pgHookStore) Delete(tableName string, fields, data []interface{}) error
 	return res
 }
 
-func (s *pgHookStore) Update(tableName string, d sqlmapper.RowData, id int) (sqlmapper.RowData, error) {
-	model := s.modelMap[tableName]
+func (s *pgHookStore) Update(dbName string, tableName string, d sqlmapper.RowData, id int) (sqlmapper.RowData, error) {
+	model := s.modelMap[dbName][tableName]
 	if model.IsBeforeUpdateEnable() {
 		err := s.hookEngine.Eval(nil, model.Hooks.BeforeUpdate.Content)
 		if err != nil {
@@ -95,7 +95,7 @@ func (s *pgHookStore) Update(tableName string, d sqlmapper.RowData, id int) (sql
 		}
 	}
 
-	res, err := s.pgStore.Update(tableName, d, id)
+	res, err := s.pgStore.Update(dbName, tableName, d, id)
 	if err != nil {
 		return nil, err
 	}

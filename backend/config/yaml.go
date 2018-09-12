@@ -29,7 +29,7 @@ func (c yamlReaderImpl) Read() (*Config, error) {
 	}
 
 	// init model map for prevent access nil map
-	res.ModelMap = make(map[string]database.Model)
+	res.ModelMap = make(map[string]map[string]database.Model)
 
 	return res, nil
 }

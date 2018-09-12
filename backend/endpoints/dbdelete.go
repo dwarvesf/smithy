@@ -16,8 +16,9 @@ type deleteFilter struct {
 
 // DBDeleteRequest request for db delete data by id
 type DBDeleteRequest struct {
-	TableName string       `json:"-"`
-	Filter    deleteFilter `json:"filter"`
+	TableName    string       `json:"-"`
+	DatabaseName string       `json:"-"`
+	Filter       deleteFilter `json:"filter"`
 }
 
 // DBDeleteResponse response for db delete data by id
@@ -32,7 +33,7 @@ func makeDBDeleteEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, errors.New("failed to make type assertion")
 		}
 
-		if err := s.Delete(req.TableName, req.Filter.Fields, req.Filter.Data); err != nil {
+		if err := s.Delete(req.DatabaseName, req.TableName, req.Filter.Fields, req.Filter.Data); err != nil {
 			return nil, err
 		}
 

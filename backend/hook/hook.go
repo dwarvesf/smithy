@@ -28,11 +28,11 @@ type ankoScriptEngine struct {
 
 // DBLib interface for lib in db
 type DBLib interface {
-	First(tableName string, condition string) (map[interface{}]interface{}, error)
-	Where(tableName string, condition string) ([]map[interface{}]interface{}, error)
-	Create(tableName string, data map[interface{}]interface{}) (map[interface{}]interface{}, error)
-	Update(tableName string, primaryKey interface{}, data map[interface{}]interface{}) (map[interface{}]interface{}, error)
-	Delete(tableName string, fields, data []interface{}) error
+	First(dbName string, tableName string, condition string) (map[interface{}]interface{}, error)
+	Where(dbName string, tableName string, condition string) ([]map[interface{}]interface{}, error)
+	Create(dbName string, tableName string, data map[interface{}]interface{}) (map[interface{}]interface{}, error)
+	Update(dbName string, tableName string, primaryKey interface{}, data map[interface{}]interface{}) (map[interface{}]interface{}, error)
+	Delete(dbName string, tableName string, fields, data []interface{}) error
 }
 
 func toRowData(data map[interface{}]interface{}) sqlmapper.RowData {
@@ -176,7 +176,7 @@ func defineAnkoDBLib(env *vm.Env, lib DBLib) error {
 }
 
 // NewAnkoScriptEngine engine for running a engine
-func NewAnkoScriptEngine(db *gorm.DB, modelMap map[string]database.Model) (ScriptEngine, error) {
+func NewAnkoScriptEngine(db map[string]*gorm.DB, modelMap map[string]map[string]database.Model) (ScriptEngine, error) {
 	env := vm.NewEnv()
 	err := env.Define("println", fmt.Println) // TODO: REMOVE THIS LATTER
 	if err != nil {

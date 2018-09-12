@@ -13,10 +13,11 @@ import (
 
 // DBUpdateRequest request for db Update data
 type DBUpdateRequest struct {
-	TableName  string        `json:"-"`
-	Fields     []interface{} `json:"fields"`
-	Data       []interface{} `json:"data"`
-	PrimaryKey string        `json:"primary_key" schema:"primary_key"`
+	TableName    string        `json:"-"`
+	DatabaseName string        `json:"-"`
+	Fields       []interface{} `json:"fields"`
+	Data         []interface{} `json:"data"`
+	PrimaryKey   string        `json:"primary_key" schema:"primary_key"`
 }
 
 // DBUpdateResponse response for db Update data
@@ -49,7 +50,7 @@ func makeDBUpdateEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, err
 		}
 
-		data, err := s.Update(req.TableName, rowData, id)
+		data, err := s.Update(req.DatabaseName, req.TableName, rowData, id)
 
 		if err != nil {
 			return nil, err

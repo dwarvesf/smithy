@@ -1,8 +1,10 @@
 package set1
 
 import (
+	"math/rand"
 	"strconv"
 	"testing"
+	"time"
 
 	"github.com/dwarvesf/smithy/common/database"
 	"github.com/jinzhu/gorm"
@@ -73,10 +75,25 @@ func CreateModelList() []database.Model {
 	return dm
 }
 
+// CreateDatabaseList .
+func CreateDatabaseList() []database.Database {
+	rand.Seed(time.Now().UnixNano())
+	randDBName := strconv.FormatInt(rand.Int63(), 10)
+
+	dm := []database.Database{
+		{
+			DBName:    randDBName,
+			ModelList: CreateModelList(),
+		},
+	}
+
+	return dm
+}
+
 // CreateConfig fake config for test
 func CreateConfig(t *testing.T) (*backendConfig.Config, func()) {
 	cfg := &backendConfig.Config{
-		ModelList: CreateModelList(),
+		Databases: CreateDatabaseList(),
 		ModelMap:  make(map[string]database.Model),
 		ConnectionInfo: database.ConnectionInfo{
 			DBType:          "postgres",

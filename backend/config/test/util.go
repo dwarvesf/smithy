@@ -61,11 +61,26 @@ func CreateModelList() []database.Model {
 	return dm
 }
 
+// CreateDatabaseList .
+func CreateDatabaseList() []database.Database {
+	rand.Seed(time.Now().UnixNano())
+	randDBName := strconv.FormatInt(rand.Int63(), 10)
+
+	dm := []database.Database{
+		{
+			DBName:    randDBName,
+			ModelList: CreateModelList(),
+		},
+	}
+
+	return dm
+}
+
 // CreateBackendConfig fake config for test
 func CreateBackendConfig(t *testing.T) (*backendConfig.Config, func()) {
 	cfg := &backendConfig.Config{
-		ModelList: CreateModelList(),
-		ModelMap:  make(map[string]database.Model),
+		Databases: CreateDatabaseList(),
+		ModelMap:  make(map[string]map[string]database.Model),
 		ConnectionInfo: database.ConnectionInfo{
 			DBType:          "postgres",
 			DBUsername:      dbUser,
@@ -91,7 +106,7 @@ func CreateBackendConfig(t *testing.T) (*backendConfig.Config, func()) {
 // CreateAgentConfig fake config for test
 func CreateAgentConfig(t *testing.T) *agentConfig.Config {
 	cfg := &agentConfig.Config{
-		ModelList: CreateModelList(),
+		Databases: CreateDatabaseList(),
 		ConnectionInfo: database.ConnectionInfo{
 			DBType:          "postgres",
 			DBUsername:      dbUser,

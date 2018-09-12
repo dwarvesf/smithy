@@ -1,6 +1,6 @@
 #  **POST** | Query 
 ```
-<url>/tables/{table_name}/query
+<url>/databases/{database_name}/{table_name}/query
 ```
 ### Headers
 | | |

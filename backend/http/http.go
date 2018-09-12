@@ -57,7 +57,7 @@ func NewHTTPHandler(endpoints endpoints.Endpoints,
 			options...,
 		).ServeHTTP)
 
-		r.Route("/database/{db_name}/{table_name}", func(r chi.Router) {
+		r.Route("/databases/{db_name}/{table_name}", func(r chi.Router) {
 			r.Post("/query", httptransport.NewServer( // Post query for case a query have more than 2048 character
 				endpoints.DBQuery,
 				decodeDBQueryRequest,

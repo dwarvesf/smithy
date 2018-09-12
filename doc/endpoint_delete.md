@@ -1,7 +1,7 @@
 # **DELETE** | Delete
 
 ```
-<url>/tables/{table_name}/delete
+<url>/databases/{database_name}/{table_name}/delete
 ```
 ### Headers
 | Key|Value |

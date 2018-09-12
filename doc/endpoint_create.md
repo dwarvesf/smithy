@@ -1,6 +1,6 @@
 #  **POST** | Create 
 ```
-<url>/tables/{table_name}/create
+<url>/databases/{database_name}/{table_name}/create
 ```
 ### Headers
 | | |

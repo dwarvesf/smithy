@@ -63,12 +63,9 @@ func CreateModelList() []database.Model {
 
 // CreateDatabaseList .
 func CreateDatabaseList() []database.Database {
-	rand.Seed(time.Now().UnixNano())
-	randDBName := strconv.FormatInt(rand.Int63(), 10)
-
 	dm := []database.Database{
 		{
-			DBName:    randDBName,
+			DBName:    "test",
 			ModelList: CreateModelList(),
 		},
 	}

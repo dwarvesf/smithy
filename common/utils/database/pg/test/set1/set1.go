@@ -1,24 +1,14 @@
 package set1
 
 import (
-	"math/rand"
 	"strconv"
 	"testing"
-	"time"
 
 	"github.com/dwarvesf/smithy/common/database"
 	"github.com/jinzhu/gorm"
 
 	backendConfig "github.com/dwarvesf/smithy/backend/config"
 	utilDB "github.com/dwarvesf/smithy/common/utils/database/pg"
-)
-
-const (
-	dbHost     = "localhost"
-	dbPort     = "5439"
-	dbUser     = "postgres"
-	dbPassword = "example"
-	dbName     = "test"
 )
 
 // MigrateTables migrate db with tables base by domain model
@@ -77,12 +67,9 @@ func CreateModelList() []database.Model {
 
 // CreateDatabaseList .
 func CreateDatabaseList() []database.Database {
-	rand.Seed(time.Now().UnixNano())
-	randDBName := strconv.FormatInt(rand.Int63(), 10)
-
 	dm := []database.Database{
 		{
-			DBName:    randDBName,
+			DBName:    "test",
 			ModelList: CreateModelList(),
 		},
 	}
@@ -94,14 +81,14 @@ func CreateDatabaseList() []database.Database {
 func CreateConfig(t *testing.T) (*backendConfig.Config, func()) {
 	cfg := &backendConfig.Config{
 		Databases: CreateDatabaseList(),
-		ModelMap:  make(map[string]database.Model),
+		ModelMap:  make(map[string]map[string]database.Model),
 		ConnectionInfo: database.ConnectionInfo{
 			DBType:          "postgres",
-			DBUsername:      dbUser,
-			DBPassword:      dbPassword,
-			DBName:          dbName,
-			DBPort:          dbPort,
-			DBHostname:      dbHost,
+			DBUsername:      utilDB.DBUser,
+			DBPassword:      utilDB.DBPassword,
+			DBName:          utilDB.DBName,
+			DBPort:          utilDB.DBPort,
+			DBHostname:      utilDB.DBHost,
 			DBSSLModeOption: "false",
 		},
 		Authentication: backendConfig.Authentication{

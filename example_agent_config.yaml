@@ -14,7 +14,7 @@ database_connection_info:
     username: agent_db_manager
     password: this_is_password
 databases_list:
-  - db_name: "fortress"   
+  - db_name: "fortress"
     model_list:
       - table_name: "users"
         display_name: "users"

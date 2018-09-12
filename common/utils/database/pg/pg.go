@@ -11,19 +11,28 @@ import (
 	backendConfig "github.com/dwarvesf/smithy/backend/config"
 )
 
+// DB info
+const (
+	DBHost     = "localhost"
+	DBPort     = "5439"
+	DBUser     = "postgres"
+	DBPassword = "example"
+	DBName     = "test"
+)
+
 // CreateDatabase create pg db for test
 func CreateDatabase(t *testing.T, cfg *backendConfig.Config) func() {
 	rand.Seed(time.Now().UnixNano())
 
 	schemaName := "test" + strconv.FormatInt(rand.Int63(), 10)
 
-	err := cfg.DB().Exec("CREATE SCHEMA " + schemaName).Error
+	err := cfg.DB(DBName).Exec("CREATE SCHEMA " + schemaName).Error
 	if err != nil {
 		t.Fatalf("Fail to create schema. %s", err.Error())
 	}
 
 	// set schema for current db connection
-	err = cfg.DB().Exec("SET search_path TO " + schemaName).Error
+	err = cfg.DB(DBName).Exec("SET search_path TO " + schemaName).Error
 	if err != nil {
 		t.Fatalf("Fail to set search_path to created schema. %s", err.Error())
 	}
@@ -32,7 +41,7 @@ func CreateDatabase(t *testing.T, cfg *backendConfig.Config) func() {
 	cfg.DBSchemaName = schemaName
 
 	return func() {
-		err := cfg.DB().Exec("DROP SCHEMA " + schemaName + " CASCADE").Error
+		err := cfg.DB(DBName).Exec("DROP SCHEMA " + schemaName + " CASCADE").Error
 		if err != nil {
 			t.Fatalf("Fail to drop database. %s", err.Error())
 		}

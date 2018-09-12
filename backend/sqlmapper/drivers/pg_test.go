@@ -22,13 +22,13 @@ func Test_pgStore_Query(t *testing.T) {
 	defer clearDB()
 
 	// migrate tables
-	err := utilTest.MigrateTables(cfg.DB())
+	err := utilTest.MigrateTables(cfg.DB(utilDB.DBName))
 	if err != nil {
 		t.Fatalf("Failed to migrate table by error %v", err)
 	}
 
 	// create sample data
-	users, err := utilTest.CreateUserSampleData(cfg.DB())
+	users, err := utilTest.CreateUserSampleData(cfg.DB(utilDB.DBName))
 	if err != nil {
 		t.Fatalf("Failed to create sample data by error %v", err)
 	}
@@ -264,13 +264,13 @@ func Test_pgStore_Query(t *testing.T) {
 				defer clearDB()
 
 				// migrate tables
-				err := utilTest.MigrateTables(cfgEmpty.DB())
+				err := utilTest.MigrateTables(cfgEmpty.DB(utilDB.DBName))
 				if err != nil {
 					t.Fatalf("Failed to migrate table by error %v", err)
 				}
-				s = NewPGStore(cfgEmpty.DB(), database.Models(cfgEmpty.ModelList).GroupByName())
+				s = NewPGStore(cfgEmpty.DBs(), database.Models(cfgEmpty.ModelList).GroupByName())
 			} else {
-				s = NewPGStore(cfg.DB(), database.Models(cfg.ModelList).GroupByName())
+				s = NewPGStore(cfg.DBs(), database.Models(cfg.ModelList).GroupByName())
 			}
 
 			got, got1, err := s.Query(*tt.args)
@@ -311,13 +311,13 @@ func Test_pgStore_Delete(t *testing.T) {
 	defer clearDB()
 
 	// migrate tables
-	err := utilTest.MigrateTables(cfg.DB())
+	err := utilTest.MigrateTables(cfg.DB(utilDB.DBName))
 	if err != nil {
 		t.Fatalf("Failed to migrate table by error %v", err)
 	}
 
 	//create sample data
-	_, err = utilTest.CreateUserSampleData(cfg.DB())
+	_, err = utilTest.CreateUserSampleData(cfg.DB(utilDB.DBName))
 	if err != nil {
 		t.Fatalf("Failed to create sample data by error %v", err)
 	}
@@ -405,16 +405,16 @@ func Test_pgStore_Delete(t *testing.T) {
 				defer clearDB()
 
 				// migrate tables
-				err := utilTest.MigrateTables(cfgEmpty.DB())
+				err := utilTest.MigrateTables(cfgEmpty.DB(utilDB.DBName))
 				if err != nil {
 					t.Fatalf("Failed to migrate table by error %v", err)
 				}
-				s = NewPGStore(cfgEmpty.DB(), database.Models(cfgEmpty.ModelList).GroupByName())
+				s = NewPGStore(cfgEmpty.DBs(), database.Models(cfgEmpty.ModelList).GroupByName())
 			} else {
-				s = NewPGStore(cfg.DB(), database.Models(cfg.ModelList).GroupByName())
+				s = NewPGStore(cfg.DBs(), database.Models(cfg.ModelList).GroupByName())
 			}
 
-			err := s.Delete(tt.tableName, tt.args.fields, tt.args.data)
+			err := s.Delete(utilDB.DBName, tt.tableName, tt.args.fields, tt.args.data)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("pgStore.Delete() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -429,7 +429,7 @@ func Test_pgStore_Create(t *testing.T) {
 	defer clearDB()
 
 	// migrate tables
-	err := utilTest.MigrateTables(cfg.DB())
+	err := utilTest.MigrateTables(cfg.DB(utilDB.DBName))
 	if err != nil {
 		t.Fatalf("Failed to migrate table by error %v", err)
 	}
@@ -486,7 +486,7 @@ func Test_pgStore_Create(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := NewPGStore(cfg.DB(), database.Models(cfg.ModelList).GroupByName())
+			s := NewPGStore(cfg.DBs(), database.Models(cfg.ModelList).GroupByName())
 			got, err := s.Create(tt.tableName, tt.args.data)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("pgStore.Create() error = %v, wantErr %v", err, tt.wantErr)
@@ -505,12 +505,12 @@ func Test_pgStore_Update(t *testing.T) {
 	cfg, clearDB := utilTest.CreateConfig(t)
 	defer clearDB()
 	// migrate tables
-	err := utilTest.MigrateTables(cfg.DB())
+	err := utilTest.MigrateTables(cfg.DB(utilDB.DBName))
 	if err != nil {
 		t.Fatalf("Failed to migrate table by error %v", err)
 	}
 	//create sample data
-	users, err := utilTest.CreateUserSampleData(cfg.DB())
+	users, err := utilTest.CreateUserSampleData(cfg.DB(utilDB.DBName))
 	if err != nil {
 		t.Fatalf("Failed to create sample data by error %v", err)
 	}
@@ -601,8 +601,8 @@ func Test_pgStore_Update(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := NewPGStore(cfg.DB(), database.Models(cfg.ModelList).GroupByName())
-			got, err := s.Update(tt.tableName, tt.args.d, tt.args.id)
+			s := NewPGStore(cfg.DBs(), database.Models(cfg.ModelList).GroupByName())
+			got, err := s.Update(utilDB.DBName, tt.tableName, tt.args.d, tt.args.id)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("pgStore.Update() error = %v, wantErr %v", err, tt.wantErr)
 				return

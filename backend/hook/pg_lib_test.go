@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"testing"
 
+	utilDB "github.com/dwarvesf/smithy/common/utils/database/pg"
 	utilTest "github.com/dwarvesf/smithy/common/utils/database/pg/test/set1"
 )
 
@@ -15,13 +16,13 @@ func Test_pgLibImpl_First(t *testing.T) {
 	defer clearDB()
 
 	// migrate tables
-	err := utilTest.MigrateTables(cfg.DB())
+	err := utilTest.MigrateTables(cfg.DB(utilDB.DBName))
 	if err != nil {
 		t.Fatalf("Failed to migrate table by error %v", err)
 	}
 
 	//create sample data
-	_, err = utilTest.CreateUserSampleData(cfg.DB())
+	_, err = utilTest.CreateUserSampleData(cfg.DB(utilDB.DBName))
 	if err != nil {
 		t.Fatalf("Failed to create sample data by error %v", err)
 	}
@@ -78,9 +79,9 @@ func Test_pgLibImpl_First(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := NewPGLib(cfg.DB(), cfg.ModelMap)
+			s := NewPGLib(cfg.DBs(), cfg.ModelMap)
 
-			got, err := s.First(tt.args.tableName, tt.args.condition)
+			got, err := s.First(utilDB.DBName, tt.args.tableName, tt.args.condition)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("pgLibImpl.First() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -98,13 +99,13 @@ func Test_pgLibImpl_Where(t *testing.T) {
 	defer clearDB()
 
 	// migrate tables
-	err := utilTest.MigrateTables(cfg.DB())
+	err := utilTest.MigrateTables(cfg.DB(utilDB.DBName))
 	if err != nil {
 		t.Fatalf("Failed to migrate table by error %v", err)
 	}
 
 	//create sample data
-	_, err = utilTest.CreateUserSampleData(cfg.DB())
+	_, err = utilTest.CreateUserSampleData(cfg.DB(utilDB.DBName))
 	if err != nil {
 		t.Fatalf("Failed to create sample data by error %v", err)
 	}
@@ -163,9 +164,9 @@ func Test_pgLibImpl_Where(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := NewPGLib(cfg.DB(), cfg.ModelMap)
+			s := NewPGLib(cfg.DBs(), cfg.ModelMap)
 
-			got, err := s.Where(tt.args.tableName, tt.args.condition)
+			got, err := s.Where(utilDB.DBName, tt.args.tableName, tt.args.condition)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("pgLibImpl.Where() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -183,7 +184,7 @@ func Test_pgLibImpl_Create(t *testing.T) {
 	defer clearDB()
 
 	// migrate tables
-	err := utilTest.MigrateTables(cfg.DB())
+	err := utilTest.MigrateTables(cfg.DB(utilDB.DBName))
 	if err != nil {
 		t.Fatalf("Failed to migrate table by error %v", err)
 	}
@@ -237,9 +238,9 @@ func Test_pgLibImpl_Create(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := NewPGLib(cfg.DB(), cfg.ModelMap)
+			s := NewPGLib(cfg.DBs(), cfg.ModelMap)
 
-			got, err := s.Create(tt.args.tableName, tt.args.d)
+			got, err := s.Create(utilDB.DBName, tt.args.tableName, tt.args.d)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("pgLibImpl.Create() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -257,13 +258,13 @@ func Test_pgLibImpl_Update(t *testing.T) {
 	defer clearDB()
 
 	// migrate tables
-	err := utilTest.MigrateTables(cfg.DB())
+	err := utilTest.MigrateTables(cfg.DB(utilDB.DBName))
 	if err != nil {
 		t.Fatalf("Failed to migrate table by error %v", err)
 	}
 
 	//create sample data
-	_, err = utilTest.CreateUserSampleData(cfg.DB())
+	_, err = utilTest.CreateUserSampleData(cfg.DB(utilDB.DBName))
 	if err != nil {
 		t.Fatalf("Failed to create sample data by error %v", err)
 	}
@@ -330,9 +331,9 @@ func Test_pgLibImpl_Update(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := NewPGLib(cfg.DB(), cfg.ModelMap)
+			s := NewPGLib(cfg.DBs(), cfg.ModelMap)
 
-			got, err := s.Update(tt.args.tableName, tt.args.primaryKey, tt.args.d)
+			got, err := s.Update(utilDB.DBName, tt.args.tableName, tt.args.primaryKey, tt.args.d)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("pgLibImpl.Update() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -350,13 +351,13 @@ func Test_pgLibImpl_Delete(t *testing.T) {
 	defer clearDB()
 
 	// migrate tables
-	err := utilTest.MigrateTables(cfg.DB())
+	err := utilTest.MigrateTables(cfg.DB(utilDB.DBName))
 	if err != nil {
 		t.Fatalf("Failed to migrate table by error %v", err)
 	}
 
 	//create sample data
-	_, err = utilTest.CreateUserSampleData(cfg.DB())
+	_, err = utilTest.CreateUserSampleData(cfg.DB(utilDB.DBName))
 	if err != nil {
 		t.Fatalf("Failed to create sample data by error %v", err)
 	}
@@ -417,13 +418,13 @@ func Test_pgLibImpl_Delete(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := NewPGLib(cfg.DB(), cfg.ModelMap)
+			s := NewPGLib(cfg.DBs(), cfg.ModelMap)
 
-			if err := s.Delete(tt.args.tableName, tt.args.fields, tt.args.data); (err != nil) != tt.wantErr {
+			if err := s.Delete(utilDB.DBName, tt.args.tableName, tt.args.fields, tt.args.data); (err != nil) != tt.wantErr {
 				t.Errorf("pgLibImpl.Delete() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if tt.testCorrect {
-				_, err = s.First("users", "id = 1") // check record users already deleted in database
+				_, err = s.First(utilDB.DBName, "users", "id = 1") // check record users already deleted in database
 				if err == nil {
 					t.Error("pgLibImpl.Delete() not delete record in database ")
 				}

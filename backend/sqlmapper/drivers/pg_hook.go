@@ -1,6 +1,8 @@
 package drivers
 
 import (
+	"fmt"
+
 	"github.com/jinzhu/gorm"
 
 	"github.com/dwarvesf/smithy/backend/hook"
@@ -39,7 +41,11 @@ func (s *pgHookStore) ColumnMetadata(q sqlmapper.Query) ([]database.Column, erro
 func (s *pgHookStore) Create(dbName string, tableName string, row sqlmapper.RowData) (sqlmapper.RowData, error) {
 	ctx := row.ToCtx()
 
-	model := s.modelMap[dbName][tableName]
+	model, ok := s.modelMap[dbName][tableName]
+	if !ok {
+		return nil, fmt.Errorf("uknown table_name %s", tableName)
+	}
+
 	if model.IsBeforeCreateEnable() {
 		err := s.hookEngine.Eval(ctx, model.Hooks.BeforeCreate.Content)
 		if err != nil {
@@ -66,7 +72,11 @@ func (s *pgHookStore) Create(dbName string, tableName string, row sqlmapper.RowD
 }
 
 func (s *pgHookStore) Delete(dbName string, tableName string, fields, data []interface{}) error {
-	model := s.modelMap[dbName][tableName]
+	model, ok := s.modelMap[dbName][tableName]
+	if !ok {
+		return fmt.Errorf("uknown table_name %s", tableName)
+	}
+
 	if model.IsBeforeDeleteEnable() {
 		err := s.hookEngine.Eval(nil, model.Hooks.BeforeDelete.Content)
 		if err != nil {
@@ -87,7 +97,11 @@ func (s *pgHookStore) Delete(dbName string, tableName string, fields, data []int
 }
 
 func (s *pgHookStore) Update(dbName string, tableName string, d sqlmapper.RowData, id int) (sqlmapper.RowData, error) {
-	model := s.modelMap[dbName][tableName]
+	model, ok := s.modelMap[dbName][tableName]
+	if !ok {
+		return nil, fmt.Errorf("uknown table_name %s", tableName)
+	}
+
 	if model.IsBeforeUpdateEnable() {
 		err := s.hookEngine.Eval(nil, model.Hooks.BeforeUpdate.Content)
 		if err != nil {

@@ -11,14 +11,6 @@ import (
 	utilDB "github.com/dwarvesf/smithy/common/utils/database/pg"
 )
 
-const (
-	dbHost     = "localhost"
-	dbPort     = "5439"
-	dbUser     = "postgres"
-	dbPassword = "example"
-	dbName     = "test"
-)
-
 // MigrateTables migrate db with tables base by domain model
 func MigrateTables(db *gorm.DB) error {
 	return db.Exec(`CREATE SEQUENCE user_id_seq;
@@ -73,18 +65,30 @@ func CreateModelList() []database.Model {
 	return dm
 }
 
+// CreateDatabaseList .
+func CreateDatabaseList() []database.Database {
+	dm := []database.Database{
+		{
+			DBName:    "test",
+			ModelList: CreateModelList(),
+		},
+	}
+
+	return dm
+}
+
 // CreateConfig fake config for test
 func CreateConfig(t *testing.T) (*backendConfig.Config, func()) {
 	cfg := &backendConfig.Config{
-		ModelList: CreateModelList(),
-		ModelMap:  make(map[string]database.Model),
+		Databases: CreateDatabaseList(),
+		ModelMap:  make(map[string]map[string]database.Model),
 		ConnectionInfo: database.ConnectionInfo{
 			DBType:          "postgres",
-			DBUsername:      dbUser,
-			DBPassword:      dbPassword,
-			DBName:          dbName,
-			DBPort:          dbPort,
-			DBHostname:      dbHost,
+			DBUsername:      utilDB.DBUser,
+			DBPassword:      utilDB.DBPassword,
+			DBName:          utilDB.DBName,
+			DBPort:          utilDB.DBPort,
+			DBHostname:      utilDB.DBHost,
 			DBSSLModeOption: "false",
 		},
 		Authentication: backendConfig.Authentication{

@@ -12,48 +12,56 @@ import (
 
 func decodeDBQueryRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 	var req endpoints.DBQueryRequest
+	dbName := chi.URLParam(r, "db_name")
 	tableName := chi.URLParam(r, "table_name")
 
 	err := json.NewDecoder(r.Body).Decode(&req)
 	defer r.Body.Close()
 
 	req.SourceTable = tableName
+	req.SourceDatabase = dbName
 
 	return req, err
 }
 
 func decodeDBCreateRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 	var req endpoints.DBCreateRequest
+	dbName := chi.URLParam(r, "db_name")
 	tableName := chi.URLParam(r, "table_name")
 
 	err := json.NewDecoder(r.Body).Decode(&req)
 	defer r.Body.Close()
 
 	req.TableName = tableName
+	req.DatabaseName = dbName
 
 	return req, err
 }
 
 func decodeDBUpdateRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 	var req endpoints.DBUpdateRequest
+	dbName := chi.URLParam(r, "db_name")
 	tableName := chi.URLParam(r, "table_name")
 
 	err := json.NewDecoder(r.Body).Decode(&req)
 	defer r.Body.Close()
 
 	req.TableName = tableName
+	req.DatabaseName = dbName
 
 	return req, err
 }
 
 func decodeDBDeleteRequest(ctx context.Context, r *http.Request) (interface{}, error) {
 	var req endpoints.DBDeleteRequest
+	dbName := chi.URLParam(r, "db_name")
 	tableName := chi.URLParam(r, "table_name")
 
 	err := json.NewDecoder(r.Body).Decode(&req)
 	defer r.Body.Close()
 
 	req.TableName = tableName
+	req.DatabaseName = dbName
 
 	return req, err
 }

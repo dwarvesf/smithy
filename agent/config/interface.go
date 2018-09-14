@@ -21,25 +21,25 @@ type Config struct {
 	SerectKey               string `yaml:"serect_key" json:"-"`
 	VerifyConfig            bool   `yaml:"verify_config" json:"-"`
 	database.ConnectionInfo `yaml:"database_connection_info" json:"database_connection_info"`
-	ForceRecreate           bool             `yaml:"force_recreate" json:"force_recreate"`
-	ModelList               []database.Model `yaml:"model_list" json:"model_list"`
+	ForceRecreate           bool                `yaml:"force_recreate" json:"force_recreate"`
+	Databases               []database.Database `yaml:"databases_list" json:"databases_list"`
 }
 
 // DBConnectionString get pg connection string
-func (c Config) DBConnectionString() string {
+func (c Config) DBConnectionString(dbName string) string {
 	switch c.DBType {
 	case "postgres":
-		return c.pgConnectionString()
+		return c.pgConnectionString(dbName)
 	default:
 		return ""
 	}
 }
 
 // PGConnectionString get pg connection string
-func (c Config) pgConnectionString() string {
+func (c Config) pgConnectionString(dbName string) string {
 	return fmt.Sprintf("user=%s dbname=%s sslmode=%s password=%s host=%s port=%s",
 		c.DBUsername,
-		c.DBName,
+		dbName,
 		c.DBSSLModeOption,
 		c.DBPassword,
 		c.DBHostname,

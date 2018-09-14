@@ -24,15 +24,15 @@ var (
 
 // AvailableModelsResponse response for available model endpoints
 type AvailableModelsResponse struct {
-	Status             string           `json:"status"`
-	AvailableMethods   []string         `json:"available_methods"`
-	AvailableHookTypes []string         `json:"available_hook_types"`
-	Models             []database.Model `json:"models"`
+	Status             string              `json:"status"`
+	AvailableMethods   []string            `json:"available_methods"`
+	AvailableHookTypes []string            `json:"available_hook_types"`
+	Models             []database.Database `json:"models"`
 }
 
 func makeAvailableModelsEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		data := s.SyncConfig().ModelList
+		data := s.SyncConfig().Databases
 
 		return AvailableModelsResponse{
 			Status:             "success",

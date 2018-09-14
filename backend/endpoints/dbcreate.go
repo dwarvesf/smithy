@@ -12,9 +12,10 @@ import (
 
 // DBCreateRequest request for db create data
 type DBCreateRequest struct {
-	TableName string        `json:"-"`
-	Fields    []interface{} `json:"fields"`
-	Data      []interface{} `json:"data"`
+	TableName    string        `json:"-"`
+	DatabaseName string        `json:"-"`
+	Fields       []interface{} `json:"fields"`
+	Data         []interface{} `json:"data"`
 }
 
 // DBCreateResponse response for db create data
@@ -35,7 +36,7 @@ func makeDBCreateEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, err
 		}
 
-		data, err := s.Create(req.TableName, rowData)
+		data, err := s.Create(req.DatabaseName, req.TableName, rowData)
 		if err != nil {
 			return nil, err
 		}

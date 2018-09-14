@@ -58,7 +58,7 @@ func (b boltImpl) Read() (*Config, error) {
 	}
 
 	// init model map for prevent access nil map
-	cfg.ModelMap = make(map[string]database.Model)
+	cfg.ModelMap = make(map[string]map[string]database.Model)
 
 	return cfg, nil
 }

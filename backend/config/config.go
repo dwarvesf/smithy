@@ -46,10 +46,10 @@ type Config struct {
 	PersistenceFileName string `yaml:"persistence_file_name"`
 
 	database.ConnectionInfo `yaml:"-"`
-	ModelList               []database.Model          `yaml:"-"`
-	ModelMap                map[string]database.Model `yaml:"-" json:"-"`
-	Version                 Version                   `yaml:"-" json:"version"`
-	db                      *gorm.DB
+	Databases               []database.Database                  `yaml:"databases_list" json:"databases_list"`
+	ModelMap                map[string]map[string]database.Model `yaml:"-" json:"-"`
+	Version                 Version                              `yaml:"-" json:"version"`
+	db                      map[string]*gorm.DB
 	Authentication          Authentication `yaml:"authentication" json:"authentication"`
 
 	sync.Mutex
@@ -80,7 +80,12 @@ func (w *Wrapper) SyncConfig() *Config {
 }
 
 // DB get db connection from config
-func (c *Config) DB() *gorm.DB {
+func (c *Config) DB(dbName string) *gorm.DB {
+	return c.db[dbName]
+}
+
+// DBs get db connection from config
+func (c *Config) DBs() map[string]*gorm.DB {
 	return c.db
 }
 
@@ -127,7 +132,7 @@ func (c *Config) UpdateConfigFromAgentConfig(agentCfg *agentConfig.Config) error
 	tempCfg.ConnectionInfo = agentCfg.ConnectionInfo
 	tempCfg.DBUsername = agentCfg.UserWithACL.Username
 	tempCfg.DBPassword = agentCfg.UserWithACL.Password
-	tempCfg.ModelList = agentCfg.ModelList
+	tempCfg.Databases = agentCfg.Databases
 
 	// If available new version, update config then save it into persistence
 	checksum, err := tempCfg.CheckSum()
@@ -152,15 +157,16 @@ func (c *Config) UpdateConfigFromAgentConfig(agentCfg *agentConfig.Config) error
 
 // AddHook add hook to configuration
 func (c *Config) AddHook(tableName, hookType, content string) error {
-	models := c.ModelList
-
-	for i := range models {
-		if models[i].TableName == tableName {
-			err := models[i].AddHook(hookType, content)
-			if err != nil {
-				return err
+	for i := range c.Databases {
+		models := c.Databases[i].ModelList
+		for i := range models {
+			if models[i].TableName == tableName {
+				err := models[i].AddHook(hookType, content)
+				if err != nil {
+					return err
+				}
+				return nil
 			}
-			return nil
 		}
 	}
 
@@ -176,16 +182,19 @@ func (c *Config) UpdateConfig(cfg *Config) error {
 	c.ConnectionInfo = cfg.ConnectionInfo
 	c.DBUsername = cfg.DBUsername
 	c.DBPassword = cfg.DBPassword
-	c.ModelList = cfg.ModelList
+	c.Databases = cfg.Databases
 	c.Version = cfg.Version
 
 	for k := range c.ModelMap {
 		delete(c.ModelMap, k)
 	}
 
-	tmp := database.Models(c.ModelList).GroupByName()
-	for k := range tmp {
-		c.ModelMap[k] = tmp[k]
+	for _, db := range c.Databases {
+		tmp := database.Models(db.ModelList).GroupByName()
+		c.ModelMap[db.DBName] = make(map[string]database.Model)
+		for k := range tmp {
+			c.ModelMap[db.DBName][k] = tmp[k]
+		}
 	}
 
 	return c.UpdateDB()
@@ -204,18 +213,21 @@ func (c *Config) ChangeVersion(id int) error {
 
 // UpdateDB update db connection
 func (c *Config) UpdateDB() error {
-	newDB, err := c.openNewDBConnection()
-	if err != nil {
-		// TODO: add nicer error
-		return err
+	c.db = make(map[string]*gorm.DB)
+	for i := range c.Databases {
+		newDB, err := c.openNewDBConnection(c.Databases[i].DBName)
+		if err != nil {
+			// TODO: add nicer error
+			return err
+		}
+		c.db[c.Databases[i].DBName] = newDB
 	}
-	c.db = newDB
 
 	return nil
 }
 
 // TODO: extend for using mutiple DB
-func (c *Config) openNewDBConnection() (*gorm.DB, error) {
+func (c *Config) openNewDBConnection(dbName string) (*gorm.DB, error) {
 	sslmode := "disable"
 	if c.DBSSLModeOption == "enable" {
 		sslmode = "require"
@@ -223,7 +235,7 @@ func (c *Config) openNewDBConnection() (*gorm.DB, error) {
 
 	dbstring := fmt.Sprintf("user=%s dbname=%s sslmode=%s password=%s host=%s port=%s",
 		c.DBUsername,
-		c.DBName,
+		dbName,
 		sslmode,
 		c.DBPassword,
 		c.DBHostname,
@@ -233,7 +245,7 @@ func (c *Config) openNewDBConnection() (*gorm.DB, error) {
 	return gorm.Open("postgres", dbstring)
 }
 
-// convert user list to user map
+// ConvertUserListToMap convert user list to user map
 func (c *Config) ConvertUserListToMap() map[string]User {
 	userMap := make(map[string]User)
 
@@ -243,11 +255,13 @@ func (c *Config) ConvertUserListToMap() map[string]User {
 	return userMap
 }
 
+// Authentication use to authenticate
 type Authentication struct {
 	SerectKey string `yaml:"secret_key" json:"secret_key"`
 	UserList  []User `yaml:"users" json:"users"`
 }
 
+// User .
 type User struct {
 	Username string `yaml:"username" json:"username"`
 	Password string `yaml:"password" json:"password"`

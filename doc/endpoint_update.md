@@ -1,6 +1,6 @@
 #  **PUT** | Update 
 ```
-<url>/tables/{table_name}/update
+<url>/databases/{database_name}/{table_name}/update
 ```
 ### Headers
 | | |

@@ -14,21 +14,22 @@ import (
 
 // Mapper interface for mapping query from sql to corresponding database engine
 type Mapper interface {
-	Create(tableName string, d RowData) (RowData, error)
-	Update(tableName string, d RowData, id int) (RowData, error)
-	Delete(tableName string, fields, data []interface{}) error
+	Create(dbName string, tableName string, d RowData) (RowData, error)
+	Update(dbName string, tableName string, d RowData, id int) (RowData, error)
+	Delete(dbName string, tableName string, fields, data []interface{}) error
 	Query(Query) ([]string, []interface{}, error)
 	ColumnMetadata(Query) ([]database.Column, error)
 }
 
 // Query contain query data for a query request
 type Query struct {
-	SourceTable string   `json:"-"`
-	Fields      []string `json:"fields"`
-	Filter      Filter   `json:"filter"`
-	Offset      int      `json:"offset"`
-	Limit       int      `json:"limit"`
-	Order       []string `json:"order"` // 2 elements: "columnName" and "asc" if ascending order, "desc" if descending order
+	SourceDatabase string   `json:"-"`
+	SourceTable    string   `json:"-"`
+	Fields         []string `json:"fields"`
+	Filter         Filter   `json:"filter"`
+	Offset         int      `json:"offset"`
+	Limit          int      `json:"limit"`
+	Order          []string `json:"order"` // 2 elements: "columnName" and "asc" if ascending order, "desc" if descending order
 }
 
 // ColumnNames return columns name in query

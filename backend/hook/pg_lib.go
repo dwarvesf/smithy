@@ -27,7 +27,7 @@ func NewPGLib(db map[string]*gorm.DB, modelMap map[string]map[string]database.Mo
 func (s *pgLibImpl) First(dbName string, tableName string, condition string) (map[interface{}]interface{}, error) {
 	model, ok := s.modelMap[dbName][tableName]
 	if !ok {
-		return nil, fmt.Errorf("uknown table_name %s", tableName)
+		return nil, fmt.Errorf("uknown database_name/table_name %s/%s", dbName, tableName)
 	}
 	cols := database.Columns(model.Columns).Names()
 	colNames := strings.Join(cols, ",")
@@ -57,7 +57,7 @@ func (s *pgLibImpl) First(dbName string, tableName string, condition string) (ma
 func (s *pgLibImpl) Where(dbName string, tableName string, condition string) ([]map[interface{}]interface{}, error) {
 	model, ok := s.modelMap[dbName][tableName]
 	if !ok {
-		return nil, fmt.Errorf("uknown table_name %s", tableName)
+		return nil, fmt.Errorf("uknown database_name/table_name %s/%s", dbName, tableName)
 	}
 	cols := database.Columns(model.Columns).Names()
 	colNames := strings.Join(cols, ",")

@@ -98,7 +98,7 @@ func (s *pgStore) Query(q sqlmapper.Query) ([]string, []interface{}, error) {
 func (s *pgStore) ColumnMetadata(q sqlmapper.Query) ([]database.Column, error) {
 	m, ok := s.modelMap[q.SourceDatabase][q.SourceTable]
 	if !ok {
-		return nil, fmt.Errorf("uknown source_table %s", q.SourceTable)
+		return nil, fmt.Errorf("uknown database_name/table_name %s/%s", q.SourceDatabase, q.SourceTable)
 	}
 
 	return q.ColumnMetadata(m.Columns)
@@ -125,7 +125,7 @@ func (s *pgStore) getRelationshipType(dbName string, tableName string, relateTab
 func (s *pgStore) getForeignKeyColumn(dbName string, tableName string, relateTableName string) (*database.Column, error) {
 	m, ok := s.modelMap[dbName][relateTableName]
 	if !ok {
-		return nil, fmt.Errorf("uknown table_name %s", tableName)
+		return nil, fmt.Errorf("uknown database_name/table_name %s/%s", dbName, relateTableName)
 	}
 
 	cs := m.Columns
@@ -147,7 +147,7 @@ func (s *pgStore) getForeignKeyColumn(dbName string, tableName string, relateTab
 func (s *pgStore) Create(dbName string, tableName string, row sqlmapper.RowData) (sqlmapper.RowData, error) {
 	d, ok := s.modelMap[dbName]
 	if !ok {
-		return nil, errors.New("Can't find foreign key column")
+		return nil, fmt.Errorf("uknown database_name %s", dbName)
 	}
 
 	if err := verifyInput(row, tableName, d); err != nil {
@@ -250,7 +250,7 @@ func (s *pgStore) createWithHasMany(tx *sql.Tx, dbName string, parentTableName s
 func (s *pgStore) Delete(dbName string, tableName string, fields, data []interface{}) error {
 	d, ok := s.modelMap[dbName]
 	if !ok {
-		return errors.New("Can't find foreign key column")
+		return fmt.Errorf("uknown database_name %s", dbName)
 	}
 
 	if !tableExisted(tableName, d) {
@@ -364,7 +364,7 @@ func (s *pgStore) Update(dbName string, tableName string, row sqlmapper.RowData,
 
 	d, ok := s.modelMap[dbName]
 	if !ok {
-		return nil, errors.New("Can't find foreign key column")
+		return nil, fmt.Errorf("uknown database_name %s", dbName)
 	}
 
 	if err := verifyInput(row, tableName, d); err != nil {
@@ -433,7 +433,7 @@ func (s *pgStore) isIDNotExist(dbName string, tableName string, id int) (bool, e
 func (s *pgStore) isPrimaryKey(dbName, colName, tableName string) (bool, error) {
 	m, ok := s.modelMap[dbName][tableName]
 	if !ok {
-		return false, errors.New("Can't find foreign key column")
+		return false, fmt.Errorf("uknown database_name/table_name %s/%s", dbName, tableName)
 	}
 	columns := m.Columns
 	for _, col := range columns {
@@ -462,7 +462,7 @@ func (s *pgStore) ignorePrimaryKey(dbName, tableName string, relateRowData map[s
 func (s *pgStore) getRelationalColumn(dbName, tableName string) ([]database.Column, error) {
 	m, ok := s.modelMap[dbName][tableName]
 	if !ok {
-		return nil, errors.New("Can't find foreign key column")
+		return nil, fmt.Errorf("uknown database_name/table_name %s/%s", dbName, tableName)
 	}
 
 	cs := m.Columns
@@ -531,7 +531,7 @@ func (s *pgStore) updateWithHasMany(tx *sql.Tx, dbName string, parentTableName s
 
 		d, ok := s.modelMap[dbName]
 		if !ok {
-			return errors.New("Can't find foreign key column")
+			return fmt.Errorf("uknown database_name %s", dbName)
 		}
 
 		if err := verifyInput(row, tableName, d); err != nil {

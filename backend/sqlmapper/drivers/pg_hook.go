@@ -43,7 +43,7 @@ func (s *pgHookStore) Create(dbName string, tableName string, row sqlmapper.RowD
 
 	model, ok := s.modelMap[dbName][tableName]
 	if !ok {
-		return nil, fmt.Errorf("uknown table_name %s", tableName)
+		return nil, fmt.Errorf("uknown database_name/table_name %s/%s", dbName, tableName)
 	}
 
 	if model.IsBeforeCreateEnable() {
@@ -74,7 +74,7 @@ func (s *pgHookStore) Create(dbName string, tableName string, row sqlmapper.RowD
 func (s *pgHookStore) Delete(dbName string, tableName string, fields, data []interface{}) error {
 	model, ok := s.modelMap[dbName][tableName]
 	if !ok {
-		return fmt.Errorf("uknown table_name %s", tableName)
+		return fmt.Errorf("uknown database_name/table_name %s/%s", dbName, tableName)
 	}
 
 	if model.IsBeforeDeleteEnable() {
@@ -99,7 +99,7 @@ func (s *pgHookStore) Delete(dbName string, tableName string, fields, data []int
 func (s *pgHookStore) Update(dbName string, tableName string, d sqlmapper.RowData, id int) (sqlmapper.RowData, error) {
 	model, ok := s.modelMap[dbName][tableName]
 	if !ok {
-		return nil, fmt.Errorf("uknown table_name %s", tableName)
+		return nil, fmt.Errorf("uknown database_name/table_name %s/%s", dbName, tableName)
 	}
 
 	if model.IsBeforeUpdateEnable() {

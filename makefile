@@ -13,7 +13,7 @@ up-agent:
 
 up-dashboard:
 	go build -o bin/dashboard ./cmd/backend
-	PORT=2999 bin/dashboard
+	ENV=local PORT=2999 bin/dashboard
 
 up-swagger:
 	go build -o bin/swaggerui ./cmd/swaggerui

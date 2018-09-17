@@ -1,0 +1,209 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "title": "Smithy",
+        "description": "Smithy is an admin dashboard written in Go and VueJS. It is designed to support multiple existed architectures and databases https://smithy.dwarves.foundation",
+        "version": "1.0.0",
+        "termsOfService": "https://smithy.dwarves.foundation",
+        "contact": {
+            "email": "apiteam@swagger.io"
+        },
+        "license": {
+            "name": "Apache 2.0",
+            "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+        }
+    },
+    "host": "localhost:2999",
+    "basePath": "",
+    "tags": [
+        {
+            "name": "Authenticate",
+            "description": "Authenticate to get access token",
+            "externalDocs": {
+                "description": "Find out more",
+                "url": "https://smithy.dwarves.foundation"
+            }
+        },
+        {
+            "name": "CRUD",
+            "description": "Operations about user",
+            "externalDocs": {
+                "description": "Find out more about our store",
+                "url": "https://smithy.dwarves.foundation"
+            }
+        }
+    ],
+    "schemes": [
+        "http",
+        "https"
+    ],
+    "paths": {
+        "/auth/login": {
+            "post": {
+                "tags": [
+                    "Authenticate"
+                ],
+                "summary": "Authenticate to get an access token",
+                "description": "",
+                "operationId": "login",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "User to auth",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/User"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "successful operation"
+                    }
+                }
+            }
+        },
+        "/databases/{database_name}/{table_name}/query": {
+            "post": {
+                "tags": [
+                    "CRUD"
+                ],
+                "summary": "Query row in databases",
+                "description": "",
+                "operationId": "query",
+                "produces": [
+                    "application/json"
+                ],
+                "parameters": [
+                    {
+                        "name": "database_name",
+                        "in": "path",
+                        "description": "Name of database to query",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "table_name",
+                        "in": "path",
+                        "description": "Name of table to query",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "description": "query data",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/Query"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "successful operation",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/User"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid status value"
+                    }
+                },
+                "security": [
+                    {
+                        "api_key": []
+                    }
+                ]
+            }
+        }
+    },
+    "securityDefinitions": {
+        "api_key": {
+            "type": "apiKey",
+            "in": "header",
+            "name": "Authorization"
+        }
+    },
+    "definitions": {
+        "User": {
+            "type": "object",
+            "properties": {
+                "username": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string"
+                }
+            },
+            "xml": {
+                "name": "User"
+            },
+            "example": {
+                "username": "aaa",
+                "password": "abc"
+            }
+        },
+        "Filter": {
+            "type": "object",
+            "properties": {
+                "operator": {
+                    "type": "string"
+                },
+                "column_name": {
+                    "type": "string"
+                },
+                "value": {
+                    "type": "string"
+                }
+            },
+            "example": {
+                "operator": "=",
+                "column_name": "name",
+                "value": "Hieu Dep Trai"
+            }
+        },
+        "Query": {
+            "type": "object",
+            "properties": {
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": ["id", "name"]
+                },
+                "filter": {
+                    "$ref": "#/definitions/Filter"
+                },
+                "offset": {
+                    "type": "integer",
+                    "format": "int64",
+                    "example": 2
+                },
+                "limit": {
+                    "type": "integer",
+                    "format": "int64",
+                    "example": 3
+                }
+            },
+            "xml": {
+                "name": "Query"
+            }
+        }
+    },
+    "externalDocs": {
+        "description": "Find out more about Smithy",
+        "url": "https://smithy.dwarves.foundation"
+    }
+}

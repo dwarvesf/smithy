@@ -87,14 +87,16 @@
                         "in": "path",
                         "description": "Name of database to query",
                         "required": true,
-                        "type": "string"
+                        "type": "string",
+                        "example": "fortress"
                     },
                     {
                         "name": "table_name",
                         "in": "path",
                         "description": "Name of table to query",
                         "required": true,
-                        "type": "string"
+                        "type": "string",
+                        "example": "users"
                     },
                     {
                         "in": "body",
@@ -110,14 +112,8 @@
                     "200": {
                         "description": "successful operation",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/User"
-                            }
+                            "$ref": "#/definitions/QueryResponse"
                         }
-                    },
-                    "400": {
-                        "description": "Invalid status value"
                     }
                 },
                 "security": [
@@ -189,7 +185,7 @@
                 "offset": {
                     "type": "integer",
                     "format": "int64",
-                    "example": 2
+                    "example": 0
                 },
                 "limit": {
                     "type": "integer",
@@ -199,6 +195,79 @@
             },
             "xml": {
                 "name": "Query"
+            }
+        },
+        "Column": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string",
+                    "example": "id"
+                },
+                "type": {
+                    "type": "string",
+                    "example": "int"
+                },
+                "tags": {
+                    "type": "string"
+                },
+                "is_nullable": {
+                    "type": "boolean",
+                    "example": false
+                },
+                "is_primary": {
+                    "type": "boolean",
+                    "example": true
+                },
+                "default_value": {
+                    "type": "string"
+                },
+                "foreign_key": {
+                    "type": "object",
+                    "properties": {
+                        "table": {
+                            "type": "string"
+                        },
+                        "foreign_column": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "QueryResponse": {
+            "type": "object",
+            "properties": {
+                "status": {
+                    "type": "string",
+                    "example": "success"
+                },
+                "columns": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    },
+                    "example": ["id", "name"]
+                },
+                "rows": {
+                    "type": "array",
+                    "items": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "example": [["1", "Hieu Dep Trai"]]
+                },
+                "cols": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Column"
+                    }
+                }
+            },
+            "xml": {
+                "name": "QueryResponse"
             }
         }
     },

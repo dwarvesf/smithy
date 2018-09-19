@@ -541,19 +541,26 @@ func Test_pgStore_Update(t *testing.T) {
 	t.Parallel()
 	cfg, clearDB := utilTest.CreateConfig(t)
 	defer clearDB()
-	// migrate tables
-	err := utilTest.MigrateTables(cfg.DB(utilDB.DBName))
-	if err != nil {
-		t.Fatalf("Failed to migrate table by error %v", err)
+
+	users := []utilDB.User{}
+	for _, dbase := range cfg.Databases {
+		// migrate tables
+		err := utilTest.MigrateTables(cfg.DB(dbase.DBName))
+		if err != nil {
+			t.Fatalf("Failed to migrate table by error %v", err)
+		}
+
+		//create sample data
+		users, err = utilTest.CreateUserSampleData(cfg.DB(dbase.DBName))
+		if err != nil {
+			t.Fatalf("Failed to create sample data by error %v", err)
+		}
 	}
-	//create sample data
-	users, err := utilTest.CreateUserSampleData(cfg.DB(utilDB.DBName))
-	if err != nil {
-		t.Fatalf("Failed to create sample data by error %v", err)
-	}
+
 	type args struct {
-		d  sqlmapper.RowData
-		id int
+		d            sqlmapper.RowData
+		id           int
+		databaseName string
 	}
 	tests := []struct {
 		name      string
@@ -566,6 +573,7 @@ func Test_pgStore_Update(t *testing.T) {
 			name:      "success",
 			tableName: "users",
 			args: args{
+				databaseName: "test1",
 				d: sqlmapper.RowData{
 					"name": sqlmapper.ColData{
 						Data: "demo",
@@ -584,6 +592,7 @@ func Test_pgStore_Update(t *testing.T) {
 			name:      "primary key isn't exist",
 			tableName: "users",
 			args: args{
+				databaseName: "test1",
 				d: sqlmapper.RowData{
 					"name": sqlmapper.ColData{
 						Data: "demo",
@@ -597,6 +606,7 @@ func Test_pgStore_Update(t *testing.T) {
 			name:      "primary key is duplicated",
 			tableName: "users",
 			args: args{
+				databaseName: "test1",
 				d: sqlmapper.RowData{
 					"name": sqlmapper.ColData{
 						Data: "demo",
@@ -618,7 +628,8 @@ func Test_pgStore_Update(t *testing.T) {
 			name:      "rowData is empty",
 			tableName: "users",
 			args: args{
-				id: users[0].ID,
+				databaseName: "test1",
+				id:           users[0].ID,
 			},
 			wantErr: true,
 		},
@@ -626,6 +637,7 @@ func Test_pgStore_Update(t *testing.T) {
 			name:      "invalid column name",
 			tableName: "users",
 			args: args{
+				databaseName: "test1",
 				d: sqlmapper.RowData{
 					"blabla": sqlmapper.ColData{
 						Data: "anmt",
@@ -639,7 +651,7 @@ func Test_pgStore_Update(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := NewPGStore(cfg.DBs(), cfg.ModelMap)
-			got, err := s.Update(utilDB.DBName, tt.tableName, tt.args.d, tt.args.id)
+			got, err := s.Update(tt.args.databaseName, tt.tableName, tt.args.d, tt.args.id)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("pgStore.Update() error = %v, wantErr %v", err, tt.wantErr)
 				return

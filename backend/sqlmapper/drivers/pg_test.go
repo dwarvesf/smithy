@@ -332,22 +332,25 @@ func Test_pgStore_Delete(t *testing.T) {
 	cfg, clearDB := utilTest.CreateConfig(t)
 	defer clearDB()
 
-	// migrate tables
-	err := utilTest.MigrateTables(cfg.DB(utilDB.DBName))
-	if err != nil {
-		t.Fatalf("Failed to migrate table by error %v", err)
-	}
+	for _, dbase := range cfg.Databases {
+		// migrate tables
+		err := utilTest.MigrateTables(cfg.DB(dbase.DBName))
+		if err != nil {
+			t.Fatalf("Failed to migrate table by error %v", err)
+		}
 
-	//create sample data
-	_, err = utilTest.CreateUserSampleData(cfg.DB(utilDB.DBName))
-	if err != nil {
-		t.Fatalf("Failed to create sample data by error %v", err)
+		// create sample data
+		_, err = utilTest.CreateUserSampleData(cfg.DB(dbase.DBName))
+		if err != nil {
+			t.Fatalf("Failed to create sample data by error %v", err)
+		}
 	}
 
 	type args struct {
-		tableName string
-		fields    []interface{}
-		data      []interface{}
+		databaseName string
+		tableName    string
+		fields       []interface{}
+		data         []interface{}
 	}
 	tests := []struct {
 		name              string
@@ -360,7 +363,8 @@ func Test_pgStore_Delete(t *testing.T) {
 			name:      "Valid test case: id",
 			tableName: "users",
 			args: &args{
-				tableName: "users",
+				databaseName: "test1",
+				tableName:    "users",
 				fields: []interface{}{
 					"id",
 				},
@@ -375,7 +379,8 @@ func Test_pgStore_Delete(t *testing.T) {
 			name:      "Valid test case: id name",
 			tableName: "users",
 			args: &args{
-				tableName: "users",
+				databaseName: "test1",
+				tableName:    "users",
 				fields: []interface{}{
 					"id",
 					"name",
@@ -392,7 +397,8 @@ func Test_pgStore_Delete(t *testing.T) {
 			name:      "Invalid testcase: fields id not exists",
 			tableName: "users",
 			args: &args{
-				tableName: "users",
+				databaseName: "test1",
+				tableName:    "users",
 				fields: []interface{}{
 					"minh dep trai chet di duoc",
 				},
@@ -407,7 +413,8 @@ func Test_pgStore_Delete(t *testing.T) {
 			name:      "Invalid testcase: table empty",
 			tableName: "users",
 			args: &args{
-				tableName: "users",
+				databaseName: "test1",
+				tableName:    "users",
 				fields: []interface{}{
 					"iddfdf",
 				},
@@ -426,17 +433,19 @@ func Test_pgStore_Delete(t *testing.T) {
 				cfgEmpty, clearDB := utilTest.CreateConfig(t)
 				defer clearDB()
 
-				// migrate tables
-				err := utilTest.MigrateTables(cfgEmpty.DB(utilDB.DBName))
-				if err != nil {
-					t.Fatalf("Failed to migrate table by error %v", err)
+				for _, dbase := range cfgEmpty.Databases {
+					// migrate tables
+					err := utilTest.MigrateTables(cfgEmpty.DB(dbase.DBName))
+					if err != nil {
+						t.Fatalf("Failed to migrate table by error %v", err)
+					}
 				}
 				s = NewPGStore(cfgEmpty.DBs(), cfgEmpty.ModelMap)
 			} else {
 				s = NewPGStore(cfg.DBs(), cfg.ModelMap)
 			}
 
-			err := s.Delete(utilDB.DBName, tt.tableName, tt.args.fields, tt.args.data)
+			err := s.Delete(tt.args.databaseName, tt.tableName, tt.args.fields, tt.args.data)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("pgStore.Delete() error = %v, wantErr %v", err, tt.wantErr)
 				return

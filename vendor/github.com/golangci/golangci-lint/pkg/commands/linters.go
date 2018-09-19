@@ -6,7 +6,6 @@ import (
 
 	"github.com/fatih/color"
 	"github.com/golangci/golangci-lint/pkg/lint/linter"
-	"github.com/golangci/golangci-lint/pkg/lint/lintersdb"
 	"github.com/spf13/cobra"
 )
 
@@ -21,8 +20,8 @@ func (e *Executor) initLinters() {
 }
 
 func IsLinterInConfigsList(name string, linters []linter.Config) bool {
-	for _, linter := range linters {
-		if linter.Linter.Name() == name {
+	for _, lc := range linters {
+		if lc.Name() == name {
 			return true
 		}
 	}
@@ -30,8 +29,8 @@ func IsLinterInConfigsList(name string, linters []linter.Config) bool {
 	return false
 }
 
-func (e Executor) executeLinters(cmd *cobra.Command, args []string) {
-	enabledLCs, err := lintersdb.GetEnabledLinters(e.cfg, e.log.Child("lintersdb"))
+func (e *Executor) executeLinters(cmd *cobra.Command, args []string) {
+	enabledLCs, err := e.EnabledLintersSet.Get()
 	if err != nil {
 		log.Fatalf("Can't get enabled linters: %s", err)
 	}
@@ -40,8 +39,8 @@ func (e Executor) executeLinters(cmd *cobra.Command, args []string) {
 	printLinterConfigs(enabledLCs)
 
 	var disabledLCs []linter.Config
-	for _, lc := range lintersdb.GetAllSupportedLinterConfigs() {
-		if !IsLinterInConfigsList(lc.Linter.Name(), enabledLCs) {
+	for _, lc := range e.DBManager.GetAllSupportedLinterConfigs() {
+		if !IsLinterInConfigsList(lc.Name(), enabledLCs) {
 			disabledLCs = append(disabledLCs, lc)
 		}
 	}

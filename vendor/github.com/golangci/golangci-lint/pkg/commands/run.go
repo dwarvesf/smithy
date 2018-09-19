@@ -18,6 +18,7 @@ import (
 	"github.com/golangci/golangci-lint/pkg/logutils"
 	"github.com/golangci/golangci-lint/pkg/printers"
 	"github.com/golangci/golangci-lint/pkg/result"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/pflag"
 )
@@ -39,7 +40,7 @@ func wh(text string) string {
 	return color.GreenString(text)
 }
 
-func initFlagSet(fs *pflag.FlagSet, cfg *config.Config) {
+func initFlagSet(fs *pflag.FlagSet, cfg *config.Config, m *lintersdb.Manager) {
 	hideFlag := func(name string) {
 		if err := fs.MarkHidden(name); err != nil {
 			panic(err)
@@ -136,7 +137,7 @@ func initFlagSet(fs *pflag.FlagSet, cfg *config.Config) {
 	fs.BoolVar(&lc.DisableAll, "disable-all", false, wh("Disable all linters"))
 	fs.StringSliceVarP(&lc.Presets, "presets", "p", nil,
 		wh(fmt.Sprintf("Enable presets (%s) of linters. Run 'golangci-lint linters' to see "+
-			"them. This option implies option --disable-all", strings.Join(lintersdb.AllPresets(), "|"))))
+			"them. This option implies option --disable-all", strings.Join(m.AllPresets(), "|"))))
 	fs.BoolVar(&lc.Fast, "fast", false, wh("Run only fast linters from enabled linters set"))
 
 	// Issues config
@@ -166,43 +167,49 @@ func initFlagSet(fs *pflag.FlagSet, cfg *config.Config) {
 func (e *Executor) initRunConfiguration(cmd *cobra.Command) {
 	fs := cmd.Flags()
 	fs.SortFlags = false // sort them as they are defined here
-	initFlagSet(fs, e.cfg)
+	initFlagSet(fs, e.cfg, e.DBManager)
+}
 
-	// init e.cfg by values from config: flags parse will see these values
-	// like the default ones. It will overwrite them only if the same option
-	// is found in command-line: it's ok, command-line has higher priority.
+func (e Executor) getConfigForCommandLine() (*config.Config, error) {
+	// We use another pflag.FlagSet here to not set `changed` flag
+	// on cmd.Flags() options. Otherwise string slice options will be duplicated.
+	fs := pflag.NewFlagSet("config flag set", pflag.ContinueOnError)
 
-	r := config.NewFileReader(e.cfg, e.log.Child("config_reader"), func(fs *pflag.FlagSet, cfg *config.Config) {
-		// Don't do `fs.AddFlagSet(cmd.Flags())` because it shares flags representations:
-		// `changed` variable inside string slice vars will be shared.
-		// Use another config variable here, not e.cfg, to not
-		// affect main parsing by this parsing of only config option.
-		initFlagSet(fs, cfg)
+	var cfg config.Config
+	// Don't do `fs.AddFlagSet(cmd.Flags())` because it shares flags representations:
+	// `changed` variable inside string slice vars will be shared.
+	// Use another config variable here, not e.cfg, to not
+	// affect main parsing by this parsing of only config option.
+	initFlagSet(fs, &cfg, e.DBManager)
 
-		// Parse max options, even force version option: don't want
-		// to get access to Executor here: it's error-prone to use
-		// cfg vs e.cfg.
-		initRootFlagSet(fs, cfg, true)
-	})
-	if err := r.Read(); err != nil {
-		e.log.Fatalf("Can't read config: %s", err)
+	// Parse max options, even force version option: don't want
+	// to get access to Executor here: it's error-prone to use
+	// cfg vs e.cfg.
+	initRootFlagSet(fs, &cfg, true)
+
+	fs.Usage = func() {} // otherwise help text will be printed twice
+	if err := fs.Parse(os.Args); err != nil {
+		if err == pflag.ErrHelp {
+			return nil, err
+		}
+
+		return nil, fmt.Errorf("can't parse args: %s", err)
 	}
 
-	// Slice options must be explicitly set for proper merging of config and command-line options.
-	fixSlicesFlags(fs)
+	return &cfg, nil
 }
 
 func (e *Executor) initRun() {
-	var runCmd = &cobra.Command{
+	e.runCmd = &cobra.Command{
 		Use:   "run",
 		Short: welcomeMessage,
 		Run:   e.executeRun,
 	}
-	e.rootCmd.AddCommand(runCmd)
+	e.rootCmd.AddCommand(e.runCmd)
 
-	runCmd.SetOutput(logutils.StdOut) // use custom output to properly color it in Windows terminals
+	e.runCmd.SetOutput(logutils.StdOut) // use custom output to properly color it in Windows terminals
 
-	e.initRunConfiguration(runCmd)
+	e.initRunConfiguration(e.runCmd)
 }
 
 func fixSlicesFlags(fs *pflag.FlagSet) {
@@ -231,25 +238,25 @@ func fixSlicesFlags(fs *pflag.FlagSet) {
 func (e *Executor) runAnalysis(ctx context.Context, args []string) (<-chan result.Issue, error) {
 	e.cfg.Run.Args = args
 
-	linters, err := lintersdb.GetEnabledLinters(e.cfg, e.log.Child("lintersdb"))
+	enabledLinters, err := e.EnabledLintersSet.Get()
 	if err != nil {
 		return nil, err
 	}
 
-	for _, lc := range lintersdb.GetAllSupportedLinterConfigs() {
+	for _, lc := range e.DBManager.GetAllSupportedLinterConfigs() {
 		isEnabled := false
-		for _, linter := range linters {
-			if linter.Linter.Name() == lc.Linter.Name() {
+		for _, enabledLC := range enabledLinters {
+			if enabledLC.Name() == lc.Name() {
 				isEnabled = true
 				break
 			}
 		}
-		e.reportData.AddLinter(lc.Linter.Name(), isEnabled, lc.EnabledByDefault)
+		e.reportData.AddLinter(lc.Name(), isEnabled, lc.EnabledByDefault)
 	}
 
-	lintCtx, err := lint.LoadContext(linters, e.cfg, e.log.Child("load"))
+	lintCtx, err := lint.LoadContext(enabledLinters, e.cfg, e.log.Child("load"))
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "context loading failed")
 	}
 
 	runner, err := lint.NewRunner(lintCtx.ASTCache, e.cfg, e.log.Child("runner"))
@@ -257,7 +264,7 @@ func (e *Executor) runAnalysis(ctx context.Context, args []string) (<-chan resul
 		return nil, err
 	}
 
-	return runner.Run(ctx, linters, lintCtx), nil
+	return runner.Run(ctx, enabledLinters, lintCtx), nil
 }
 
 func (e *Executor) setOutputToDevNull() (savedStdout, savedStderr *os.File) {
@@ -272,6 +279,26 @@ func (e *Executor) setOutputToDevNull() (savedStdout, savedStderr *os.File) {
 	return
 }
 
+func (e *Executor) setExitCodeIfIssuesFound(issues <-chan result.Issue) <-chan result.Issue {
+	resCh := make(chan result.Issue, 1024)
+
+	go func() {
+		issuesFound := false
+		for i := range issues {
+			issuesFound = true
+			resCh <- i
+		}
+
+		if issuesFound {
+			e.exitCode = e.cfg.Run.ExitCodeIfIssuesFound
+		}
+
+		close(resCh)
+	}()
+
+	return resCh
+}
+
 func (e *Executor) runAndPrint(ctx context.Context, args []string) error {
 	if !logutils.HaveDebugTag("linters_output") {
 		// Don't allow linters and loader to print anything
@@ -284,7 +311,7 @@ func (e *Executor) runAndPrint(ctx context.Context, args []string) error {
 
 	issues, err := e.runAnalysis(ctx, args)
 	if err != nil {
-		return err
+		return err // XXX: don't loose type
 	}
 
 	p, err := e.createPrinter()
@@ -292,14 +319,10 @@ func (e *Executor) runAndPrint(ctx context.Context, args []string) error {
 		return err
 	}
 
-	gotAnyIssues, err := p.Print(ctx, issues)
-	if err != nil {
-		return fmt.Errorf("can't print %d issues: %s", len(issues), err)
-	}
+	issues = e.setExitCodeIfIssuesFound(issues)
 
-	if gotAnyIssues {
-		e.exitCode = e.cfg.Run.ExitCodeIfIssuesFound
-		return nil
+	if err = p.Print(ctx, issues); err != nil {
+		return fmt.Errorf("can't print %d issues: %s", len(issues), err)
 	}
 
 	return nil
@@ -345,7 +368,11 @@ func (e *Executor) executeRun(cmd *cobra.Command, args []string) {
 	if err := e.runAndPrint(ctx, args); err != nil {
 		e.log.Errorf("Running error: %s", err)
 		if e.exitCode == exitcodes.Success {
-			e.exitCode = exitcodes.Failure
+			if exitErr, ok := errors.Cause(err).(*exitcodes.ExitError); ok {
+				e.exitCode = exitErr.Code
+			} else {
+				e.exitCode = exitcodes.Failure
+			}
 		}
 	}
 

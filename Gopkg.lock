@@ -2,18 +2,6 @@
 
 
 [[projects]]
-  branch = "master"
-  digest = "1:bf573d0637989470dee90e11a6ea87b5de1ddb7a435334b80656b0df05b0630b"
-  name = "github.com/GoASTScanner/gas"
-  packages = [
-    ".",
-    "rules",
-  ]
-  pruneopts = "UT"
-  revision = "8afd9cbb6cfb34a3b4d4d5711bafdc6640ae892f"
-  source = "github.com/golangci/gas"
-
-[[projects]]
   digest = "1:f9ae348e1f793dcf9ed930ed47136a67343dbd6809c5c91391322267f4476892"
   name = "github.com/Microsoft/go-winio"
   packages = ["."]
@@ -36,15 +24,6 @@
   pruneopts = "UT"
   revision = "2f1ce7a837dcb8da3ec595b1dac9d0632f0f99e8"
   version = "v1.3.1"
-
-[[projects]]
-  branch = "master"
-  digest = "1:07d5a5772acf81583937919b21bee82377499b26d68d361b48bf8afcca1b41e5"
-  name = "github.com/client9/misspell"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "950f5d19e77066a2353d9a22e89f8f889d1d7012"
-  source = "github.com/golangci/misspell"
 
 [[projects]]
   digest = "1:76dc72490af7174349349838f2fe118996381b31ea83243812a97e5a0fd5ed55"
@@ -204,6 +183,14 @@
   version = "v1.1.1"
 
 [[projects]]
+  digest = "1:bc38c7c481812e178d85160472e231c5e1c9a7f5845d67e23ee4e706933c10d8"
+  name = "github.com/golang/mock"
+  packages = ["gomock"]
+  pruneopts = "UT"
+  revision = "c34cdb4725f4c3844d095133c6e40e448b86589b"
+  version = "v1.1.1"
+
+[[projects]]
   branch = "master"
   digest = "1:c173565780edcf5d43c5f983be0e9085266764465422d4ad230355abd2e0d252"
   name = "github.com/golangci/check"
@@ -216,11 +203,56 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:efb8cf3f0c2f47844104d6e879fc77d846649df794e378cae50e749fad1bb1dc"
+  name = "github.com/golangci/dupl"
+  packages = [
+    ".",
+    "job",
+    "printer",
+    "suffixtree",
+    "syntax",
+    "syntax/golang",
+  ]
+  pruneopts = "UT"
+  revision = "3e9179ac440a0386ac7cc9a085fc44397c6b9bbc"
+
+[[projects]]
+  branch = "master"
+  digest = "1:2146ed9836ab6af9cbe527299544566ee7506ca6dcd4ab71d761141c015ba174"
+  name = "github.com/golangci/errcheck"
+  packages = [
+    "golangci",
+    "internal/errcheck",
+  ]
+  pruneopts = "UT"
+  revision = "f726ab79eeeb2d770a997ee4d9bce4ca674956a0"
+
+[[projects]]
+  branch = "master"
   digest = "1:f63d85b6e551b6c8aa3ed2e42b64db15f5b525bdb01fa36af18288f1de4c859b"
   name = "github.com/golangci/go-misc"
   packages = ["deadcode"]
   pruneopts = "UT"
   revision = "927a3d87b613e9f6f0fb7ef8bb8de8b83c30a5a2"
+
+[[projects]]
+  branch = "master"
+  digest = "1:159ec56cf5d1e0bb8c68082ccbcad9a854be7e28d3c2a20e285305ae4ca96778"
+  name = "github.com/golangci/go-tools"
+  packages = [
+    "deprecated",
+    "functions",
+    "internal/sharedcheck",
+    "lint",
+    "lint/lintutil",
+    "simple",
+    "staticcheck",
+    "staticcheck/vrp",
+    "unused",
+    "version",
+  ]
+  pruneopts = "UT"
+  revision = "93eecd106a0b4f93401f91127a550709f819193d"
 
 [[projects]]
   branch = "master"
@@ -250,7 +282,7 @@
   revision = "2076e05ced53480baa8ba14a05b80a415bec9377"
 
 [[projects]]
-  digest = "1:d8fc51e92c9bd794e559fdf16b312293f23cefb1a8061a9534fadb1678ec6235"
+  digest = "1:af0fa1acf38bbbe0561c14f45631268e9321fb34cf2754b8c7a71555eb930459"
   name = "github.com/golangci/golangci-lint"
   packages = [
     "cmd/golangci-lint",
@@ -273,14 +305,17 @@
     "pkg/timeutils",
   ]
   pruneopts = "UT"
-  revision = "a2b901227c37337bce9860499a413db2b464481b"
-  version = "v1.10"
+  revision = "dbfcf633d5f7b6544efa07d36798600a6f786005"
+  version = "v1.10.2"
 
 [[projects]]
   branch = "master"
-  digest = "1:84ce5891356bc091bb3bbf14c1e4a94e6a8cbc9eb016d4dd9daf6da3287bdc11"
+  digest = "1:bf573d0637989470dee90e11a6ea87b5de1ddb7a435334b80656b0df05b0630b"
   name = "github.com/golangci/gosec"
-  packages = ["."]
+  packages = [
+    ".",
+    "rules",
+  ]
   pruneopts = "UT"
   revision = "8afd9cbb6cfb34a3b4d4d5711bafdc6640ae892f"
 
@@ -306,6 +341,22 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:8a043d165b607fada34aceb22e8f5d1fb80871f5b2d6c3e5d5933c37094c9228"
+  name = "github.com/golangci/interfacer"
+  packages = ["check"]
+  pruneopts = "UT"
+  revision = "01958817a6ec5bb4bb01d0b9a5f3fca30923ebbf"
+
+[[projects]]
+  branch = "master"
+  digest = "1:59b6cfe4fe54ed13f7570c74b2581100ad6f65cf421b3d5c992d863b238fbc39"
+  name = "github.com/golangci/lint"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "c2187e7932b5ee7899eaa2e83bcf00e251abd274"
+
+[[projects]]
+  branch = "master"
   digest = "1:fdc1b377c447d5168fc335f30de8d55333ccebfa64ce97b9e03b6cb1ce14b178"
   name = "github.com/golangci/lint-1"
   packages = ["."]
@@ -319,6 +370,14 @@
   packages = ["."]
   pruneopts = "UT"
   revision = "b1d89398deca2fd3f8578e5a9551e819bd01ca5f"
+
+[[projects]]
+  digest = "1:73dfedbcb6b348638ef0066766a9e7d8f6cfc5cfcb3a8e00ceb631a4bca73cf1"
+  name = "github.com/golangci/misspell"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "b90dc15cfd220ecf8bbc9043ecb928cef381f011"
+  version = "v0.3.4"
 
 [[projects]]
   branch = "master"
@@ -338,11 +397,34 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:ba7223001c6b9de88a3e5beb6e441b3d559e09e3e9bc8ff866b2c0e72a6f7f8f"
+  name = "github.com/golangci/tools"
+  packages = [
+    "go/callgraph",
+    "go/callgraph/cha",
+    "go/callgraph/rta",
+    "go/callgraph/static",
+    "go/ssa",
+    "go/ssa/ssautil",
+  ]
+  pruneopts = "UT"
+  revision = "98e75f53b4b9b9243ddc6f08b76f7682294b53b5"
+
+[[projects]]
+  branch = "master"
   digest = "1:c553e7c7483f2d6db1e84a27a18df144ed4041792d7556916369f86ccf5409fe"
   name = "github.com/golangci/unconvert"
   packages = ["."]
   pruneopts = "UT"
   revision = "28b1c447d1f4a810737ee6ab40ea6c1d0ceae4ad"
+
+[[projects]]
+  branch = "master"
+  digest = "1:5b3fb341e79acec135f1241e4d72b9a8231f705852f752142fb800115f50ba80"
+  name = "github.com/golangci/unparam"
+  packages = ["check"]
+  pruneopts = "UT"
+  revision = "7ad9dbcccc1667190475751c43137253b310dc10"
 
 [[projects]]
   branch = "master"
@@ -389,18 +471,6 @@
   packages = ["."]
   pruneopts = "UT"
   revision = "04140366298a54a039076d798123ffa108fff46c"
-
-[[projects]]
-  branch = "master"
-  digest = "1:92ecd3161b2baa430167882933fd9a62f997242b7689cc867f7bfc09322c79fb"
-  name = "github.com/kisielk/errcheck"
-  packages = [
-    "golangci",
-    "internal/errcheck",
-  ]
-  pruneopts = "UT"
-  revision = "46cecd339393da3e3742fc0045eb5e5ec0dd6563"
-  source = "github.com/golangci/errcheck"
 
 [[projects]]
   digest = "1:15ec2166e33ef6c60b344a04d050eec79193517e7f5082b6233b2d09ef0d10b8"
@@ -469,22 +539,6 @@
   pruneopts = "UT"
   revision = "0360b2af4f38e8d38c7fce2a9f4e702702d73a39"
   version = "v0.0.3"
-
-[[projects]]
-  branch = "master"
-  digest = "1:5cb872835e9779d6daff8541d29c5f6e97faa0fea04d35cc19441dcfb0ddf632"
-  name = "github.com/mibk/dupl"
-  packages = [
-    ".",
-    "job",
-    "printer",
-    "suffixtree",
-    "syntax",
-    "syntax/golang",
-  ]
-  pruneopts = "UT"
-  revision = "53b9af5a45362a6f2896cfa39cc17d17ba9667ea"
-  source = "github.com/golangci/dupl"
 
 [[projects]]
   digest = "1:645110e089152bd0f4a011a2648fbb0e4df5977be73ca605781157ac297f50c4"
@@ -653,27 +707,21 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:47357b70bddc05651ec8cf40328574158264e199908fc6d952ffb4c18934fd54"
+  digest = "1:1585bf4c2d62f9ddbaa3c141bc7dd132467c78ef1204a4a1c8d1d6ff97d21c8c"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
     "go/buildutil",
-    "go/callgraph",
-    "go/callgraph/cha",
-    "go/callgraph/rta",
-    "go/callgraph/static",
     "go/gcexportdata",
+    "go/internal/cgo",
     "go/internal/gcimporter",
     "go/loader",
-    "go/ssa",
-    "go/ssa/ssautil",
     "go/types/typeutil",
     "imports",
     "internal/fastwalk",
   ]
   pruneopts = "UT"
-  revision = "1b5a18146dea803d40d194b191359600da91665a"
-  source = "github.com/golangci/tools"
+  revision = "90fa682c2a6e6a37b3a1364ce2fe1d5e41af9d6d"
 
 [[projects]]
   digest = "1:342378ac4dcb378a5448dd723f0784ae519383532f5e70ade24132c4c8693202"
@@ -682,51 +730,6 @@
   pruneopts = "UT"
   revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
   version = "v2.2.1"
-
-[[projects]]
-  branch = "master"
-  digest = "1:dd3808d5bdd7dfdbfe9b7412aa59b0a4c6fc6d9e3db25ba75465cc86e10def59"
-  name = "honnef.co/go/tools"
-  packages = [
-    "deprecated",
-    "functions",
-    "internal/sharedcheck",
-    "lint",
-    "lint/lintutil",
-    "simple",
-    "staticcheck",
-    "staticcheck/vrp",
-    "unused",
-    "version",
-  ]
-  pruneopts = "UT"
-  revision = "986cd2acf8dbf500b75aef5636a8107de6044e63"
-  source = "github.com/golangci/go-tools"
-
-[[projects]]
-  branch = "master"
-  digest = "1:ef98efcb9462d27d251466fdc89656c5dbc28f4dc6b428a4270c3ba668ea412d"
-  name = "mvdan.cc/interfacer"
-  packages = ["check"]
-  pruneopts = "UT"
-  revision = "822e100dd73a2677e406ccc437efdb4a82e67033"
-
-[[projects]]
-  branch = "master"
-  digest = "1:521f15c98723cb42db85f5b83980ffa5f707ddaff12976a0d366e6a6cdd1f791"
-  name = "mvdan.cc/lint"
-  packages = ["."]
-  pruneopts = "UT"
-  revision = "adc824a0674b99099789b6188a058d485eaf61c0"
-
-[[projects]]
-  branch = "fix-crash-on-nil-constant"
-  digest = "1:f3f31fed50be4dad26688c0466c4d92de015ce4a3c0aa7e01b55326a77d1bf40"
-  name = "mvdan.cc/unparam"
-  packages = ["check"]
-  pruneopts = "UT"
-  revision = "f30d69ad8b55690d0e814cdd96e955834e0d0ee1"
-  source = "github.com/golangci/unparam"
 
 [[projects]]
   branch = "master"

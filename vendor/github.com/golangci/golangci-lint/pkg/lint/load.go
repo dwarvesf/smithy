@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/golangci/golangci-lint/pkg/exitcodes"
 	"github.com/golangci/golangci-lint/pkg/fsutils"
 	"github.com/golangci/golangci-lint/pkg/goutils"
 	"github.com/golangci/golangci-lint/pkg/logutils"
@@ -18,17 +19,17 @@ import (
 	"github.com/golangci/golangci-lint/pkg/lint/astcache"
 	"github.com/golangci/golangci-lint/pkg/lint/linter"
 	"github.com/golangci/golangci-lint/pkg/packages"
+	"github.com/golangci/tools/go/ssa"
+	"github.com/golangci/tools/go/ssa/ssautil"
 	"golang.org/x/tools/go/loader"
-	"golang.org/x/tools/go/ssa"
-	"golang.org/x/tools/go/ssa/ssautil"
 )
 
 var loadDebugf = logutils.Debug("load")
 
 func isFullImportNeeded(linters []linter.Config, cfg *config.Config) bool {
-	for _, linter := range linters {
-		if linter.NeedsProgramLoading() {
-			if linter.Linter.Name() == "govet" && cfg.LintersSettings.Govet.UseInstalledPackages {
+	for _, lc := range linters {
+		if lc.NeedsProgramLoading() {
+			if lc.Name() == "govet" && cfg.LintersSettings.Govet.UseInstalledPackages {
 				// TODO: remove this hack
 				continue
 			}
@@ -301,6 +302,10 @@ func LoadContext(linters []linter.Config, cfg *config.Config, log logutils.Log) 
 	pkgProg, err := r.Resolve(args...)
 	if err != nil {
 		return nil, err
+	}
+
+	if len(pkgProg.Packages()) == 0 {
+		return nil, exitcodes.ErrNoGoFiles
 	}
 
 	prog, loaderConfig, err := loadWholeAppIfNeeded(linters, cfg, pkgProg, log)

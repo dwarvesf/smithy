@@ -459,14 +459,17 @@ func Test_pgStore_Create(t *testing.T) {
 	cfg, clearDB := utilTest.CreateConfig(t)
 	defer clearDB()
 
-	// migrate tables
-	err := utilTest.MigrateTables(cfg.DB(utilDB.DBName))
-	if err != nil {
-		t.Fatalf("Failed to migrate table by error %v", err)
+	for _, dbase := range cfg.Databases {
+		// migrate tables
+		err := utilTest.MigrateTables(cfg.DB(dbase.DBName))
+		if err != nil {
+			t.Fatalf("Failed to migrate table by error %v", err)
+		}
 	}
 
 	type args struct {
-		data sqlmapper.RowData
+		data         sqlmapper.RowData
+		databaseName string
 	}
 	tests := []struct {
 		name      string
@@ -479,6 +482,7 @@ func Test_pgStore_Create(t *testing.T) {
 			name:      "valid user",
 			tableName: "users",
 			args: args{
+				databaseName: "test1",
 				data: sqlmapper.RowData{
 					"name": sqlmapper.ColData{
 						Data: "hieudeptrai",
@@ -498,7 +502,8 @@ func Test_pgStore_Create(t *testing.T) {
 			name:      "empty input",
 			tableName: "users",
 			args: args{
-				data: sqlmapper.RowData{},
+				databaseName: "test1",
+				data:         sqlmapper.RowData{},
 			},
 			wantErr: true,
 		},
@@ -506,6 +511,7 @@ func Test_pgStore_Create(t *testing.T) {
 			name:      "invalid column name",
 			tableName: "users",
 			args: args{
+				databaseName: "test1",
 				data: sqlmapper.RowData{
 					"namenmce": sqlmapper.ColData{
 						Data: "hieudeptrai",
@@ -518,7 +524,7 @@ func Test_pgStore_Create(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := NewPGStore(cfg.DBs(), cfg.ModelMap)
-			got, err := s.Create(utilDB.DBName, tt.tableName, tt.args.data)
+			got, err := s.Create(tt.args.databaseName, tt.tableName, tt.args.data)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("pgStore.Create() error = %v, wantErr %v", err, tt.wantErr)
 				return

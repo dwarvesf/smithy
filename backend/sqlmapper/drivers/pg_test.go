@@ -275,6 +275,16 @@ func Test_pgStore_Query(t *testing.T) {
 			},
 			wantErr: true,
 		},
+		{
+			name: "Other database: Find all",
+			args: &sqlmapper.Query{
+				SourceDatabase: "test2",
+				SourceTable:    "users",
+				Fields:         []string{"id", "name"},
+			},
+			want:  []string{"id", "name"},
+			want1: users,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -425,6 +435,22 @@ func Test_pgStore_Delete(t *testing.T) {
 			wantErr:           true,
 			testForEmptyTable: true,
 		},
+		{
+			name:      "Other database: Valid test case: id",
+			tableName: "users",
+			args: &args{
+				databaseName: "test2",
+				tableName:    "users",
+				fields: []interface{}{
+					"id",
+				},
+				data: []interface{}{
+					"1",
+				},
+			},
+			wantErr:           false,
+			testForEmptyTable: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -519,6 +545,26 @@ func Test_pgStore_Create(t *testing.T) {
 				},
 			},
 			wantErr: true,
+		},
+		{
+			name:      "Other database: valid user",
+			tableName: "users",
+			args: args{
+				databaseName: "test2",
+				data: sqlmapper.RowData{
+					"name": sqlmapper.ColData{
+						Data: "hieudeptrai",
+					},
+				},
+			},
+			want: sqlmapper.RowData{
+				"id": sqlmapper.ColData{
+					Data: 1,
+				},
+				"name": sqlmapper.ColData{
+					Data: "hieudeptrai",
+				},
+			},
 		},
 	}
 	for _, tt := range tests {
@@ -646,6 +692,25 @@ func Test_pgStore_Update(t *testing.T) {
 				id: users[0].ID,
 			},
 			wantErr: true,
+		},
+		{
+			name:      "Other database",
+			tableName: "users",
+			args: args{
+				databaseName: "test2",
+				d: sqlmapper.RowData{
+					"name": sqlmapper.ColData{
+						Data: "demo",
+					},
+				},
+				id: users[0].ID,
+			},
+			want: sqlmapper.RowData{
+				"name": sqlmapper.ColData{
+					Data: "demo",
+				},
+			},
+			wantErr: false,
 		},
 	}
 	for _, tt := range tests {

@@ -14,24 +14,22 @@
 
 package rules
 
-import (
-	"github.com/GoASTScanner/gas"
-)
+import "github.com/golangci/gosec"
 
 // RuleDefinition contains the description of a rule and a mechanism to
 // create it.
 type RuleDefinition struct {
 	ID          string
 	Description string
-	Create      gas.RuleBuilder
+	Create      gosec.RuleBuilder
 }
 
 // RuleList is a mapping of rule ID's to rule definitions
 type RuleList map[string]RuleDefinition
 
 // Builders returns all the create methods for a given rule list
-func (rl RuleList) Builders() map[string]gas.RuleBuilder {
-	builders := make(map[string]gas.RuleBuilder)
+func (rl RuleList) Builders() map[string]gosec.RuleBuilder {
+	builders := make(map[string]gosec.RuleBuilder)
 	for _, def := range rl {
 		builders[def.ID] = def.Create
 	}
@@ -79,9 +77,10 @@ func Generate(filters ...RuleFilter) RuleList {
 		{"G302", "Poor file permisions used when creation file or using chmod", NewFilePerms},
 		{"G303", "Creating tempfile using a predictable path", NewBadTempFile},
 		{"G304", "File path provided as taint input", NewReadFile},
+		{"G305", "File path traversal when extracting zip archive", NewArchive},
 
 		// crypto
-		{"G401", "Detect the usage of DES, RC4, or MD5", NewUsesWeakCryptography},
+		{"G401", "Detect the usage of DES, RC4, MD5 or SHA1", NewUsesWeakCryptography},
 		{"G402", "Look for bad TLS connection settings", NewIntermediateTLSCheck},
 		{"G403", "Ensure minimum RSA key length of 2048 bits", NewWeakKeyStrength},
 		{"G404", "Insecure random number source (rand)", NewWeakRandCheck},
@@ -91,6 +90,7 @@ func Generate(filters ...RuleFilter) RuleList {
 		{"G502", "Import blacklist: crypto/des", NewBlacklistedImportDES},
 		{"G503", "Import blacklist: crypto/rc4", NewBlacklistedImportRC4},
 		{"G504", "Import blacklist: net/http/cgi", NewBlacklistedImportCGI},
+		{"G505", "Import blacklist: crypto/sha1", NewBlacklistedImportSHA1},
 	}
 
 	ruleMap := make(map[string]RuleDefinition)

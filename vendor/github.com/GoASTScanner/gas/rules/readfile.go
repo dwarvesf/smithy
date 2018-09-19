@@ -18,12 +18,13 @@ import (
 	"go/ast"
 	"go/types"
 
-	"github.com/GoASTScanner/gas"
+	"github.com/golangci/gosec"
 )
 
 type readfile struct {
-	gas.MetaData
-	gas.CallList
+	gosec.MetaData
+	gosec.CallList
+	pathJoin gosec.CallList
 }
 
 // ID returns the identifier for this rule
@@ -31,14 +32,53 @@ func (r *readfile) ID() string {
 	return r.MetaData.ID
 }
 
+// isJoinFunc checks if there is a filepath.Join or other join function
+func (r *readfile) isJoinFunc(n ast.Node, c *gosec.Context) bool {
+	if call := r.pathJoin.ContainsCallExpr(n, c); call != nil {
+		for _, arg := range call.Args {
+			// edge case: check if one of the args is a BinaryExpr
+			if binExp, ok := arg.(*ast.BinaryExpr); ok {
+				// iterate and resolve all found identites from the BinaryExpr
+				if _, ok := gosec.FindVarIdentities(binExp, c); ok {
+					return true
+				}
+			}
+
+		// try and resolve identity
+		if ident, ok := arg.(*ast.Ident); ok {
+			obj := c.Info.ObjectOf(ident)
+			if _, ok := obj.(*types.Var); ok && !gosec.TryResolve(ident, c) {
+				return true
+			}
+		}
+	}
+}
+	return false
+}
+
 // Match inspects AST nodes to determine if the match the methods `os.Open` or `ioutil.ReadFile`
-func (r *readfile) Match(n ast.Node, c *gas.Context) (*gas.Issue, error) {
+func (r *readfile) Match(n ast.Node, c *gosec.Context) (*gosec.Issue, error) {
 	if node := r.ContainsCallExpr(n, c); node != nil {
 		for _, arg := range node.Args {
+			// handles path joining functions in Arg
+			// eg. os.Open(filepath.Join("/tmp/", file))
+			if callExpr, ok := arg.(*ast.CallExpr); ok {
+				if r.isJoinFunc(callExpr, c) {
+					return gosec.NewIssue(c, n, r.ID(), r.What, r.Severity, r.Confidence), nil
+				}
+			}
+			// handles binary string concatenation eg. ioutil.Readfile("/tmp/" + file + "/blob")
+			if binExp, ok := arg.(*ast.BinaryExpr); ok {
+				// resolve all found identites from the BinaryExpr
+				if _, ok := gosec.FindVarIdentities(binExp, c); ok {
+					return gosec.NewIssue(c, n, r.ID(), r.What, r.Severity, r.Confidence), nil
+				}
+			}
+
 			if ident, ok := arg.(*ast.Ident); ok {
 				obj := c.Info.ObjectOf(ident)
-				if _, ok := obj.(*types.Var); ok && !gas.TryResolve(ident, c) {
-					return gas.NewIssue(c, n, r.ID(), r.What, r.Severity, r.Confidence), nil
+				if _, ok := obj.(*types.Var); ok && !gosec.TryResolve(ident, c) {
+					return gosec.NewIssue(c, n, r.ID(), r.What, r.Severity, r.Confidence), nil
 				}
 			}
 		}
@@ -47,16 +87,19 @@ func (r *readfile) Match(n ast.Node, c *gas.Context) (*gas.Issue, error) {
 }
 
 // NewReadFile detects cases where we read files
-func NewReadFile(id string, conf gas.Config) (gas.Rule, []ast.Node) {
+func NewReadFile(id string, conf gosec.Config) (gosec.Rule, []ast.Node) {
 	rule := &readfile{
-		CallList: gas.NewCallList(),
-		MetaData: gas.MetaData{
+		pathJoin: gosec.NewCallList(),
+		CallList: gosec.NewCallList(),
+		MetaData: gosec.MetaData{
 			ID:         id,
 			What:       "Potential file inclusion via variable",
-			Severity:   gas.Medium,
-			Confidence: gas.High,
+			Severity:   gosec.Medium,
+			Confidence: gosec.High,
 		},
 	}
+	rule.pathJoin.Add("path/filepath", "Join")
+	rule.pathJoin.Add("path", "Join")
 	rule.Add("io/ioutil", "ReadFile")
 	rule.Add("os", "Open")
 	return rule, []ast.Node{(*ast.CallExpr)(nil)}

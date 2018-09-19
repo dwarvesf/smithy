@@ -30,26 +30,30 @@ const (
 func CreateDatabase(t *testing.T, cfg *backendConfig.Config) func() {
 	rand.Seed(time.Now().UnixNano())
 
-	schemaName := "test" + strconv.FormatInt(rand.Int63(), 10)
+	for i, dbase := range cfg.Databases {
+		schemaName := "test" + strconv.FormatInt(rand.Int63(), 10)
 
-	err := cfg.DB(DBName).Exec("CREATE SCHEMA " + schemaName).Error
-	if err != nil {
-		t.Fatalf("Fail to create schema. %s", err.Error())
+		err := cfg.DB(dbase.DBName).Exec("CREATE SCHEMA " + schemaName).Error
+		if err != nil {
+			t.Fatalf("Fail to create schema. %s", err.Error())
+		}
+
+		// set schema for current db connection
+		err = cfg.DB(dbase.DBName).Exec("SET search_path TO " + schemaName).Error
+		if err != nil {
+			t.Fatalf("Fail to set search_path to created schema. %s", err.Error())
+		}
+
+		// set schema name to config
+		cfg.Databases[i].SchemaName = schemaName
 	}
-
-	// set schema for current db connection
-	err = cfg.DB(DBName).Exec("SET search_path TO " + schemaName).Error
-	if err != nil {
-		t.Fatalf("Fail to set search_path to created schema. %s", err.Error())
-	}
-
-	// set schema name to config
-	cfg.DBSchemaName = schemaName
 
 	return func() {
-		err := cfg.DB(DBName).Exec("DROP SCHEMA " + schemaName + " CASCADE").Error
-		if err != nil {
-			t.Fatalf("Fail to drop database. %s", err.Error())
+		for _, dbase := range cfg.Databases {
+			err := cfg.DB(dbase.DBName).Exec("DROP SCHEMA " + dbase.SchemaName + " CASCADE").Error
+			if err != nil {
+				t.Fatalf("Fail to drop schema %s in database %s. %v", dbase.SchemaName, dbase.DBName, err)
+			}
 		}
 	}
 }

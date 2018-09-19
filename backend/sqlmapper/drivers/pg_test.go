@@ -21,16 +21,19 @@ func Test_pgStore_Query(t *testing.T) {
 	cfg, clearDB := utilTest.CreateConfig(t)
 	defer clearDB()
 
-	// migrate tables
-	err := utilTest.MigrateTables(cfg.DB(utilDB.DBName))
-	if err != nil {
-		t.Fatalf("Failed to migrate table by error %v", err)
-	}
+	users := []utilDB.User{}
+	for _, dbase := range cfg.Databases {
+		// migrate tables
+		err := utilTest.MigrateTables(cfg.DB(dbase.DBName))
+		if err != nil {
+			t.Fatalf("Failed to migrate table by error %v", err)
+		}
 
-	// create sample data
-	users, err := utilTest.CreateUserSampleData(cfg.DB(utilDB.DBName))
-	if err != nil {
-		t.Fatalf("Failed to create sample data by error %v", err)
+		// create sample data
+		users, err = utilTest.CreateUserSampleData(cfg.DB(dbase.DBName))
+		if err != nil {
+			t.Fatalf("Failed to create sample data by error %v", err)
+		}
 	}
 
 	// sort for sample data
@@ -69,7 +72,7 @@ func Test_pgStore_Query(t *testing.T) {
 		{
 			name: "Valid test case",
 			args: &sqlmapper.Query{
-				SourceDatabase: utilDB.DBName,
+				SourceDatabase: "test1",
 				SourceTable:    "users",
 				Fields:         []string{"id", "name"},
 				Filter: sqlmapper.Filter{
@@ -84,7 +87,7 @@ func Test_pgStore_Query(t *testing.T) {
 		{
 			name: "empty table",
 			args: &sqlmapper.Query{
-				SourceDatabase: utilDB.DBName,
+				SourceDatabase: "test1",
 				SourceTable:    "users",
 				Fields:         []string{"id", "name"},
 			},
@@ -95,7 +98,7 @@ func Test_pgStore_Query(t *testing.T) {
 		{
 			name: "Find all",
 			args: &sqlmapper.Query{
-				SourceDatabase: utilDB.DBName,
+				SourceDatabase: "test1",
 				SourceTable:    "users",
 				Fields:         []string{"id", "name"},
 			},
@@ -105,7 +108,7 @@ func Test_pgStore_Query(t *testing.T) {
 		{
 			name: "id not exists",
 			args: &sqlmapper.Query{
-				SourceDatabase: utilDB.DBName,
+				SourceDatabase: "test1",
 				SourceTable:    "users",
 				Fields:         []string{"id", "name"},
 				Filter: sqlmapper.Filter{
@@ -120,7 +123,7 @@ func Test_pgStore_Query(t *testing.T) {
 		{
 			name: "id too long",
 			args: &sqlmapper.Query{
-				SourceDatabase: utilDB.DBName,
+				SourceDatabase: "test1",
 				SourceTable:    "users",
 				Fields:         []string{"id", "name"},
 				Filter: sqlmapper.Filter{
@@ -134,7 +137,7 @@ func Test_pgStore_Query(t *testing.T) {
 		{
 			name: "invalid column name",
 			args: &sqlmapper.Query{
-				SourceDatabase: utilDB.DBName,
+				SourceDatabase: "test1",
 				SourceTable:    "users",
 				Fields:         []string{"id", "name"},
 				Filter: sqlmapper.Filter{
@@ -148,7 +151,7 @@ func Test_pgStore_Query(t *testing.T) {
 		{
 			name: "invalid table name",
 			args: &sqlmapper.Query{
-				SourceDatabase: utilDB.DBName,
+				SourceDatabase: "test1",
 				SourceTable:    "usershandsome",
 				Fields:         []string{"id", "name"},
 				Filter: sqlmapper.Filter{
@@ -162,7 +165,7 @@ func Test_pgStore_Query(t *testing.T) {
 		{
 			name: "offset=3 limit=2",
 			args: &sqlmapper.Query{
-				SourceDatabase: utilDB.DBName,
+				SourceDatabase: "test1",
 				SourceTable:    "users",
 				Fields:         []string{"id", "name"},
 				Offset:         3,
@@ -174,7 +177,7 @@ func Test_pgStore_Query(t *testing.T) {
 		{
 			name: "offset=3 limit=0",
 			args: &sqlmapper.Query{
-				SourceDatabase: utilDB.DBName,
+				SourceDatabase: "test1",
 				SourceTable:    "users",
 				Fields:         []string{"id", "name"},
 				Offset:         3,
@@ -185,7 +188,7 @@ func Test_pgStore_Query(t *testing.T) {
 		{
 			name: "success sort by name in descending order",
 			args: &sqlmapper.Query{
-				SourceDatabase: utilDB.DBName,
+				SourceDatabase: "test1",
 				SourceTable:    "users",
 				Fields:         []string{"id", "name"},
 				Order:          []string{"name", "desc"},
@@ -197,7 +200,7 @@ func Test_pgStore_Query(t *testing.T) {
 		{
 			name: "success sort by name in ascending order",
 			args: &sqlmapper.Query{
-				SourceDatabase: utilDB.DBName,
+				SourceDatabase: "test1",
 				SourceTable:    "users",
 				Fields:         []string{"id", "name"},
 				Order:          []string{"name", "asc"},
@@ -209,7 +212,7 @@ func Test_pgStore_Query(t *testing.T) {
 		{
 			name: "success sort by ID in descending order",
 			args: &sqlmapper.Query{
-				SourceDatabase: utilDB.DBName,
+				SourceDatabase: "test1",
 				SourceTable:    "users",
 				Fields:         []string{"id", "name"},
 				Order:          []string{"id", "desc"},
@@ -221,7 +224,7 @@ func Test_pgStore_Query(t *testing.T) {
 		{
 			name: "success sort by ID in ascending order",
 			args: &sqlmapper.Query{
-				SourceDatabase: utilDB.DBName,
+				SourceDatabase: "test1",
 				SourceTable:    "users",
 				Fields:         []string{"id", "name"},
 				Order:          []string{"id", "asc"},
@@ -233,7 +236,7 @@ func Test_pgStore_Query(t *testing.T) {
 		{
 			name: "success for none sort",
 			args: &sqlmapper.Query{
-				SourceDatabase: utilDB.DBName,
+				SourceDatabase: "test1",
 				SourceTable:    "users",
 				Fields:         []string{"id", "name"},
 				Order:          []string{},
@@ -245,7 +248,7 @@ func Test_pgStore_Query(t *testing.T) {
 		{
 			name: "fail sort because missing argument of Order",
 			args: &sqlmapper.Query{
-				SourceDatabase: utilDB.DBName,
+				SourceDatabase: "test1",
 				SourceTable:    "users",
 				Fields:         []string{"id", "name"},
 				Order:          []string{"name"},
@@ -255,7 +258,7 @@ func Test_pgStore_Query(t *testing.T) {
 		{
 			name: "fail sort because wrong argument format for Order",
 			args: &sqlmapper.Query{
-				SourceDatabase: utilDB.DBName,
+				SourceDatabase: "test1",
 				SourceTable:    "users",
 				Fields:         []string{"id", "name"},
 				Order:          []string{"name", "ascending"},
@@ -265,7 +268,7 @@ func Test_pgStore_Query(t *testing.T) {
 		{
 			name: "fail sort because column name doesn't exist",
 			args: &sqlmapper.Query{
-				SourceDatabase: utilDB.DBName,
+				SourceDatabase: "test1",
 				SourceTable:    "users",
 				Fields:         []string{"id", "name"},
 				Order:          []string{"age", "asc"},
@@ -281,11 +284,12 @@ func Test_pgStore_Query(t *testing.T) {
 				defer clearDB()
 
 				// migrate tables
-				err := utilTest.MigrateTables(cfgEmpty.DB(utilDB.DBName))
-				if err != nil {
-					t.Fatalf("Failed to migrate table by error %v", err)
+				for _, dbase := range cfgEmpty.Databases {
+					err := utilTest.MigrateTables(cfgEmpty.DB(dbase.DBName))
+					if err != nil {
+						t.Fatalf("Failed to migrate table by error %v", err)
+					}
 				}
-
 				s = NewPGStore(cfgEmpty.DBs(), cfgEmpty.ModelMap)
 			} else {
 				s = NewPGStore(cfg.DBs(), cfg.ModelMap)

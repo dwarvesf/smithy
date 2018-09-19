@@ -8,6 +8,7 @@ import (
 	agentConfig "github.com/dwarvesf/smithy/agent/config"
 	"github.com/dwarvesf/smithy/agent/dbtool/drivers"
 	"github.com/dwarvesf/smithy/common/database"
+	utilPGDb "github.com/dwarvesf/smithy/common/utils/database/pg"
 )
 
 const (
@@ -139,6 +140,11 @@ func AutoMigrate(cfg *agentConfig.Config) error {
 
 func autoMigrationPG(cfg *agentConfig.Config) error {
 	for _, d := range cfg.Databases {
+		err := utilPGDb.CreatePGDatabase(cfg.DBPort, d.DBName)
+		if err != nil {
+			return err
+		}
+
 		db, err := gorm.Open("postgres", cfg.DBConnectionString(d.DBName))
 		if err != nil {
 			return err

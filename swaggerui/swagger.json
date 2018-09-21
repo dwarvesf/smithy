@@ -207,6 +207,171 @@
           }
         ]
       }
+    },
+    "/databases/{database_name}/{table_name}/create": {
+        "post": {
+            "tags": [
+                "CRUD"
+            ],
+            "summary": "Create row in databases",
+            "description": "",
+            "operationId": "create",
+            "produces": [
+                "application/json"
+            ],
+            "parameters": [
+                {
+                    "name": "database_name",
+                    "in": "path",
+                    "description": "Name of database to create",
+                    "required": true,
+                    "type": "string"
+                },
+                {
+                    "name": "table_name",
+                    "in": "path",
+                    "description": "Name of table to create",
+                    "required": true,
+                    "type": "string"
+                },
+                {
+                    "in": "body",
+                    "name": "body",
+                    "description": "create data",
+                    "required": true,
+                    "schema": {
+                        "$ref": "#/definitions/Create"
+                    }
+                }
+            ],
+            "responses": {
+                "200": {
+                    "description": "successful operation",
+                    "schema": {
+                        "$ref": "#/definitions/CreateResponse"
+                    }
+                },
+                "400": {
+                    "description": "Invalid status value"
+                }
+            },
+            "security": [
+                {
+                    "jwt": []
+                }
+            ]
+        }
+    }, 
+    "/databases/{database_name}/{table_name}/update": {
+        "put": {
+            "tags": [
+                "CRUD"
+            ],
+            "summary": "Update row in databases",
+            "description": "",
+            "operationId": "update",
+            "produces": [
+                "application/json"
+            ],
+            "consumes": [
+                "application/json"
+            ],
+            "parameters": [
+                {
+                    "name": "database_name",
+                    "in": "path",
+                    "description": "Name of database to update",
+                    "required": true,
+                    "type": "string"
+                },
+                {
+                    "name": "table_name",
+                    "in": "path",
+                    "description": "Name of table to update",
+                    "required": true,
+                    "type": "string"
+                },
+                {
+                    "in": "body",
+                    "name": "body",
+                    "description": "update data",
+                    "required": true,
+                    "schema": {
+                        "$ref": "#/definitions/Update"
+                    }
+                }
+            ],
+            "responses": {
+                "200": {
+                    "description": "successful operation",
+                    "schema": {
+                        "$ref": "#/definitions/UpdateResponse"
+                    }
+                },
+                "400": {
+                    "description": "Invalid status value"
+                }
+            },
+            "security": [
+                {
+                    "jwt": []
+                }
+            ]
+        }
+    },
+    "/databases/{database_name}/{table_name}/delete": {
+        "delete": {
+            "tags": [
+                "CRUD"
+            ],
+            "summary": "Delete row in databases",
+            "description": "",
+            "operationId": "delete",
+            "produces": [
+                "application/json"
+            ],
+            "parameters": [
+                {
+                    "name": "database_name",
+                    "in": "path",
+                    "description": "Name of database to delete",
+                    "required": true,
+                    "type": "string"
+                },
+                {
+                    "name": "table_name",
+                    "in": "path",
+                    "description": "Name of table to delete",
+                    "required": true,
+                    "type": "string"
+                },
+                {
+                    "in": "body",
+                    "name": "body",
+                    "description": "delete data",
+                    "required": true,
+                    "schema": {
+                        "$ref": "#/definitions/Delete"
+                    }
+                }
+            ],
+            "responses": {
+                "200": {
+                    "description": "successful operation",
+                    "schema": {
+                        "$ref": "#/definitions/DeleteResponse"
+                    }
+                },
+                "400": {
+                    "description": "Invalid status value"
+                }
+            },
+            "security": [
+                {
+                    "jwt": []
+                }
+            ]
+        }
     }
   },
   "securityDefinitions": {
@@ -222,7 +387,11 @@
       "properties": {
         "username": {
           "type": "string"
-        },
+        
+
+
+
+},
         "password": {
           "type": "string"
         }
@@ -319,6 +488,127 @@
           }
         }
       }
+    },
+    "Create": {
+        "type": "object",
+        "properties": {
+            "fields": {
+                "type": "array",
+                "items": {
+                    "type": "object"
+                },
+                "example": ["name", "age", {"books": ["name", "description"]}]
+            },
+            "data": {
+                "type": "array",
+                "items": {
+                    "type": "object"
+                },
+                "example": ["Que Huong", 18, [
+                    ["Golang", "Start learning Go"]
+                ]]
+            }
+        }
+    },
+    "CreateResponse": {
+        "type": "object",
+        "properties": {
+            "status": {
+                "type": "string",
+                "example": "success"
+            },
+            "data": {
+                "type": "object",
+                "example": {
+                    "age": 18,
+                    "books": [
+                        {
+                            "description": "Start learning Go",
+                            "id": 4,
+                            "name": "Golang"
+                        }
+                    ],
+                    "id": 4,
+                    "name": "Que Huong"
+                }
+            }
+        },
+        "xml": {
+            "name": "CreateResponse"
+        }
+    },
+    "Update": {
+        "type": "object",
+        "properties": {
+            "fields": {
+                "type": "array",
+                "items": {
+                    "type": "object"
+                },
+                "example": ["name", "age"]
+            },
+            "data": {
+                "type": "array",
+                "items": {
+                    "type": "object"
+                },
+                "example": ["Que Huong", 18]
+            },
+            "primary_key": {
+                "type": "string",
+                "example": "1"
+            }
+        }
+    },
+    "UpdateResponse": {
+        "type": "object",
+        "properties": {
+            "status": {
+                "type": "string",
+                "example": "success"
+            },
+            "data": {
+                "type": "object",
+                "properties": {
+                    "type": "object"
+                },
+                "example": {
+                    "age": 18,
+                    "name": "Que Huong"
+                }
+            }
+        },
+        "xml": {
+            "name": "UpdateResponse"
+        }
+    },
+    "Delete": {
+        "type": "object",
+        "properties": {
+            "filter": {
+                "type": "object",
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    },
+                    "example": {"fields": ["fields you want", "to delete"], "data": ["data of", "the fields"]}
+                },
+                "example": {"fields": ["id", "name"], "data": ["1", "quehuong"]}
+            }
+        }
+    },
+    "DeleteResponse": {
+        "type": "object",
+        "properties": {
+            "status": {
+                "type": "string",
+                "example": "success"
+            }
+        },
+        "xml": {
+            "name": "DeleteResponse"
+        }
     },
     "QueryResponse": {
       "type": "object",

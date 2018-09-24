@@ -723,3 +723,87 @@ func Test_pgStore_Update(t *testing.T) {
 		})
 	}
 }
+
+func Test_pgStore_RawQuery(t *testing.T) {
+	t.Parallel()
+	// create config & create database with DOCKER SDK
+	cfg, clearDB := utilTest.CreateConfig(t)
+	defer clearDB()
+
+	users := []utilDB.User{}
+	for _, dbase := range cfg.Databases {
+		// migrate tables
+		err := utilTest.MigrateTables(cfg.DB(dbase.DBName))
+		if err != nil {
+			t.Fatalf("Failed to migrate table by error %v", err)
+		}
+
+		// create sample data
+		users, err = utilTest.CreateUserSampleData(cfg.DB(dbase.DBName))
+		if err != nil {
+			t.Fatalf("Failed to create sample data by error %v", err)
+		}
+	}
+
+	dbTest := []string{"test1", "test2"}
+
+	type args struct {
+		dbName string
+		sql    string
+	}
+	tests := []struct {
+		name    string
+		args    args
+		want    []utilDB.User
+		wantErr bool
+	}{
+		{
+			name: "in valid view",
+			args: args{
+				dbName: dbTest[0],
+				sql:    "SELECTS * FROM users WHERE id = 1",
+			},
+			wantErr: true,
+		},
+		{
+			name: "select user by id",
+			args: args{
+				dbName: dbTest[0],
+				sql:    "SELECT * FROM users WHERE id = 1",
+			},
+			want: users[0:1],
+		},
+		{
+			name: "select all user",
+			args: args{
+				dbName: dbTest[0],
+				sql:    "SELECT * FROM users",
+			},
+			want: users,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s := NewPGStore(cfg.DBs(), cfg.ModelMap)
+			_, _, got, err := s.RawQuery(tt.args.dbName, tt.args.sql)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("pgStore.RawQuery() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if len(got) != len(tt.want) {
+				t.Errorf("pgStore.RawQuery() got = %v, want %v", got, tt.want)
+				return
+			}
+
+			for i := range got {
+				u := got[i].([]interface{})
+				id := int(u[0].(int64))
+				name := u[1].(string)
+				if id != tt.want[i].ID || name != tt.want[i].Name {
+					t.Errorf("pgStore.RawQuery() got = %v, want %v", got, tt.want)
+				}
+			}
+		})
+	}
+}

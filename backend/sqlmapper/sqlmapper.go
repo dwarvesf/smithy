@@ -18,7 +18,10 @@ type Mapper interface {
 	Update(dbName, tableName string, d RowData) (RowData, error)
 	Delete(dbName, tableName string, fields, data []interface{}) error
 	Query(Query) ([]string, []interface{}, error)
+	RawQuery(dbName string, sql string) ([]string, []database.Column, []interface{}, error)
 	ColumnMetadata(Query) ([]database.Column, error)
+	ColumnMetadataByRows(*sql.Rows) ([]database.Column, error)
+	Explain(dbName string, sql string) (interface{}, error)
 }
 
 // Query contain query data for a query request
@@ -30,6 +33,14 @@ type Query struct {
 	Offset         int      `json:"offset"`
 	Limit          int      `json:"limit"`
 	Order          []string `json:"order"` // 2 elements: "columnName" and "asc" if ascending order, "desc" if descending order
+}
+
+// QueryPlan .
+type QueryPlan struct {
+	NodeType      string `json:"Node Type"`
+	ParallelAware bool   `json:"Parallel Aware"`
+	RelationName  string `json:"Relation Name"`
+	Alias         string `json:"Alias"`
 }
 
 // ColumnNames return columns name in query

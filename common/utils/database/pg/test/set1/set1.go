@@ -125,11 +125,6 @@ func CreateConfig(t *testing.T) (*backendConfig.Config, func()) {
 		t.Fatal(err)
 	}
 
-	// err = cfg.UpdateDB()
-	// if err != nil {
-	// 	t.Fatal(err)
-	// }
-
 	clearDBs := utilDB.CreateDatabase(t, cfg)
 
 	return cfg, clearDBs

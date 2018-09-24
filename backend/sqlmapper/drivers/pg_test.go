@@ -18,6 +18,7 @@ import (
 
 func Test_pgStore_Query(t *testing.T) {
 	t.Parallel()
+	// create config & create database with DOCKER SDK
 	cfg, clearDB := utilTest.CreateConfig(t)
 	defer clearDB()
 
@@ -57,6 +58,8 @@ func Test_pgStore_Query(t *testing.T) {
 	copy(descUserID, users)
 	sort.Slice(descUserID, func(i, j int) bool { return descUserID[i].ID > descUserID[j].ID })
 
+	dbTest := []string{"test1", "test2"}
+
 	type fields struct {
 		db       *gorm.DB
 		modelMap map[string]database.Model
@@ -70,9 +73,9 @@ func Test_pgStore_Query(t *testing.T) {
 		testForEmptyTable bool
 	}{
 		{
-			name: "Valid test case",
+			name: "Query an exist user in db",
 			args: &sqlmapper.Query{
-				SourceDatabase: "test1",
+				SourceDatabase: dbTest[0],
 				SourceTable:    "users",
 				Fields:         []string{"id", "name"},
 				Filter: sqlmapper.Filter{
@@ -85,9 +88,9 @@ func Test_pgStore_Query(t *testing.T) {
 			want1: users[0:1],
 		},
 		{
-			name: "empty table",
+			name: "Query in an empty table",
 			args: &sqlmapper.Query{
-				SourceDatabase: "test1",
+				SourceDatabase: dbTest[0],
 				SourceTable:    "users",
 				Fields:         []string{"id", "name"},
 			},
@@ -96,9 +99,9 @@ func Test_pgStore_Query(t *testing.T) {
 			testForEmptyTable: true,
 		},
 		{
-			name: "Find all",
+			name: "Query all records in db",
 			args: &sqlmapper.Query{
-				SourceDatabase: "test1",
+				SourceDatabase: dbTest[0],
 				SourceTable:    "users",
 				Fields:         []string{"id", "name"},
 			},
@@ -106,9 +109,9 @@ func Test_pgStore_Query(t *testing.T) {
 			want1: users,
 		},
 		{
-			name: "id not exists",
+			name: "Query by an id not exists",
 			args: &sqlmapper.Query{
-				SourceDatabase: "test1",
+				SourceDatabase: dbTest[0],
 				SourceTable:    "users",
 				Fields:         []string{"id", "name"},
 				Filter: sqlmapper.Filter{
@@ -121,9 +124,9 @@ func Test_pgStore_Query(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "id too long",
+			name: "Query a user by too long id",
 			args: &sqlmapper.Query{
-				SourceDatabase: "test1",
+				SourceDatabase: dbTest[0],
 				SourceTable:    "users",
 				Fields:         []string{"id", "name"},
 				Filter: sqlmapper.Filter{
@@ -135,9 +138,9 @@ func Test_pgStore_Query(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "invalid column name",
+			name: "Query a record invalid column name",
 			args: &sqlmapper.Query{
-				SourceDatabase: "test1",
+				SourceDatabase: dbTest[0],
 				SourceTable:    "users",
 				Fields:         []string{"id", "name"},
 				Filter: sqlmapper.Filter{
@@ -149,9 +152,9 @@ func Test_pgStore_Query(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "invalid table name",
+			name: "Query in an invalid table name",
 			args: &sqlmapper.Query{
-				SourceDatabase: "test1",
+				SourceDatabase: dbTest[0],
 				SourceTable:    "usershandsome",
 				Fields:         []string{"id", "name"},
 				Filter: sqlmapper.Filter{
@@ -163,9 +166,9 @@ func Test_pgStore_Query(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "offset=3 limit=2",
+			name: "Query with offset=3 limit=2",
 			args: &sqlmapper.Query{
-				SourceDatabase: "test1",
+				SourceDatabase: dbTest[0],
 				SourceTable:    "users",
 				Fields:         []string{"id", "name"},
 				Offset:         3,
@@ -175,9 +178,9 @@ func Test_pgStore_Query(t *testing.T) {
 			want1: users[3:5],
 		},
 		{
-			name: "offset=3 limit=0",
+			name: "Query with offset=3 limit=0",
 			args: &sqlmapper.Query{
-				SourceDatabase: "test1",
+				SourceDatabase: dbTest[0],
 				SourceTable:    "users",
 				Fields:         []string{"id", "name"},
 				Offset:         3,
@@ -186,9 +189,9 @@ func Test_pgStore_Query(t *testing.T) {
 			want1: users[3:],
 		},
 		{
-			name: "success sort by name in descending order",
+			name: "Query and sort by name in descending order",
 			args: &sqlmapper.Query{
-				SourceDatabase: "test1",
+				SourceDatabase: dbTest[0],
 				SourceTable:    "users",
 				Fields:         []string{"id", "name"},
 				Order:          []string{"name", "desc"},
@@ -198,9 +201,9 @@ func Test_pgStore_Query(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "success sort by name in ascending order",
+			name: "Query and sort by name in ascending order",
 			args: &sqlmapper.Query{
-				SourceDatabase: "test1",
+				SourceDatabase: dbTest[0],
 				SourceTable:    "users",
 				Fields:         []string{"id", "name"},
 				Order:          []string{"name", "asc"},
@@ -210,9 +213,9 @@ func Test_pgStore_Query(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "success sort by ID in descending order",
+			name: "Query and sort by ID in descending order",
 			args: &sqlmapper.Query{
-				SourceDatabase: "test1",
+				SourceDatabase: dbTest[0],
 				SourceTable:    "users",
 				Fields:         []string{"id", "name"},
 				Order:          []string{"id", "desc"},
@@ -222,9 +225,9 @@ func Test_pgStore_Query(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "success sort by ID in ascending order",
+			name: "Query and sort by ID in ascending order",
 			args: &sqlmapper.Query{
-				SourceDatabase: "test1",
+				SourceDatabase: dbTest[0],
 				SourceTable:    "users",
 				Fields:         []string{"id", "name"},
 				Order:          []string{"id", "asc"},
@@ -234,9 +237,9 @@ func Test_pgStore_Query(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "success for none sort",
+			name: "Query without sort",
 			args: &sqlmapper.Query{
-				SourceDatabase: "test1",
+				SourceDatabase: dbTest[0],
 				SourceTable:    "users",
 				Fields:         []string{"id", "name"},
 				Order:          []string{},
@@ -246,9 +249,9 @@ func Test_pgStore_Query(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "fail sort because missing argument of Order",
+			name: "Query and sort with missing argument of Order",
 			args: &sqlmapper.Query{
-				SourceDatabase: "test1",
+				SourceDatabase: dbTest[0],
 				SourceTable:    "users",
 				Fields:         []string{"id", "name"},
 				Order:          []string{"name"},
@@ -256,9 +259,9 @@ func Test_pgStore_Query(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "fail sort because wrong argument format for Order",
+			name: "Query and sort with wrong argument format for Order",
 			args: &sqlmapper.Query{
-				SourceDatabase: "test1",
+				SourceDatabase: dbTest[0],
 				SourceTable:    "users",
 				Fields:         []string{"id", "name"},
 				Order:          []string{"name", "ascending"},
@@ -266,9 +269,9 @@ func Test_pgStore_Query(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "fail sort because column name doesn't exist",
+			name: "Query and sort with column name doesn't exist",
 			args: &sqlmapper.Query{
-				SourceDatabase: "test1",
+				SourceDatabase: dbTest[0],
 				SourceTable:    "users",
 				Fields:         []string{"id", "name"},
 				Order:          []string{"age", "asc"},
@@ -276,9 +279,9 @@ func Test_pgStore_Query(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name: "Other database: Find all",
+			name: "Query user in other database",
 			args: &sqlmapper.Query{
-				SourceDatabase: "test2",
+				SourceDatabase: dbTest[1],
 				SourceTable:    "users",
 				Fields:         []string{"id", "name"},
 			},
@@ -290,6 +293,7 @@ func Test_pgStore_Query(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var s sqlmapper.Mapper
 			if tt.testForEmptyTable {
+				// create config & create database with DOCKER SDK
 				cfgEmpty, clearDB := utilTest.CreateConfig(t)
 				defer clearDB()
 
@@ -339,6 +343,7 @@ func Test_pgStore_Query(t *testing.T) {
 
 func Test_pgStore_Delete(t *testing.T) {
 	t.Parallel()
+	// create config & create database with DOCKER SDK
 	cfg, clearDB := utilTest.CreateConfig(t)
 	defer clearDB()
 
@@ -356,6 +361,8 @@ func Test_pgStore_Delete(t *testing.T) {
 		}
 	}
 
+	dbTest := []string{"test1", "test2"}
+
 	type args struct {
 		databaseName string
 		tableName    string
@@ -370,10 +377,10 @@ func Test_pgStore_Delete(t *testing.T) {
 		testForEmptyTable bool
 	}{
 		{
-			name:      "Valid test case: id",
+			name:      "Delete an exist user by id",
 			tableName: "users",
 			args: &args{
-				databaseName: "test1",
+				databaseName: dbTest[0],
 				tableName:    "users",
 				fields: []interface{}{
 					"id",
@@ -386,10 +393,10 @@ func Test_pgStore_Delete(t *testing.T) {
 			testForEmptyTable: false,
 		},
 		{
-			name:      "Valid test case: id name",
+			name:      "Delete an exist user by name",
 			tableName: "users",
 			args: &args{
-				databaseName: "test1",
+				databaseName: dbTest[0],
 				tableName:    "users",
 				fields: []interface{}{
 					"id",
@@ -404,10 +411,10 @@ func Test_pgStore_Delete(t *testing.T) {
 			testForEmptyTable: false,
 		},
 		{
-			name:      "Invalid testcase: fields id not exists",
+			name:      "Delete user missing primary key",
 			tableName: "users",
 			args: &args{
-				databaseName: "test1",
+				databaseName: dbTest[0],
 				tableName:    "users",
 				fields: []interface{}{
 					"minh dep trai chet di duoc",
@@ -420,10 +427,10 @@ func Test_pgStore_Delete(t *testing.T) {
 			testForEmptyTable: false,
 		},
 		{
-			name:      "Invalid testcase: table empty",
+			name:      "Delete record in a empty table",
 			tableName: "users",
 			args: &args{
-				databaseName: "test1",
+				databaseName: dbTest[0],
 				tableName:    "users",
 				fields: []interface{}{
 					"iddfdf",
@@ -436,10 +443,10 @@ func Test_pgStore_Delete(t *testing.T) {
 			testForEmptyTable: true,
 		},
 		{
-			name:      "Other database: Valid test case: id",
+			name:      "Delete record by id in a other database",
 			tableName: "users",
 			args: &args{
-				databaseName: "test2",
+				databaseName: dbTest[1],
 				tableName:    "users",
 				fields: []interface{}{
 					"id",
@@ -456,6 +463,7 @@ func Test_pgStore_Delete(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			var s sqlmapper.Mapper
 			if tt.testForEmptyTable {
+				// create config & create database with DOCKER SDK
 				cfgEmpty, clearDB := utilTest.CreateConfig(t)
 				defer clearDB()
 
@@ -482,6 +490,7 @@ func Test_pgStore_Delete(t *testing.T) {
 
 func Test_pgStore_Create(t *testing.T) {
 	t.Parallel()
+	// create config & create database with DOCKER SDK
 	cfg, clearDB := utilTest.CreateConfig(t)
 	defer clearDB()
 
@@ -492,6 +501,8 @@ func Test_pgStore_Create(t *testing.T) {
 			t.Fatalf("Failed to migrate table by error %v", err)
 		}
 	}
+
+	dbTest := []string{"test1", "test2"}
 
 	type args struct {
 		data         sqlmapper.RowData
@@ -505,10 +516,10 @@ func Test_pgStore_Create(t *testing.T) {
 		wantErr   bool
 	}{
 		{
-			name:      "valid user",
+			name:      "create a valid record",
 			tableName: "users",
 			args: args{
-				databaseName: "test1",
+				databaseName: dbTest[0],
 				data: sqlmapper.RowData{
 					"name": sqlmapper.ColData{
 						Data: "hieudeptrai",
@@ -525,10 +536,10 @@ func Test_pgStore_Create(t *testing.T) {
 			},
 		},
 		{
-			name:      "empty input",
+			name:      "create record missing data",
 			tableName: "users",
 			args: args{
-				databaseName: "test1",
+				databaseName: dbTest[0],
 				data:         sqlmapper.RowData{},
 			},
 			wantErr: true,
@@ -537,7 +548,7 @@ func Test_pgStore_Create(t *testing.T) {
 			name:      "invalid column name",
 			tableName: "users",
 			args: args{
-				databaseName: "test1",
+				databaseName: dbTest[0],
 				data: sqlmapper.RowData{
 					"namenmce": sqlmapper.ColData{
 						Data: "hieudeptrai",
@@ -547,10 +558,10 @@ func Test_pgStore_Create(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:      "Other database: valid user",
+			name:      "create a valid record in other database",
 			tableName: "users",
 			args: args{
-				databaseName: "test2",
+				databaseName: dbTest[1],
 				data: sqlmapper.RowData{
 					"name": sqlmapper.ColData{
 						Data: "hieudeptrai",
@@ -585,8 +596,11 @@ func Test_pgStore_Create(t *testing.T) {
 
 func Test_pgStore_Update(t *testing.T) {
 	t.Parallel()
+	// create config & create database with DOCKER SDK
 	cfg, clearDB := utilTest.CreateConfig(t)
 	defer clearDB()
+
+	dbTest := []string{"test1", "test2"}
 
 	users := []utilDB.User{}
 	for _, dbase := range cfg.Databases {
@@ -616,10 +630,10 @@ func Test_pgStore_Update(t *testing.T) {
 		wantErr   bool
 	}{
 		{
-			name:      "success",
+			name:      "Update an valid record",
 			tableName: "users",
 			args: args{
-				databaseName: "test1",
+				databaseName: dbTest[0],
 				d: sqlmapper.RowData{
 					"name": sqlmapper.ColData{
 						Data: "demo",
@@ -638,7 +652,7 @@ func Test_pgStore_Update(t *testing.T) {
 			name:      "primary key isn't exist",
 			tableName: "users",
 			args: args{
-				databaseName: "test1",
+				databaseName: dbTest[0],
 				d: sqlmapper.RowData{
 					"name": sqlmapper.ColData{
 						Data: "demo",
@@ -652,7 +666,7 @@ func Test_pgStore_Update(t *testing.T) {
 			name:      "primary key is duplicated",
 			tableName: "users",
 			args: args{
-				databaseName: "test1",
+				databaseName: dbTest[0],
 				d: sqlmapper.RowData{
 					"name": sqlmapper.ColData{
 						Data: "demo",
@@ -674,7 +688,7 @@ func Test_pgStore_Update(t *testing.T) {
 			name:      "rowData is empty",
 			tableName: "users",
 			args: args{
-				databaseName: "test1",
+				databaseName: dbTest[0],
 				id:           users[0].ID,
 			},
 			wantErr: true,
@@ -683,7 +697,7 @@ func Test_pgStore_Update(t *testing.T) {
 			name:      "invalid column name",
 			tableName: "users",
 			args: args{
-				databaseName: "test1",
+				databaseName: dbTest[0],
 				d: sqlmapper.RowData{
 					"blabla": sqlmapper.ColData{
 						Data: "anmt",
@@ -694,10 +708,10 @@ func Test_pgStore_Update(t *testing.T) {
 			wantErr: true,
 		},
 		{
-			name:      "Other database",
+			name:      "Update a valid record in other database",
 			tableName: "users",
 			args: args{
-				databaseName: "test2",
+				databaseName: dbTest[1],
 				d: sqlmapper.RowData{
 					"name": sqlmapper.ColData{
 						Data: "demo",

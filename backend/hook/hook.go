@@ -28,11 +28,11 @@ type ankoScriptEngine struct {
 
 // DBLib interface for lib in db
 type DBLib interface {
-	First(dbName string, tableName string, condition string) (map[interface{}]interface{}, error)
-	Where(dbName string, tableName string, condition string) ([]map[interface{}]interface{}, error)
-	Create(dbName string, tableName string, data map[interface{}]interface{}) (map[interface{}]interface{}, error)
-	Update(dbName string, tableName string, primaryKey interface{}, data map[interface{}]interface{}) (map[interface{}]interface{}, error)
-	Delete(dbName string, tableName string, fields, data []interface{}) error
+	First(dbName, tableName, condition string) (map[interface{}]interface{}, error)
+	Where(dbName, tableName, condition string) ([]map[interface{}]interface{}, error)
+	Create(dbName, tableName string, data map[interface{}]interface{}) (map[interface{}]interface{}, error)
+	Update(dbName, tableName string, data map[interface{}]interface{}) (map[interface{}]interface{}, error)
+	Delete(dbName, tableName string, fields, data []interface{}) error
 }
 
 func toRowData(data map[interface{}]interface{}) sqlmapper.RowData {

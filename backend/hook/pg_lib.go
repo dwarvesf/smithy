@@ -115,29 +115,40 @@ func (s *pgLibImpl) Create(dbName string, tableName string, d map[interface{}]in
 	return d, nil
 }
 
-func (s *pgLibImpl) Update(dbName string, tableName string, primaryKey interface{}, d map[interface{}]interface{}) (map[interface{}]interface{}, error) {
+func (s *pgLibImpl) Update(dbName, tableName string, d map[interface{}]interface{}) (map[interface{}]interface{}, error) {
 	db := s.db[dbName].DB()
-	if notExist, _ := s.isIDNotExist(dbName, tableName, primaryKey); !notExist {
+	row := toRowData(d)
+
+	primaryKeyMap, err := s.getPrimaryKeyMap(row, dbName, tableName)
+	if err != nil {
+		return nil, err
+	}
+	if exist, _ := s.isPrimaryKeyExist(dbName, tableName, primaryKeyMap); !exist {
 		return nil, errors.New("primary key is not exist")
 	}
 
-	row := toRowData(d)
 	cols, data := row.ColumnsAndData()
-
 	rowQuery := make([]string, len(cols))
 
 	for i := 0; i < len(cols); i++ {
 		rowQuery[i] = fmt.Sprintf("%s = $%d", cols[i], i+1)
 	}
 
-	execQuery := fmt.Sprintf("UPDATE %s SET %s WHERE id = %d", // FIXME: set primary key could have dynamic name not only id
+	params := []string{}
+	for colName, colData := range primaryKeyMap {
+		params = append(params, fmt.Sprintf("%s = '%v'", colName, colData.Data))
+		delete(d, colName)
+	}
+
+	execQuery := fmt.Sprintf("UPDATE %s SET %s WHERE %s",
 		tableName,
 		strings.Join(rowQuery, ","),
-		primaryKey)
+		strings.Join(params, " AND "))
 
 	if _, err := db.Exec(execQuery, data...); err != nil {
 		return nil, err
 	}
+
 	return d, nil
 }
 func (s *pgLibImpl) Delete(dbName string, tableName string, fields, data []interface{}) error {
@@ -162,12 +173,44 @@ func (s *pgLibImpl) Delete(dbName string, tableName string, fields, data []inter
 	return nil
 }
 
-func (s *pgLibImpl) isIDNotExist(dbName string, tableName string, primaryKey interface{}) (bool, error) {
+func (s *pgLibImpl) isPrimaryKey(dbName, colName, tableName string) bool {
+	columns := s.modelMap[dbName][tableName].Columns
+	for _, col := range columns {
+		if col.IsPrimary && col.Name == colName {
+			return true
+		}
+	}
+	return false
+}
+func (s *pgLibImpl) getPrimaryKeyMap(row sqlmapper.RowData, dbName, tableName string) (sqlmapper.RowData, error) {
+	if _, ok := s.modelMap[dbName][tableName]; !ok {
+		return nil, fmt.Errorf("uknown database_name/table_name %s/%s", dbName, tableName)
+	}
+	primaryKeyMap := make(sqlmapper.RowData)
+	for colName, colData := range row {
+		if ok := s.isPrimaryKey(dbName, colName, tableName); ok {
+			primaryKeyMap[colName] = colData
+			delete(row, colName)
+		}
+
+	}
+	return primaryKeyMap, nil
+}
+
+func (s *pgLibImpl) isPrimaryKeyExist(dbName, tableName string, primaryKeyMap sqlmapper.RowData) (bool, error) {
+	db, ok := s.db[dbName]
+	if !ok {
+		return false, errors.New("DB not exist!")
+	}
 	data := struct {
 		Result bool
 	}{}
 
-	execQuery := fmt.Sprintf("SELECT EXISTS(SELECT 1 FROM %s WHERE id = %v) as result", tableName, primaryKey)
+	params := []string{}
+	for colName, colData := range primaryKeyMap {
+		params = append(params, fmt.Sprintf("%s = '%v'", colName, colData.Data))
+	}
+	execQuery := fmt.Sprintf("SELECT EXISTS(SELECT 1 FROM %s WHERE %s) as result", tableName, strings.Join(params, " AND "))
 
-	return data.Result, s.db[dbName].Raw(execQuery).Scan(&data).Error
+	return data.Result, db.Raw(execQuery).Scan(&data).Error
 }

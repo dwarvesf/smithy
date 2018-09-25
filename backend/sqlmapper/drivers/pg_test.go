@@ -635,11 +635,13 @@ func Test_pgStore_Update(t *testing.T) {
 			args: args{
 				databaseName: dbTest[0],
 				d: sqlmapper.RowData{
+					"id": sqlmapper.ColData{
+						Data: users[0].ID,
+					},
 					"name": sqlmapper.ColData{
 						Data: "demo",
 					},
 				},
-				id: users[0].ID,
 			},
 			want: sqlmapper.RowData{
 				"name": sqlmapper.ColData{
@@ -654,11 +656,10 @@ func Test_pgStore_Update(t *testing.T) {
 			args: args{
 				databaseName: dbTest[0],
 				d: sqlmapper.RowData{
-					"name": sqlmapper.ColData{
-						Data: "demo",
+					"id": sqlmapper.ColData{
+						Data: -1,
 					},
 				},
-				id: -1,
 			},
 			wantErr: true,
 		},
@@ -671,18 +672,9 @@ func Test_pgStore_Update(t *testing.T) {
 					"name": sqlmapper.ColData{
 						Data: "demo",
 					},
-					"id": sqlmapper.ColData{
-						Data: "1",
-					},
-				},
-				id: users[0].ID,
-			},
-			want: sqlmapper.RowData{
-				"name": sqlmapper.ColData{
-					Data: "demo",
 				},
 			},
-			wantErr: false,
+			wantErr: true,
 		},
 		{
 			name:      "rowData is empty",
@@ -699,11 +691,13 @@ func Test_pgStore_Update(t *testing.T) {
 			args: args{
 				databaseName: dbTest[0],
 				d: sqlmapper.RowData{
+					"id": sqlmapper.ColData{
+						Data: users[0].ID,
+					},
 					"blabla": sqlmapper.ColData{
 						Data: "anmt",
 					},
 				},
-				id: users[0].ID,
 			},
 			wantErr: true,
 		},

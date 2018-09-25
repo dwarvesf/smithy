@@ -291,10 +291,10 @@ func Test_pgLibImpl_Update(t *testing.T) {
 		}
 	}
 
+	dbName := "test"
 	type args struct {
 		databaseName string
 		tableName    string
-		primaryKey   interface{}
 		d            map[interface{}]interface{}
 	}
 	tests := []struct {
@@ -308,8 +308,8 @@ func Test_pgLibImpl_Update(t *testing.T) {
 			args: args{
 				databaseName: "test1",
 				tableName:    "users",
-				primaryKey:   1,
 				d: map[interface{}]interface{}{
+					"id":   1,
 					"name": "changed user name",
 				},
 			},
@@ -323,8 +323,8 @@ func Test_pgLibImpl_Update(t *testing.T) {
 			args: args{
 				databaseName: "test1",
 				tableName:    "users",
-				primaryKey:   10000,
 				d: map[interface{}]interface{}{
+					"id":   10000,
 					"name": "changed user name",
 				},
 			},

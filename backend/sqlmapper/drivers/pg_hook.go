@@ -96,12 +96,11 @@ func (s *pgHookStore) Delete(dbName string, tableName string, fields, data []int
 	return res
 }
 
-func (s *pgHookStore) Update(dbName string, tableName string, d sqlmapper.RowData, id int) (sqlmapper.RowData, error) {
+func (s *pgHookStore) Update(dbName, tableName string, d sqlmapper.RowData) (sqlmapper.RowData, error) {
 	model, ok := s.modelMap[dbName][tableName]
 	if !ok {
 		return nil, fmt.Errorf("uknown database_name/table_name %s/%s", dbName, tableName)
 	}
-
 	if model.IsBeforeUpdateEnable() {
 		err := s.hookEngine.Eval(nil, model.Hooks.BeforeUpdate.Content)
 		if err != nil {
@@ -109,7 +108,7 @@ func (s *pgHookStore) Update(dbName string, tableName string, d sqlmapper.RowDat
 		}
 	}
 
-	res, err := s.pgStore.Update(dbName, tableName, d, id)
+	res, err := s.pgStore.Update(dbName, tableName, d)
 	if err != nil {
 		return nil, err
 	}

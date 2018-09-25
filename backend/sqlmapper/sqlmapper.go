@@ -14,9 +14,9 @@ import (
 
 // Mapper interface for mapping query from sql to corresponding database engine
 type Mapper interface {
-	Create(dbName string, tableName string, d RowData) (RowData, error)
-	Update(dbName string, tableName string, d RowData, id int) (RowData, error)
-	Delete(dbName string, tableName string, fields, data []interface{}) error
+	Create(dbName, tableName string, d RowData) (RowData, error)
+	Update(dbName, tableName string, d RowData) (RowData, error)
+	Delete(dbName, tableName string, fields, data []interface{}) error
 	Query(Query) ([]string, []interface{}, error)
 	ColumnMetadata(Query) ([]database.Column, error)
 }

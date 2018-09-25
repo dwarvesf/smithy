@@ -12,13 +12,14 @@ import (
 	httptransport "github.com/go-kit/kit/transport/http"
 
 	auth "github.com/dwarvesf/smithy/backend/auth"
+	backendConfig "github.com/dwarvesf/smithy/backend/config"
 	"github.com/dwarvesf/smithy/backend/endpoints"
 )
 
 // NewHTTPHandler http handler
 func NewHTTPHandler(endpoints endpoints.Endpoints,
 	logger log.Logger,
-	useCORS bool, jwtSecretKey string) http.Handler {
+	useCORS bool, cfg *backendConfig.Config) http.Handler {
 	r := chi.NewRouter()
 
 	if useCORS {
@@ -43,7 +44,7 @@ func NewHTTPHandler(endpoints endpoints.Endpoints,
 		options...,
 	).ServeHTTP)
 
-	tokenAuth := jwtauth.New("HS256", []byte(jwtSecretKey), nil)
+	tokenAuth := jwtauth.New("HS256", []byte(cfg.Authentication.SerectKey), nil)
 
 	if os.Getenv("ENV") == "development" {
 		fs := http.StripPrefix("/swaggerui/", http.FileServer(http.Dir("./swaggerui")))
@@ -59,7 +60,7 @@ func NewHTTPHandler(endpoints endpoints.Endpoints,
 	r.Group(func(r chi.Router) {
 		r.Use(jwtauth.Verifier(tokenAuth))
 		r.Use(auth.Authenticator)
-		r.Use(auth.Authorization)
+		r.Use(auth.Authorization(cfg))
 
 		r.Get("/agent-sync", httptransport.NewServer(
 			endpoints.AgentSync,

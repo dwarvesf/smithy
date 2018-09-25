@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -17,6 +16,7 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 
 	auth "github.com/dwarvesf/smithy/backend/auth"
+	backendConfig "github.com/dwarvesf/smithy/backend/config"
 	"github.com/dwarvesf/smithy/backend/endpoints"
 	"github.com/dwarvesf/smithy/backend/service"
 	utilTest "github.com/dwarvesf/smithy/common/utils/database/pg/test/set1"
@@ -30,7 +30,10 @@ const (
 
 func TestNewHTTPHandler(t *testing.T) {
 	//make up-dashboard
-	tsDashboard := httptest.NewServer(initDashboardServer(t))
+	cfg, clearDB := utilTest.CreateConfig(t)
+	defer clearDB()
+
+	tsDashboard := httptest.NewServer(initDashboardServer(t, cfg))
 	defer tsDashboard.Close()
 
 	tests := []struct {
@@ -102,6 +105,148 @@ func TestNewHTTPHandler(t *testing.T) {
 		})
 	}
 
+}
+
+func TestAuthorized(t *testing.T) {
+	//make up-dashboard
+	cfg, clearDB := utilTest.CreateConfig(t)
+	defer func() {
+		cfg.DBUsername = "postgres"
+		cfg.DBPassword = "example"
+		err := cfg.UpdateDB()
+		if err != nil {
+			t.Fatalf("Fail to update connection. %s", err.Error())
+		}
+		clearDB()
+	}()
+
+	err := utilTest.MigrateTables(cfg.DB("test"))
+	if err != nil {
+		t.Fatalf("Failed to migrate table by error %v", err)
+	}
+
+	cfg.DBUsername, cfg.DBPassword = cfg.DBSchemaName, "password"
+
+	clearACL := utilTest.ACLUsersTable(t, cfg)
+	defer clearACL()
+
+	// connect with username = cfg.DBSchemaName
+	if err = cfg.UpdateDB(); err != nil {
+		t.Fatalf("Failed to UpdateDB by error %s", err.Error())
+	}
+
+	// set schema for current db connection
+	err = cfg.DB("test").Exec("SET search_path TO " + cfg.DBSchemaName).Error
+	if err != nil {
+		t.Fatalf("Fail to set search_path to created schema. %s", err.Error())
+	}
+
+	tsDashboard := httptest.NewServer(initDashboardServer(t, cfg))
+	defer tsDashboard.Close()
+
+	header := newAuthHeader(auth.New(secretKey, "aaa", Admin).Encode())
+
+	//user ACL : cru
+	//table ACL : cr
+
+	type args struct {
+		HTTPMethod, url string
+		data            []byte
+	}
+
+	tests := []struct {
+		name       string
+		args       args
+		wantStatus int
+		wantErr    error
+	}{
+		{
+			name: "success",
+			args: args{
+				HTTPMethod: "POST",
+				url:        "/databases/test/users/create",
+				data: []byte(`{
+					"fields": 	[ "name" ],
+					"data":     [ "lorem ipsum" ]
+				}`),
+			},
+			wantStatus: http.StatusOK,
+		},
+		{
+			name: "Fail to update DB. User has cru permisstion but table permission just has cr permisstion",
+			args: args{
+				HTTPMethod: "PUT",
+				url:        "/databases/test/users/update",
+				data: []byte(`{
+						"fields": [ "name" ],
+						"data":     [ "lorem ipsum" ],
+						"primary_key" : "1"
+				}`),
+			},
+			wantStatus: http.StatusUnauthorized,
+			wantErr:    auth.ErrUnauthorized,
+		},
+		{
+			name: "Fail to delete DB. User has cru permisstion. cant delete",
+			args: args{
+				HTTPMethod: "DELETE",
+				url:        "/databases/test/users/delete",
+				data: []byte(`{
+					"filter": {
+						"fields": [ "id" ],
+						"data":     [ "1" ]
+				   }	
+				}`),
+			},
+			wantStatus: http.StatusUnauthorized,
+			wantErr:    auth.ErrUnauthorized,
+		},
+		{
+			name: "unknown database name",
+			args: args{
+				HTTPMethod: "POST",
+				url:        "/databases/blabla/users/create",
+				data: []byte(`{
+					"fields": [ "name" ],
+					"data":     [ "lorem ipsum" ]
+				}`),
+			},
+			wantStatus: http.StatusUnauthorized,
+			wantErr:    auth.ErrInvalidDatabaseName,
+		},
+		{
+			name: "Invalid HTTP method",
+			args: args{
+				HTTPMethod: "PATCH",
+				url:        "/databases/test/users/create",
+				data: []byte(`{
+					"fields": [ "name" ],
+					"data":     [ "lorem ipsum" ]
+				}`),
+			},
+			wantStatus: http.StatusUnauthorized,
+			wantErr:    auth.ErrInvalidHTTPMethod,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			status, resp := testRequest(t, tsDashboard, tt.args.HTTPMethod, tt.args.url, header, tt.args.data)
+			if (status != tt.wantStatus) || (tt.wantErr != nil && tt.wantErr.Error() != resp) {
+				t.Errorf("Authorized() = (%v, %d), want (%v, %d)", resp, status, tt.wantErr.Error(), tt.wantStatus)
+			}
+		})
+	}
+}
+
+func TestLogin(t *testing.T) {
+	//make up-dashboard
+	cfg, clearDB := utilTest.CreateConfig(t)
+	defer clearDB()
+
+	tsDashboard := httptest.NewServer(initDashboardServer(t, cfg))
+	defer tsDashboard.Close()
+
 	// test login api
 	loginTests := []struct {
 		name       string
@@ -142,8 +287,8 @@ func TestNewHTTPHandler(t *testing.T) {
 // Test helper functions
 //
 
-func testRequest(t *testing.T, ts *httptest.Server, method, path string, header http.Header, body io.Reader) (int, string) {
-	req, err := http.NewRequest(method, ts.URL+path, body)
+func testRequest(t *testing.T, ts *httptest.Server, method, path string, header http.Header, body []byte) (int, string) {
+	req, err := http.NewRequest(method, ts.URL+path, bytes.NewBuffer(body))
 	if err != nil {
 		t.Fatal(err)
 		return 0, ""
@@ -183,9 +328,7 @@ func newAuthHeader(tokenStr string) http.Header {
 	return h
 }
 
-func initDashboardServer(t *testing.T) http.Handler {
-	cfg, _ := utilTest.CreateConfig(t)
-
+func initDashboardServer(t *testing.T, cfg *backendConfig.Config) http.Handler {
 	var logger log.Logger
 	{
 		logger = log.NewLogfmtLogger(log.NewSyncWriter(os.Stdout))
@@ -202,7 +345,7 @@ func initDashboardServer(t *testing.T) http.Handler {
 		endpoints.MakeServerEndpoints(s),
 		logger,
 		os.Getenv("ENV") == "local",
-		cfg.Authentication.SerectKey,
+		cfg,
 	)
 }
 

@@ -56,10 +56,9 @@ func main() {
 			endpoints.MakeServerEndpoints(s),
 			logger,
 			os.Getenv("ENV") == "local" || os.Getenv("ENV") == "development",
-			cfg.Authentication.SerectKey,
+			cfg,
 		)
 	}
-
 	errs := make(chan error)
 	go func() {
 		c := make(chan os.Signal, 1)

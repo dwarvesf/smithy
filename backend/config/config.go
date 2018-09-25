@@ -263,7 +263,37 @@ type Authentication struct {
 
 // User .
 type User struct {
-	Username string `yaml:"username" json:"username"`
-	Password string `yaml:"password" json:"password"`
-	Role     string `yaml:"role" json:"role"`
+	Username     string     `yaml:"username" json:"username"`
+	Password     string     `yaml:"password" json:"password"`
+	Role         string     `yaml:"role" json:"role"`
+	DatabaseList []Database `yaml:"database" json:"database"`
+}
+
+type Database struct {
+	DBName string  `yaml:"name" json:"name"`
+	Tables []Table `yaml:"tables" json:"tables"`
+}
+
+type Table struct {
+	TableName string             `yaml:"name" json:"name"`
+	ACL       string             `yaml:"acl" json:"acl"`
+	ACLDetail database.ACLDetail `yaml:"-" json:"-"`
+}
+
+func (table *Table) MakeACLDetailFromACL() {
+	ad := database.ACLDetail{}
+	for _, r := range table.ACL {
+		switch r {
+		case 'C', 'c':
+			ad.Insert = true
+		case 'R', 'r':
+			ad.Select = true
+		case 'U', 'u':
+			ad.Update = true
+		case 'D', 'd':
+			ad.Delete = true
+		}
+	}
+
+	table.ACLDetail = ad
 }

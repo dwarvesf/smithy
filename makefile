@@ -13,11 +13,7 @@ up-agent:
 
 up-dashboard:
 	go build -o bin/dashboard ./cmd/backend
-	ENV=local PORT=2999 bin/dashboard
-
-up-swagger:
-	go build -o bin/swaggerui ./cmd/swaggerui
-	PORT=3001 bin/swaggerui
+	ENV=development PORT=2999 bin/dashboard
 
 local-db:
 	@docker-compose down

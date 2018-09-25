@@ -54,8 +54,9 @@ type ConnectionInfo struct {
 
 // Database list all database
 type Database struct {
-	DBName    string  `yaml:"db_name" json:"db_name"`
-	ModelList []Model `yaml:"model_list" json:"model_list"`
+	DBName     string  `yaml:"db_name" json:"db_name"`
+	SchemaName string  `yaml:"schema_name" json:"schema_name"`
+	ModelList  []Model `yaml:"model_list" json:"model_list"`
 }
 
 // Model store information of model can manage

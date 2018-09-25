@@ -15,21 +15,24 @@ func Test_pgLibImpl_First(t *testing.T) {
 	cfg, clearDB := utilTest.CreateConfig(t)
 	defer clearDB()
 
-	// migrate tables
-	err := utilTest.MigrateTables(cfg.DB(utilDB.DBName))
-	if err != nil {
-		t.Fatalf("Failed to migrate table by error %v", err)
-	}
+	for _, dbase := range cfg.Databases {
+		// migrate tables
+		err := utilTest.MigrateTables(cfg.DB(dbase.DBName))
+		if err != nil {
+			t.Fatalf("Failed to migrate table by error %v", err)
+		}
 
-	//create sample data
-	_, err = utilTest.CreateUserSampleData(cfg.DB(utilDB.DBName))
-	if err != nil {
-		t.Fatalf("Failed to create sample data by error %v", err)
+		//create sample data
+		_, err = utilTest.CreateUserSampleData(cfg.DB(dbase.DBName))
+		if err != nil {
+			t.Fatalf("Failed to create sample data by error %v", err)
+		}
 	}
 
 	type args struct {
-		tableName string
-		condition string
+		databaseName string
+		tableName    string
+		condition    string
 	}
 	tests := []struct {
 		name    string
@@ -40,8 +43,9 @@ func Test_pgLibImpl_First(t *testing.T) {
 		{
 			name: "correct",
 			args: args{
-				tableName: "users",
-				condition: "id = 1",
+				databaseName: "test1",
+				tableName:    "users",
+				condition:    "id = 1",
 			},
 			want: map[interface{}]interface{}{
 				"id":   int64(1),
@@ -52,8 +56,9 @@ func Test_pgLibImpl_First(t *testing.T) {
 		{
 			name: "not found record",
 			args: args{
-				tableName: "users",
-				condition: "id = 100000",
+				databaseName: "test1",
+				tableName:    "users",
+				condition:    "id = 100000",
 			},
 			want:    nil,
 			wantErr: true,
@@ -61,8 +66,9 @@ func Test_pgLibImpl_First(t *testing.T) {
 		{
 			name: "table not exist",
 			args: args{
-				tableName: "userss",
-				condition: "id = 1",
+				databaseName: "test1",
+				tableName:    "userss",
+				condition:    "id = 1",
 			},
 			want:    nil,
 			wantErr: true,
@@ -70,8 +76,9 @@ func Test_pgLibImpl_First(t *testing.T) {
 		{
 			name: "wrong condittion",
 			args: args{
-				tableName: "users",
-				condition: "wrong_column = 1",
+				databaseName: "test1",
+				tableName:    "users",
+				condition:    "wrong_column = 1",
 			},
 			want:    nil,
 			wantErr: true,
@@ -81,7 +88,7 @@ func Test_pgLibImpl_First(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			s := NewPGLib(cfg.DBs(), cfg.ModelMap)
 
-			got, err := s.First(utilDB.DBName, tt.args.tableName, tt.args.condition)
+			got, err := s.First(tt.args.databaseName, tt.args.tableName, tt.args.condition)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("pgLibImpl.First() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -98,21 +105,24 @@ func Test_pgLibImpl_Where(t *testing.T) {
 	cfg, clearDB := utilTest.CreateConfig(t)
 	defer clearDB()
 
-	// migrate tables
-	err := utilTest.MigrateTables(cfg.DB(utilDB.DBName))
-	if err != nil {
-		t.Fatalf("Failed to migrate table by error %v", err)
-	}
+	for _, dbase := range cfg.Databases {
+		// migrate tables
+		err := utilTest.MigrateTables(cfg.DB(dbase.DBName))
+		if err != nil {
+			t.Fatalf("Failed to migrate table by error %v", err)
+		}
 
-	//create sample data
-	_, err = utilTest.CreateUserSampleData(cfg.DB(utilDB.DBName))
-	if err != nil {
-		t.Fatalf("Failed to create sample data by error %v", err)
+		//create sample data
+		_, err = utilTest.CreateUserSampleData(cfg.DB(dbase.DBName))
+		if err != nil {
+			t.Fatalf("Failed to create sample data by error %v", err)
+		}
 	}
 
 	type args struct {
-		tableName string
-		condition string
+		databaseName string
+		tableName    string
+		condition    string
 	}
 	tests := []struct {
 		name    string
@@ -123,8 +133,9 @@ func Test_pgLibImpl_Where(t *testing.T) {
 		{
 			name: "correct",
 			args: args{
-				tableName: "users",
-				condition: "id = 1",
+				databaseName: "test1",
+				tableName:    "users",
+				condition:    "id = 1",
 			},
 			want: []map[interface{}]interface{}{
 				{
@@ -137,8 +148,9 @@ func Test_pgLibImpl_Where(t *testing.T) {
 		{
 			name: "not found record",
 			args: args{
-				tableName: "users",
-				condition: "id = 100000",
+				databaseName: "test1",
+				tableName:    "users",
+				condition:    "id = 100000",
 			},
 			want:    nil,
 			wantErr: false,
@@ -146,8 +158,9 @@ func Test_pgLibImpl_Where(t *testing.T) {
 		{
 			name: "table not exist",
 			args: args{
-				tableName: "userss",
-				condition: "id = 1",
+				databaseName: "test1",
+				tableName:    "userss",
+				condition:    "id = 1",
 			},
 			want:    nil,
 			wantErr: true,
@@ -155,8 +168,9 @@ func Test_pgLibImpl_Where(t *testing.T) {
 		{
 			name: "wrong condittion",
 			args: args{
-				tableName: "users",
-				condition: "wrong_column = 1",
+				databaseName: "test1",
+				tableName:    "users",
+				condition:    "wrong_column = 1",
 			},
 			want:    nil,
 			wantErr: true,
@@ -166,7 +180,7 @@ func Test_pgLibImpl_Where(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			s := NewPGLib(cfg.DBs(), cfg.ModelMap)
 
-			got, err := s.Where(utilDB.DBName, tt.args.tableName, tt.args.condition)
+			got, err := s.Where(tt.args.databaseName, tt.args.tableName, tt.args.condition)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("pgLibImpl.Where() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -183,15 +197,18 @@ func Test_pgLibImpl_Create(t *testing.T) {
 	cfg, clearDB := utilTest.CreateConfig(t)
 	defer clearDB()
 
-	// migrate tables
-	err := utilTest.MigrateTables(cfg.DB(utilDB.DBName))
-	if err != nil {
-		t.Fatalf("Failed to migrate table by error %v", err)
+	for _, dbase := range cfg.Databases {
+		// migrate tables
+		err := utilTest.MigrateTables(cfg.DB(dbase.DBName))
+		if err != nil {
+			t.Fatalf("Failed to migrate table by error %v", err)
+		}
 	}
 
 	type args struct {
-		tableName string
-		d         map[interface{}]interface{}
+		databaseName string
+		tableName    string
+		d            map[interface{}]interface{}
 	}
 	tests := []struct {
 		name    string
@@ -202,7 +219,8 @@ func Test_pgLibImpl_Create(t *testing.T) {
 		{
 			name: "correct",
 			args: args{
-				tableName: "users",
+				databaseName: "test1",
+				tableName:    "users",
 				d: map[interface{}]interface{}{
 					"name": "a_user_name",
 				},
@@ -216,7 +234,8 @@ func Test_pgLibImpl_Create(t *testing.T) {
 		{
 			name: "table not exist",
 			args: args{
-				tableName: "userss",
+				databaseName: "test1",
+				tableName:    "userss",
 				d: map[interface{}]interface{}{
 					"name": "a_user_name",
 				},
@@ -227,7 +246,8 @@ func Test_pgLibImpl_Create(t *testing.T) {
 		{
 			name: "wrong column",
 			args: args{
-				tableName: "users",
+				databaseName: "test1",
+				tableName:    "users",
 				d: map[interface{}]interface{}{
 					"wrong_column": "a_user_name",
 				},
@@ -240,7 +260,7 @@ func Test_pgLibImpl_Create(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			s := NewPGLib(cfg.DBs(), cfg.ModelMap)
 
-			got, err := s.Create(utilDB.DBName, tt.args.tableName, tt.args.d)
+			got, err := s.Create(tt.args.databaseName, tt.args.tableName, tt.args.d)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("pgLibImpl.Create() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -257,22 +277,25 @@ func Test_pgLibImpl_Update(t *testing.T) {
 	cfg, clearDB := utilTest.CreateConfig(t)
 	defer clearDB()
 
-	// migrate tables
-	err := utilTest.MigrateTables(cfg.DB(utilDB.DBName))
-	if err != nil {
-		t.Fatalf("Failed to migrate table by error %v", err)
-	}
+	for _, dbase := range cfg.Databases {
+		// migrate tables
+		err := utilTest.MigrateTables(cfg.DB(dbase.DBName))
+		if err != nil {
+			t.Fatalf("Failed to migrate table by error %v", err)
+		}
 
-	//create sample data
-	_, err = utilTest.CreateUserSampleData(cfg.DB(utilDB.DBName))
-	if err != nil {
-		t.Fatalf("Failed to create sample data by error %v", err)
+		//create sample data
+		_, err = utilTest.CreateUserSampleData(cfg.DB(dbase.DBName))
+		if err != nil {
+			t.Fatalf("Failed to create sample data by error %v", err)
+		}
 	}
 
 	type args struct {
-		tableName  string
-		primaryKey interface{}
-		d          map[interface{}]interface{}
+		databaseName string
+		tableName    string
+		primaryKey   interface{}
+		d            map[interface{}]interface{}
 	}
 	tests := []struct {
 		name    string
@@ -283,8 +306,9 @@ func Test_pgLibImpl_Update(t *testing.T) {
 		{
 			name: "correct",
 			args: args{
-				tableName:  "users",
-				primaryKey: 1,
+				databaseName: "test1",
+				tableName:    "users",
+				primaryKey:   1,
 				d: map[interface{}]interface{}{
 					"name": "changed user name",
 				},
@@ -297,8 +321,9 @@ func Test_pgLibImpl_Update(t *testing.T) {
 		{
 			name: "primary key is not exist",
 			args: args{
-				tableName:  "users",
-				primaryKey: 10000,
+				databaseName: "test1",
+				tableName:    "users",
+				primaryKey:   10000,
 				d: map[interface{}]interface{}{
 					"name": "changed user name",
 				},
@@ -309,7 +334,8 @@ func Test_pgLibImpl_Update(t *testing.T) {
 		{
 			name: "table not exist",
 			args: args{
-				tableName: "userss",
+				databaseName: "test1",
+				tableName:    "userss",
 				d: map[interface{}]interface{}{
 					"name": "a_user_name",
 				},
@@ -320,7 +346,8 @@ func Test_pgLibImpl_Update(t *testing.T) {
 		{
 			name: "wrong column",
 			args: args{
-				tableName: "users",
+				databaseName: "test1",
+				tableName:    "users",
 				d: map[interface{}]interface{}{
 					"wrong_column": "a_user_name",
 				},
@@ -333,7 +360,7 @@ func Test_pgLibImpl_Update(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			s := NewPGLib(cfg.DBs(), cfg.ModelMap)
 
-			got, err := s.Update(utilDB.DBName, tt.args.tableName, tt.args.primaryKey, tt.args.d)
+			got, err := s.Update(tt.args.databaseName, tt.args.tableName, tt.args.primaryKey, tt.args.d)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("pgLibImpl.Update() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -350,22 +377,25 @@ func Test_pgLibImpl_Delete(t *testing.T) {
 	cfg, clearDB := utilTest.CreateConfig(t)
 	defer clearDB()
 
-	// migrate tables
-	err := utilTest.MigrateTables(cfg.DB(utilDB.DBName))
-	if err != nil {
-		t.Fatalf("Failed to migrate table by error %v", err)
-	}
+	for _, dbase := range cfg.Databases {
+		// migrate tables
+		err := utilTest.MigrateTables(cfg.DB(dbase.DBName))
+		if err != nil {
+			t.Fatalf("Failed to migrate table by error %v", err)
+		}
 
-	//create sample data
-	_, err = utilTest.CreateUserSampleData(cfg.DB(utilDB.DBName))
-	if err != nil {
-		t.Fatalf("Failed to create sample data by error %v", err)
+		//create sample data
+		_, err = utilTest.CreateUserSampleData(cfg.DB(dbase.DBName))
+		if err != nil {
+			t.Fatalf("Failed to create sample data by error %v", err)
+		}
 	}
 
 	type args struct {
-		tableName string
-		fields    []interface{}
-		data      []interface{}
+		databaseName string
+		tableName    string
+		fields       []interface{}
+		data         []interface{}
 	}
 	tests := []struct {
 		name        string
@@ -376,7 +406,8 @@ func Test_pgLibImpl_Delete(t *testing.T) {
 		{
 			name: "correct",
 			args: args{
-				tableName: "users",
+				databaseName: "test1",
+				tableName:    "users",
 				fields: []interface{}{
 					"id",
 				},
@@ -390,7 +421,8 @@ func Test_pgLibImpl_Delete(t *testing.T) {
 		{
 			name: "id and name exist",
 			args: args{
-				tableName: "users",
+				databaseName: "test1",
+				tableName:    "users",
 				fields: []interface{}{
 					"id",
 					"name",
@@ -405,7 +437,8 @@ func Test_pgLibImpl_Delete(t *testing.T) {
 		{
 			name: "table not exist",
 			args: args{
-				tableName: "userss",
+				databaseName: "test1",
+				tableName:    "userss",
 				fields: []interface{}{
 					"id",
 				},
@@ -420,11 +453,11 @@ func Test_pgLibImpl_Delete(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			s := NewPGLib(cfg.DBs(), cfg.ModelMap)
 
-			if err := s.Delete(utilDB.DBName, tt.args.tableName, tt.args.fields, tt.args.data); (err != nil) != tt.wantErr {
+			if err := s.Delete(tt.args.databaseName, tt.args.tableName, tt.args.fields, tt.args.data); (err != nil) != tt.wantErr {
 				t.Errorf("pgLibImpl.Delete() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if tt.testCorrect {
-				_, err = s.First(utilDB.DBName, "users", "id = 1") // check record users already deleted in database
+				_, err := s.First(utilDB.DBName, "users", "id = 1") // check record users already deleted in database
 				if err == nil {
 					t.Error("pgLibImpl.Delete() not delete record in database ")
 				}

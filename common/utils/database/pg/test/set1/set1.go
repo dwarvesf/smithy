@@ -69,7 +69,11 @@ func CreateModelList() []database.Model {
 func CreateDatabaseList() []database.Database {
 	dm := []database.Database{
 		{
-			DBName:    "test",
+			DBName:    "test1",
+			ModelList: CreateModelList(),
+		},
+		{
+			DBName:    "test2",
 			ModelList: CreateModelList(),
 		},
 	}
@@ -108,17 +112,20 @@ func CreateConfig(t *testing.T) (*backendConfig.Config, func()) {
 		},
 	}
 
+	// migrate database
+	for _, dbase := range cfg.Databases {
+		err := utilDB.CreatePGDatabase(cfg.DBPort, dbase.DBName)
+		if err != nil {
+			t.Fatalf("Failed to migrate database by error %v", err)
+		}
+	}
+
 	err := cfg.UpdateConfig(cfg) // update table map
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	err = cfg.UpdateDB()
-	if err != nil {
-		t.Fatal(err)
-	}
+	clearDBs := utilDB.CreateDatabase(t, cfg)
 
-	clearDB := utilDB.CreateDatabase(t, cfg)
-
-	return cfg, clearDB
+	return cfg, clearDBs
 }

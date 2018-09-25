@@ -291,7 +291,6 @@ func Test_pgLibImpl_Update(t *testing.T) {
 		}
 	}
 
-	dbName := "test"
 	type args struct {
 		databaseName string
 		tableName    string
@@ -359,8 +358,7 @@ func Test_pgLibImpl_Update(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := NewPGLib(cfg.DBs(), cfg.ModelMap)
-
-			got, err := s.Update(tt.args.databaseName, tt.args.tableName, tt.args.primaryKey, tt.args.d)
+			got, err := s.Update(tt.args.databaseName, tt.args.tableName, tt.args.d)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("pgLibImpl.Update() error = %v, wantErr %v", err, tt.wantErr)
 				return

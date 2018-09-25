@@ -366,6 +366,7 @@ func (s *pgStore) Update(dbName, tableName string, row sqlmapper.RowData) (sqlma
 		return nil, errors.New("primary key is not exist")
 	}
 	tx, err := s.db[dbName].DB().Begin()
+
 	if err != nil {
 		return nil, err
 	}
@@ -423,7 +424,7 @@ func (s *pgStore) isIDNotExist(tableName, colName string, id interface{}) (bool,
 
 func (s *pgStore) handleUpdate(tx *sql.Tx, row, primaryKeyMap sqlmapper.RowData, dbName, tableName string) error {
 	cols, data := row.ColumnsAndData()
-	foreignColumns, err := s.getRelationalColumn(dbName, tableName)
+	foreignColumns, err := s.getRelationalColumns(dbName, tableName)
 	if err != nil {
 		return err
 	}
@@ -450,7 +451,7 @@ func (s *pgStore) isPrimaryKey(dbName, colName, tableName string) bool {
 	return false
 }
 
-func (s *pgStore) getRelationalColumn(dbName, tableName string) ([]database.Column, error) {
+func (s *pgStore) getRelationalColumns(dbName, tableName string) ([]database.Column, error) {
 	m, ok := s.modelMap[dbName][tableName]
 	if !ok {
 		return nil, fmt.Errorf("uknown database_name/table_name %s/%s", dbName, tableName)

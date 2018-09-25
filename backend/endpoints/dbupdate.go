@@ -3,7 +3,6 @@ package endpoints
 import (
 	"context"
 	"errors"
-	"strconv"
 
 	"github.com/go-kit/kit/endpoint"
 
@@ -17,17 +16,12 @@ type DBUpdateRequest struct {
 	DatabaseName string        `json:"-"`
 	Fields       []interface{} `json:"fields"`
 	Data         []interface{} `json:"data"`
-	PrimaryKey   string        `json:"primary_key" schema:"primary_key"`
 }
 
 // DBUpdateResponse response for db Update data
 type DBUpdateResponse struct {
 	Status string            `json:"status"`
 	Data   sqlmapper.RowData `json:"data"`
-}
-
-func (r *DBUpdateRequest) getResourceID() (int, error) {
-	return strconv.Atoi(r.PrimaryKey)
 }
 
 func makeDBUpdateEndpoint(s service.Service) endpoint.Endpoint {
@@ -37,21 +31,13 @@ func makeDBUpdateEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, errors.New("failed to make type assertion")
 		}
 
-		var (
-			id  int
-			err error
-		)
-		if id, err = req.getResourceID(); err != nil {
-			return nil, err
-		}
-
+		var err error
 		rowData, err := sqlmapper.MakeRowData(req.Fields, req.Data)
 		if err != nil {
 			return nil, err
 		}
 
-		data, err := s.Update(req.DatabaseName, req.TableName, rowData, id)
-
+		data, err := s.Update(req.DatabaseName, req.TableName, rowData)
 		if err != nil {
 			return nil, err
 		}

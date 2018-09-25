@@ -11,20 +11,21 @@
 #### Simple
 ```
 {
-    "fields": ["name", "age"],
-    "data": ["Anmoc", 21],
-    "primary_key": "1"
+    "fields": ["id","name", "age"],
+    "data":   [ 1,  "Anmoc", 21],
 }
 ```
 #### With relationship
 ```
 {
     "fields": [
+        "id",
         "name",
         "age",
         {"books": ["id", "name", "description", "author_id"]}
     ],
     "data": [
+        1,
         "An Moc",
         21,
         [

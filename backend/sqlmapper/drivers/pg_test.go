@@ -635,11 +635,13 @@ func Test_pgStore_Update(t *testing.T) {
 			args: args{
 				databaseName: dbTest[0],
 				d: sqlmapper.RowData{
+					"id": sqlmapper.ColData{
+						Data: users[0].ID,
+					},
 					"name": sqlmapper.ColData{
 						Data: "demo",
 					},
 				},
-				id: users[0].ID,
 			},
 			want: sqlmapper.RowData{
 				"name": sqlmapper.ColData{
@@ -654,42 +656,18 @@ func Test_pgStore_Update(t *testing.T) {
 			args: args{
 				databaseName: dbTest[0],
 				d: sqlmapper.RowData{
-					"name": sqlmapper.ColData{
-						Data: "demo",
+					"id": sqlmapper.ColData{
+						Data: -1,
 					},
 				},
-				id: -1,
 			},
 			wantErr: true,
-		},
-		{
-			name:      "primary key is duplicated",
-			tableName: "users",
-			args: args{
-				databaseName: dbTest[0],
-				d: sqlmapper.RowData{
-					"name": sqlmapper.ColData{
-						Data: "demo",
-					},
-					"id": sqlmapper.ColData{
-						Data: "1",
-					},
-				},
-				id: users[0].ID,
-			},
-			want: sqlmapper.RowData{
-				"name": sqlmapper.ColData{
-					Data: "demo",
-				},
-			},
-			wantErr: false,
 		},
 		{
 			name:      "rowData is empty",
 			tableName: "users",
 			args: args{
 				databaseName: dbTest[0],
-				id:           users[0].ID,
 			},
 			wantErr: true,
 		},
@@ -699,11 +677,13 @@ func Test_pgStore_Update(t *testing.T) {
 			args: args{
 				databaseName: dbTest[0],
 				d: sqlmapper.RowData{
+					"id": sqlmapper.ColData{
+						Data: users[0].ID,
+					},
 					"blabla": sqlmapper.ColData{
 						Data: "anmt",
 					},
 				},
-				id: users[0].ID,
 			},
 			wantErr: true,
 		},
@@ -713,11 +693,13 @@ func Test_pgStore_Update(t *testing.T) {
 			args: args{
 				databaseName: dbTest[1],
 				d: sqlmapper.RowData{
+					"id": sqlmapper.ColData{
+						Data: users[0].ID,
+					},
 					"name": sqlmapper.ColData{
 						Data: "demo",
 					},
 				},
-				id: users[0].ID,
 			},
 			want: sqlmapper.RowData{
 				"name": sqlmapper.ColData{
@@ -730,7 +712,7 @@ func Test_pgStore_Update(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := NewPGStore(cfg.DBs(), cfg.ModelMap)
-			got, err := s.Update(tt.args.databaseName, tt.tableName, tt.args.d, tt.args.id)
+			got, err := s.Update(tt.args.databaseName, tt.tableName, tt.args.d)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("pgStore.Update() error = %v, wantErr %v", err, tt.wantErr)
 				return

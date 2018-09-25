@@ -294,7 +294,6 @@ func Test_pgLibImpl_Update(t *testing.T) {
 	type args struct {
 		databaseName string
 		tableName    string
-		primaryKey   interface{}
 		d            map[interface{}]interface{}
 	}
 	tests := []struct {
@@ -308,8 +307,8 @@ func Test_pgLibImpl_Update(t *testing.T) {
 			args: args{
 				databaseName: "test1",
 				tableName:    "users",
-				primaryKey:   1,
 				d: map[interface{}]interface{}{
+					"id":   1,
 					"name": "changed user name",
 				},
 			},
@@ -323,8 +322,8 @@ func Test_pgLibImpl_Update(t *testing.T) {
 			args: args{
 				databaseName: "test1",
 				tableName:    "users",
-				primaryKey:   10000,
 				d: map[interface{}]interface{}{
+					"id":   10000,
 					"name": "changed user name",
 				},
 			},
@@ -359,8 +358,7 @@ func Test_pgLibImpl_Update(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			s := NewPGLib(cfg.DBs(), cfg.ModelMap)
-
-			got, err := s.Update(tt.args.databaseName, tt.args.tableName, tt.args.primaryKey, tt.args.d)
+			got, err := s.Update(tt.args.databaseName, tt.args.tableName, tt.args.d)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("pgLibImpl.Update() error = %v, wantErr %v", err, tt.wantErr)
 				return

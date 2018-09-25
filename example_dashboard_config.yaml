@@ -1,39 +1,41 @@
-agent_serect_key: fb0bc76a-dbb1-4944-bcf7-aaef0d9d6e95 
-agent_url: "http://localhost:3000/agent"
-persistence_support: "boltdb"
-persistence_file_name: "persistent.db"
+agent_serect_key: fb0bc76a-dbb1-4944-bcf7-aaef0d9d6e95
+agent_url: http://localhost:3000/agent
+persistence_support: boltdb
+persistence_file_name: persistent.db
 authentication:
   secret_key: lalala
   users:
     - username: "aaa"
-      password: "abc"      
+      password: "abc"
       role: "admin"
+      email: aaa@gmai.com
       database:
         - name: "fortress"
           tables:
-          - name: "users"
-            acl: "cr"
-          - name: "books"
-            acl: "rud"
+            - name: "users"
+              acl: "cr"
+            - name: "books"
+              acl: "rud"
         - name: "test"
           tables:
-          - name: "users"
-            acl: "cru"
-          - name: "books"
-            acl: "rud"
+            - name: "users"
+              acl: "cru"
+            - name: "books"
+              acl: "rud"
     - username: "bbb"
-      password: "abc"      
+      password: "abc"
       role: "user"
+      email: aaa@gmai.com
       database:
         - name: "fortress"
           tables:
-          - name: "users"
-            acl: "cru"
-          - name: "books"
-            acl: "rud"
+            - name: "users"
+              acl: "cru"
+            - name: "books"
+              acl: "rud"
         - name: "test"
           tables:
-          - name: "users"
-            acl: "cru"
-          - name: "books"
-            acl: "rud"
+            - name: "users"
+              acl: "cru"
+            - name: "books"
+              acl: "rud"

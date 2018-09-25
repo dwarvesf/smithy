@@ -11,6 +11,9 @@ var (
 	ErrInvalidURL          = errInvalidURL{}
 	ErrInvalidDatabaseName = errInvalidDatabaseName{}
 	ErrInvalidTableName    = errInvalidTableName{}
+	ErrOldPasswordInvalid   = errOldPasswordInvalid{}
+	ErrRePasswordIsNotMatch = errRePasswordIsNotMatch{}
+	ErrPassWordIsVeryWeak   = errPassWordIsVeryWeak{}
 )
 
 type errLogin struct{}
@@ -80,6 +83,33 @@ func (errInvalidTableName) Error() string {
 }
 
 func (errInvalidTableName) StatusCode() int {
+type errOldPasswordInvalid struct{}
+
+func (errOldPasswordInvalid) Error() string {
+	return "Old password is not correct"
+}
+
+func (errOldPasswordInvalid) StatusCode() int {
+	return http.StatusUnauthorized
+}
+
+type errRePasswordIsNotMatch struct{}
+
+func (errRePasswordIsNotMatch) Error() string {
+	return "Re-password is not match"
+}
+
+func (errRePasswordIsNotMatch) StatusCode() int {
+	return http.StatusUnauthorized
+}
+
+type errPassWordIsVeryWeak struct{}
+
+func (errPassWordIsVeryWeak) Error() string {
+	return "New password is very weak! Please try again"
+}
+
+func (errPassWordIsVeryWeak) StatusCode() int {
 	return http.StatusUnauthorized
 }
 

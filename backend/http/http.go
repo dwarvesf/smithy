@@ -113,6 +113,12 @@ func NewHTTPHandler(endpoints endpoints.Endpoints,
 			options...,
 		).ServeHTTP)
 
+		r.Post("/settings/changepassword", httptransport.NewServer(
+			endpoints.ChangePassword,
+			decodeChangePasswordRequest,
+			httptransport.EncodeJSONResponse,
+			options...,
+		).ServeHTTP)
 	})
 
 	r.Route("/auth", func(r chi.Router) {

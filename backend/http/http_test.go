@@ -109,36 +109,35 @@ func TestNewHTTPHandler(t *testing.T) {
 
 func TestAuthorized(t *testing.T) {
 	//make up-dashboard
-	cfg, clearDB := utilTest.CreateConfig(t)
-	defer func() {
-		cfg.DBUsername = "postgres"
-		cfg.DBPassword = "example"
-		err := cfg.UpdateDB()
-		if err != nil {
-			t.Fatalf("Fail to update connection. %s", err.Error())
-		}
-		clearDB()
-	}()
+	cfg, _ := utilTest.CreateConfig(t)
 
-	err := utilTest.MigrateTables(cfg.DB("test"))
-	if err != nil {
-		t.Fatalf("Failed to migrate table by error %v", err)
+	dbTest := []string{"test1", "test2"}
+	for _, dbase := range cfg.Databases {
+		// migrate tables
+		err := utilTest.MigrateTables(cfg.DB(dbase.DBName))
+		if err != nil {
+			t.Fatalf("Failed to migrate table by error %v", err)
+		}
 	}
 
-	cfg.DBUsername, cfg.DBPassword = cfg.DBSchemaName, "password"
+	cfg.DBUsername = "agent_db_manager"
+	cfg.DBPassword = "1"
 
 	clearACL := utilTest.ACLUsersTable(t, cfg)
 	defer clearACL()
 
-	// connect with username = cfg.DBSchemaName
-	if err = cfg.UpdateDB(); err != nil {
-		t.Fatalf("Failed to UpdateDB by error %s", err.Error())
+	// re-connect with DBusername = agent_db_manager
+	err := cfg.UpdateDB()
+	if err != nil {
+		t.Fatalf("Fail to update connection. %s", err.Error())
 	}
 
-	// set schema for current db connection
-	err = cfg.DB("test").Exec("SET search_path TO " + cfg.DBSchemaName).Error
-	if err != nil {
-		t.Fatalf("Fail to set search_path to created schema. %s", err.Error())
+	for _, dbase := range cfg.Databases {
+		// set schema for current db connection
+		err = cfg.DB(dbase.DBName).Exec("SET search_path TO " + dbase.SchemaName).Error
+		if err != nil {
+			t.Fatalf("Fail to set search_path to created schema. %s", err.Error())
+		}
 	}
 
 	tsDashboard := httptest.NewServer(initDashboardServer(t, cfg))
@@ -164,7 +163,7 @@ func TestAuthorized(t *testing.T) {
 			name: "success",
 			args: args{
 				HTTPMethod: "POST",
-				url:        "/databases/test/users/create",
+				url:        fmt.Sprintf("/databases/%s/users/create", dbTest[0]),
 				data: []byte(`{
 					"fields": 	[ "name" ],
 					"data":     [ "lorem ipsum" ]
@@ -176,11 +175,10 @@ func TestAuthorized(t *testing.T) {
 			name: "Fail to update DB. User has cru permisstion but table permission just has cr permisstion",
 			args: args{
 				HTTPMethod: "PUT",
-				url:        "/databases/test/users/update",
+				url:        fmt.Sprintf("/databases/%s/users/update", dbTest[0]),
 				data: []byte(`{
-						"fields": [ "name" ],
-						"data":     [ "lorem ipsum" ],
-						"primary_key" : "1"
+						"fields": ["id", "name" ],
+						"data":     [1, "aaaaaa" ],
 				}`),
 			},
 			wantStatus: http.StatusUnauthorized,
@@ -190,7 +188,7 @@ func TestAuthorized(t *testing.T) {
 			name: "Fail to delete DB. User has cru permisstion. cant delete",
 			args: args{
 				HTTPMethod: "DELETE",
-				url:        "/databases/test/users/delete",
+				url:        fmt.Sprintf("/databases/%s/users/delete", dbTest[0]),
 				data: []byte(`{
 					"filter": {
 						"fields": [ "id" ],
@@ -202,23 +200,10 @@ func TestAuthorized(t *testing.T) {
 			wantErr:    auth.ErrUnauthorized,
 		},
 		{
-			name: "unknown database name",
-			args: args{
-				HTTPMethod: "POST",
-				url:        "/databases/blabla/users/create",
-				data: []byte(`{
-					"fields": [ "name" ],
-					"data":     [ "lorem ipsum" ]
-				}`),
-			},
-			wantStatus: http.StatusUnauthorized,
-			wantErr:    auth.ErrInvalidDatabaseName,
-		},
-		{
 			name: "Invalid HTTP method",
 			args: args{
 				HTTPMethod: "PATCH",
-				url:        "/databases/test/users/create",
+				url:        fmt.Sprintf("/databases/%s/users/create", dbTest[0]),
 				data: []byte(`{
 					"fields": [ "name" ],
 					"data":     [ "lorem ipsum" ]
@@ -232,11 +217,12 @@ func TestAuthorized(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			status, resp := testRequest(t, tsDashboard, tt.args.HTTPMethod, tt.args.url, header, tt.args.data)
-			if (status != tt.wantStatus) || (tt.wantErr != nil && tt.wantErr.Error() != resp) {
-				t.Errorf("Authorized() = (%v, %d), want (%v, %d)", resp, status, tt.wantErr.Error(), tt.wantStatus)
+			if status != tt.wantStatus || (tt.wantErr != nil && resp != tt.wantErr.Error()) {
+				t.Errorf("Authorized() = (%v, %d), want (%v, %d)", resp, status, tt.wantErr, tt.wantStatus)
 			}
 		})
 	}
+
 }
 
 func TestLogin(t *testing.T) {

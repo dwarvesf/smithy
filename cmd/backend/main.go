@@ -55,7 +55,7 @@ func main() {
 		h = serviceHttp.NewHTTPHandler(
 			endpoints.MakeServerEndpoints(s),
 			logger,
-			os.Getenv("ENV") == "local",
+			os.Getenv("ENV") == "local" || os.Getenv("ENV") == "development",
 			cfg.Authentication.SerectKey,
 		)
 	}

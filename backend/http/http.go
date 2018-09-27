@@ -2,6 +2,7 @@ package http
 
 import (
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/cors"
@@ -43,6 +44,16 @@ func NewHTTPHandler(endpoints endpoints.Endpoints,
 	).ServeHTTP)
 
 	tokenAuth := jwtauth.New("HS256", []byte(jwtSecretKey), nil)
+
+	if os.Getenv("ENV") == "development" {
+		fs := http.StripPrefix("/swaggerui/", http.FileServer(http.Dir("./swaggerui")))
+		r.Get("/swaggerui", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, "/swaggerui/", http.StatusMovedPermanently)
+		}))
+		r.Get("/swaggerui/*", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			fs.ServeHTTP(w, r)
+		}))
+	}
 
 	// admin group
 	r.Group(func(r chi.Router) {
@@ -112,19 +123,21 @@ func NewHTTPHandler(endpoints endpoints.Endpoints,
 		).ServeHTTP)
 	})
 
-	r.Get("/list-config-version", httptransport.NewServer(
-		endpoints.ListVersion,
-		httptransport.NopRequestDecoder,
-		httptransport.EncodeJSONResponse,
-		options...,
-	).ServeHTTP)
+	r.Route("/config-versions", func(r chi.Router) {
+		r.Get("/", httptransport.NewServer(
+			endpoints.ListVersion,
+			httptransport.NopRequestDecoder,
+			httptransport.EncodeJSONResponse,
+			options...,
+		).ServeHTTP)
 
-	r.Post("/revert-config-version", httptransport.NewServer(
-		endpoints.RevertVersion,
-		decodeRevertVersion,
-		httptransport.EncodeJSONResponse,
-		options...,
-	).ServeHTTP)
+		r.Post("/revert", httptransport.NewServer(
+			endpoints.RevertVersion,
+			decodeRevertVersion,
+			httptransport.EncodeJSONResponse,
+			options...,
+		).ServeHTTP)
+	})
 
 	return r
 }

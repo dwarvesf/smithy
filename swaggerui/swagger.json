@@ -1,0 +1,674 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Smithy",
+    "description": "Smithy is an admin dashboard written in Go and VueJS. It is designed to support multiple existed architectures and databases https://smithy.dwarves.foundation",
+    "version": "1.0.0",
+    "termsOfService": "https://smithy.dwarves.foundation",
+    "contact": {
+      "email": "apiteam@swagger.io"
+    },
+    "license": {
+      "name": "Apache 2.0",
+      "url": "http://www.apache.org/licenses/LICENSE-2.0.html"
+    }
+  },
+  "host": "localhost:2999",
+  "basePath": "",
+  "tags": [
+    {
+      "name": "Authenticate",
+      "description": "Authenticate to get access token",
+      "externalDocs": {
+        "description": "Find out more",
+        "url": "https://smithy.dwarves.foundation"
+      }
+    },
+    {
+      "name": "Agent-sync",
+      "description": "Update config from agent",
+      "externalDocs": {
+        "description": "Find out more",
+        "url": "https://smithy.dwarves.foundation"
+      }
+    },
+    {
+      "name": "CRUD",
+      "description": "Operations about user",
+      "externalDocs": {
+        "description": "Find out more",
+        "url": "https://smithy.dwarves.foundation"
+      }
+    },
+    {
+      "name": "Config version",
+      "description": "Config version",
+      "externalDocs": {
+        "description": "Find out more",
+        "url": "https://smithy.dwarves.foundation"
+      }
+    }
+  ],
+  "schemes": ["http", "https"],
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "tags": ["Authenticate"],
+        "summary": "Authenticate to get an access token",
+        "description": "",
+        "operationId": "login",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "body",
+            "description": "User to auth",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/User"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation"
+          }
+        }
+      }
+    },
+    "/agent-sync": {
+      "get": {
+        "tags": ["Agent-sync"],
+        "summary": "Update config from agent",
+        "description": "",
+        "operationId": "agent-sync",
+        "consumes": ["application/json"],
+        "produces": ["application/json"],
+        "responses": {
+          "200": {
+            "description": "successful operation"
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/databases/{database_name}/{table_name}/query": {
+      "post": {
+        "tags": ["CRUD"],
+        "summary": "Query row in databases",
+        "description": "",
+        "operationId": "query",
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "name": "database_name",
+            "in": "path",
+            "description": "Name of database to query",
+            "required": true,
+            "type": "string",
+            "example": "fortress"
+          },
+          {
+            "name": "table_name",
+            "in": "path",
+            "description": "Name of table to query",
+            "required": true,
+            "type": "string",
+            "example": "users"
+          },
+          {
+            "in": "body",
+            "name": "body",
+            "description": "query data",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Query"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/QueryResponse"
+            }
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/config-versions": {
+      "get": {
+        "tags": ["Config version"],
+        "summary": "Get list of config's version",
+        "description": "",
+        "operationId": "list_config_version",
+        "produces": ["application/json"],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/ConfigVersion"
+            }
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/config-versions/revert": {
+      "post": {
+        "tags": ["Config version"],
+        "summary": "Revert the current config to a special version",
+        "description": "",
+        "operationId": "revert_config_version",
+        "produces": ["application/json"],
+        "parameters": [
+          {
+            "name": "body",
+            "in": "body",
+            "description": "Config's version to revert",
+            "required": true,
+            "schema": {
+              "type": "object",
+              "properties": {
+                "version_id": {
+                  "type": "integer",
+                  "format": "int64",
+                  "example": 1
+                }
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "successful operation",
+            "schema": {
+              "$ref": "#/definitions/ConfigVersion"
+            }
+          }
+        },
+        "security": [
+          {
+            "jwt": []
+          }
+        ]
+      }
+    },
+    "/databases/{database_name}/{table_name}/create": {
+        "post": {
+            "tags": [
+                "CRUD"
+            ],
+            "summary": "Create row in databases",
+            "description": "",
+            "operationId": "create",
+            "produces": [
+                "application/json"
+            ],
+            "parameters": [
+                {
+                    "name": "database_name",
+                    "in": "path",
+                    "description": "Name of database to create",
+                    "required": true,
+                    "type": "string"
+                },
+                {
+                    "name": "table_name",
+                    "in": "path",
+                    "description": "Name of table to create",
+                    "required": true,
+                    "type": "string"
+                },
+                {
+                    "in": "body",
+                    "name": "body",
+                    "description": "create data",
+                    "required": true,
+                    "schema": {
+                        "$ref": "#/definitions/Create"
+                    }
+                }
+            ],
+            "responses": {
+                "200": {
+                    "description": "successful operation",
+                    "schema": {
+                        "$ref": "#/definitions/CreateResponse"
+                    }
+                },
+                "400": {
+                    "description": "Invalid status value"
+                }
+            },
+            "security": [
+                {
+                    "jwt": []
+                }
+            ]
+        }
+    }, 
+    "/databases/{database_name}/{table_name}/update": {
+        "put": {
+            "tags": [
+                "CRUD"
+            ],
+            "summary": "Update row in databases",
+            "description": "",
+            "operationId": "update",
+            "produces": [
+                "application/json"
+            ],
+            "consumes": [
+                "application/json"
+            ],
+            "parameters": [
+                {
+                    "name": "database_name",
+                    "in": "path",
+                    "description": "Name of database to update",
+                    "required": true,
+                    "type": "string"
+                },
+                {
+                    "name": "table_name",
+                    "in": "path",
+                    "description": "Name of table to update",
+                    "required": true,
+                    "type": "string"
+                },
+                {
+                    "in": "body",
+                    "name": "body",
+                    "description": "update data",
+                    "required": true,
+                    "schema": {
+                        "$ref": "#/definitions/Update"
+                    }
+                }
+            ],
+            "responses": {
+                "200": {
+                    "description": "successful operation",
+                    "schema": {
+                        "$ref": "#/definitions/UpdateResponse"
+                    }
+                },
+                "400": {
+                    "description": "Invalid status value"
+                }
+            },
+            "security": [
+                {
+                    "jwt": []
+                }
+            ]
+        }
+    },
+    "/databases/{database_name}/{table_name}/delete": {
+        "delete": {
+            "tags": [
+                "CRUD"
+            ],
+            "summary": "Delete row in databases",
+            "description": "",
+            "operationId": "delete",
+            "produces": [
+                "application/json"
+            ],
+            "parameters": [
+                {
+                    "name": "database_name",
+                    "in": "path",
+                    "description": "Name of database to delete",
+                    "required": true,
+                    "type": "string"
+                },
+                {
+                    "name": "table_name",
+                    "in": "path",
+                    "description": "Name of table to delete",
+                    "required": true,
+                    "type": "string"
+                },
+                {
+                    "in": "body",
+                    "name": "body",
+                    "description": "delete data",
+                    "required": true,
+                    "schema": {
+                        "$ref": "#/definitions/Delete"
+                    }
+                }
+            ],
+            "responses": {
+                "200": {
+                    "description": "successful operation",
+                    "schema": {
+                        "$ref": "#/definitions/DeleteResponse"
+                    }
+                },
+                "400": {
+                    "description": "Invalid status value"
+                }
+            },
+            "security": [
+                {
+                    "jwt": []
+                }
+            ]
+        }
+    }
+  },
+  "securityDefinitions": {
+    "jwt": {
+      "type": "apiKey",
+      "in": "header",
+      "name": "Authorization"
+    }
+  },
+  "definitions": {
+    "User": {
+      "type": "object",
+      "properties": {
+        "username": {
+          "type": "string"
+        
+
+
+
+},
+        "password": {
+          "type": "string"
+        }
+      },
+      "xml": {
+        "name": "User"
+      },
+      "example": {
+        "username": "aaa",
+        "password": "abc"
+      }
+    },
+    "Filter": {
+      "type": "object",
+      "properties": {
+        "operator": {
+          "type": "string"
+        },
+        "column_name": {
+          "type": "string"
+        },
+        "value": {
+          "type": "string"
+        }
+      },
+      "example": {
+        "operator": "=",
+        "column_name": "name",
+        "value": "Hieu Dep Trai"
+      }
+    },
+    "Query": {
+      "type": "object",
+      "properties": {
+        "fields": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "example": ["id", "name"]
+        },
+        "filter": {
+          "$ref": "#/definitions/Filter"
+        },
+        "offset": {
+          "type": "integer",
+          "format": "int64",
+          "example": 0
+        },
+        "limit": {
+          "type": "integer",
+          "format": "int64",
+          "example": 3
+        }
+      },
+      "xml": {
+        "name": "Query"
+      }
+    },
+    "Column": {
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "example": "id"
+        },
+        "type": {
+          "type": "string",
+          "example": "int"
+        },
+        "tags": {
+          "type": "string"
+        },
+        "is_nullable": {
+          "type": "boolean",
+          "example": false
+        },
+        "is_primary": {
+          "type": "boolean",
+          "example": true
+        },
+        "default_value": {
+          "type": "string"
+        },
+        "foreign_key": {
+          "type": "object",
+          "properties": {
+            "table": {
+              "type": "string"
+            },
+            "foreign_column": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "Create": {
+        "type": "object",
+        "properties": {
+            "fields": {
+                "type": "array",
+                "items": {
+                    "type": "object"
+                },
+                "example": ["name", "age", {"books": ["name", "description"]}]
+            },
+            "data": {
+                "type": "array",
+                "items": {
+                    "type": "object"
+                },
+                "example": ["Que Huong", 18, [
+                    ["Golang", "Start learning Go"]
+                ]]
+            }
+        }
+    },
+    "CreateResponse": {
+        "type": "object",
+        "properties": {
+            "status": {
+                "type": "string",
+                "example": "success"
+            },
+            "data": {
+                "type": "object",
+                "example": {
+                    "age": 18,
+                    "books": [
+                        {
+                            "description": "Start learning Go",
+                            "id": 4,
+                            "name": "Golang"
+                        }
+                    ],
+                    "id": 4,
+                    "name": "Que Huong"
+                }
+            }
+        },
+        "xml": {
+            "name": "CreateResponse"
+        }
+    },
+    "Update": {
+        "type": "object",
+        "properties": {
+            "fields": {
+                "type": "array",
+                "items": {
+                    "type": "object"
+                },
+                "example": ["name", "age"]
+            },
+            "data": {
+                "type": "array",
+                "items": {
+                    "type": "object"
+                },
+                "example": ["Que Huong", 18]
+            },
+            "primary_key": {
+                "type": "string",
+                "example": "1"
+            }
+        }
+    },
+    "UpdateResponse": {
+        "type": "object",
+        "properties": {
+            "status": {
+                "type": "string",
+                "example": "success"
+            },
+            "data": {
+                "type": "object",
+                "properties": {
+                    "type": "object"
+                },
+                "example": {
+                    "age": 18,
+                    "name": "Que Huong"
+                }
+            }
+        },
+        "xml": {
+            "name": "UpdateResponse"
+        }
+    },
+    "Delete": {
+        "type": "object",
+        "properties": {
+            "filter": {
+                "type": "object",
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "type": "object"
+                    },
+                    "example": {"fields": ["fields you want", "to delete"], "data": ["data of", "the fields"]}
+                },
+                "example": {"fields": ["id", "name"], "data": ["1", "quehuong"]}
+            }
+        }
+    },
+    "DeleteResponse": {
+        "type": "object",
+        "properties": {
+            "status": {
+                "type": "string",
+                "example": "success"
+            }
+        },
+        "xml": {
+            "name": "DeleteResponse"
+        }
+    },
+    "QueryResponse": {
+      "type": "object",
+      "properties": {
+        "status": {
+          "type": "string",
+          "example": "success"
+        },
+        "columns": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "example": ["id", "name"]
+        },
+        "rows": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "example": [["1", "Hieu Dep Trai"]]
+        },
+        "cols": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Column"
+          }
+        }
+      },
+      "xml": {
+        "name": "QueryResponse"
+      }
+    },
+    "ConfigVersion": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "integer",
+          "format": "int64",
+          "example": 1
+        },
+        "checksum": {
+          "type": "string",
+          "example": "df22c3f966bd25b116899d9dfbc8558b"
+        },
+        "sync_at": {
+          "type": "string",
+          "example": "2018-09-12T15:15:14.288252406+07:00"
+        }
+      },
+      "xml": {
+        "name": "ConfigVersion"
+      }
+    }
+  },
+  "externalDocs": {
+    "description": "Find out more about Smithy",
+    "url": "https://smithy.dwarves.foundation"
+  }
+}

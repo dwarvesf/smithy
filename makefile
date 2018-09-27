@@ -1,4 +1,4 @@
-.PHONY: build up-agent up-dashboard local-db unit-test integration-test lint-test test
+.PHONY: build up-agent up-dashboard up-swagger local-db unit-test integration-test lint-test test
 
 LINT := $(shell command -v golangci-lint 2> /dev/null)
 
@@ -13,7 +13,7 @@ up-agent:
 
 up-dashboard:
 	go build -o bin/dashboard ./cmd/backend
-	PORT=2999 bin/dashboard
+	ENV=development PORT=2999 bin/dashboard
 
 local-db:
 	@docker-compose down

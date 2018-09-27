@@ -3,14 +3,13 @@ package endpoints
 import (
 	"context"
 	"errors"
-	"io/ioutil"
+	"log"
 	"math"
 	"regexp"
 	"strings"
 
 	"github.com/go-chi/jwtauth"
 	"github.com/go-kit/kit/endpoint"
-	yaml "gopkg.in/yaml.v2"
 
 	jwtAuth "github.com/dwarvesf/smithy/backend/auth"
 	backendConfig "github.com/dwarvesf/smithy/backend/config"
@@ -31,16 +30,22 @@ type ChangePasswordResponse struct {
 }
 
 const (
-	veryWeakStr  = "Very Weak"
-	weakStr      = "Weak"
-	goodStr      = "Good"
-	strongStr    = "Strong"
-	verStrongStr = "Very Strong"
+	TooShort   = "Too Short"
+	VeryWeak   = "Very Weak"
+	Weak       = "Weak"
+	Good       = "Good"
+	Strong     = "Strong"
+	VeryStrong = "Very Strong"
+	// config name
+	configFilePath = "example_dashboard_config.yaml"
 )
 
 func makeChangePasswordEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
 		req, ok := request.(ChangePasswordRequest)
+		if !ok {
+			return nil, errors.New("failed to make type assertion")
+		}
 
 		var (
 			oldPassword   = req.OldPassword
@@ -52,7 +57,6 @@ func makeChangePasswordEndpoint(s service.Service) endpoint.Endpoint {
 		cfg := s.SyncConfig()
 		userMap := cfg.ConvertUserListToMap()
 		userInfo, ok := userMap[claims["username"].(string)]
-
 		if !ok {
 			return nil, errors.New("username is invalid")
 		}
@@ -66,20 +70,15 @@ func makeChangePasswordEndpoint(s service.Service) endpoint.Endpoint {
 		}
 
 		complexity := checkPassword(reNewPassword)
-		if complexity == veryWeakStr || complexity == weakStr {
+		if complexity == VeryWeak || complexity == TooShort {
 			return nil, jwtAuth.ErrPassWordIsVeryWeak
 		}
 
 		tmpCfg := cloneConfig(cfg, userInfo, newPassword)
 
-		buff, err := yaml.Marshal(tmpCfg)
-		if err != nil {
-			return nil, err
-		}
-
-		err = ioutil.WriteFile("example_dashboard_config.yaml", buff, 0644)
-		if err != nil {
-			return nil, err
+		wr := backendConfig.WriteYAML(configFilePath)
+		if err := wr.Write(tmpCfg); err != nil {
+			log.Fatalln(err)
 		}
 
 		return ChangePasswordResponse{complexity}, nil
@@ -105,18 +104,22 @@ func cloneConfig(cfg *backendConfig.Config, userInfo backendConfig.User, newPass
 
 func checkPassword(pwd string) string {
 	var (
-		nScore, nLength                                                                                                                                   = 0, 0
-		nMultMidChar                                                                                                                                      = 2
-		nConsecAlphaUC, nConsecAlphaLC, nConsecNumber, nConsecSymbol, nConsecCharType                                                                     = 0, 0, 0, 0, 0
-		nAlphaUC, nAlphaLC, nNumber, nSymbol, nMidChar, nRequirements, nReqChar, nRepInc, nSeqAlpha, nSeqNumber, nSeqSymbol, nSeqChar, nRepChar, nUnqChar = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-		nTmpAlphaUC, nTmpAlphaLC, nTmpNumber, nTmpSymbol                                                                                                  = -1, -1, -1, -1
-		sAlphas                                                                                                                                           = "abcdefghijklmnopqrstuvwxyz"
-		sNumerics                                                                                                                                         = "01234567890"
-		sSymbols                                                                                                                                          = ")!@#$%^&*()"
-		nMultLength, nMultNumber                                                                                                                          = 4, 4
-		nMultSymbol                                                                                                                                       = 6
-		sComplexity                                                                                                                                       = "Too Short"
-		nMinPwdLen                                                                                                                                        = 8
+		nScore, nRequirements                                                                                           int
+		nLength                                                                                                         int
+		nRepInc                                                                                                         float64
+		nMultMidChar                                                                                                    = 2
+		nMultConsecAlphaUC, nMultConsecAlphaLC, nMultConsecNumber                                                       = 2, 2, 2
+		nMultSeqAlpha, nMultSeqNumber, nMultSeqSymbol                                                                   = 3, 3, 3
+		nConsecAlphaUC, nConsecAlphaLC, nConsecNumber, nConsecSymbol, nConsecCharType                                   = 0, 0, 0, 0, 0
+		nAlphaUC, nAlphaLC, nNumber, nSymbol, nMidChar, nReqChar, nSeqAlpha, nSeqNumber, nSeqSymbol, nSeqChar, nRepChar = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+		nTmpAlphaUC, nTmpAlphaLC, nTmpNumber, nTmpSymbol                                                                = -1, -1, -1, -1
+		sAlphas                                                                                                         = "abcdefghijklmnopqrstuvwxyz"
+		sNumerics                                                                                                       = "01234567890"
+		sSymbols                                                                                                        = ")!@#$%^&*()"
+		nMultLength, nMultNumber                                                                                        = 4, 4
+		nMultSymbol                                                                                                     = 6
+		sComplexity                                                                                                     = "Too Short"
+		nMinPwdLen                                                                                                      = 8
 	)
 
 	if pwd != "" {
@@ -124,10 +127,10 @@ func checkPassword(pwd string) string {
 		nScore = int(nLength * nMultLength)
 		arrPwd := strings.Split(pwd, "")
 		var arrPwdLen = len(arrPwd)
-		var validUpcase = regexp.MustCompile(`/[A-Z]/g`)
-		var validlowCase = regexp.MustCompile(`/[A-Z]/g`)
-		var validNumber = regexp.MustCompile(`/[A-Z]/g`)
-		var validUpOthers = regexp.MustCompile(`/[^a-zA-Z0-9_]/g`)
+		var validUpcase = regexp.MustCompile(`[A-Z]`)
+		var validlowCase = regexp.MustCompile(`[a-z]`)
+		var validNumber = regexp.MustCompile(`[0-9]`)
+		var validUpOthers = regexp.MustCompile(`[^a-zA-Z0-9_]`)
 
 		for i, charA := range arrPwd {
 			if validUpcase.MatchString(charA) {
@@ -185,16 +188,16 @@ func checkPassword(pwd string) string {
 						Deduction amount is based on total password length divided by the
 						difference of distance between currently selected match
 					*/
-					nRepInc = nRepInc + int(math.Abs(float64(arrPwdLen/(j-i))))
+					nRepInc += math.Abs(float64(arrPwdLen / (j - i)))
 				}
 			}
 			if bCharExists {
 				nRepChar++
-				nUnqChar = arrPwdLen - nRepChar
+				nUnqChar := float64(arrPwdLen - nRepChar)
 				if nUnqChar != 0 {
-					nRepInc = int(math.Ceil(float64(nRepInc / nUnqChar)))
+					nRepInc = math.Ceil(nRepInc / nUnqChar)
 				} else {
-					nRepInc = int(math.Ceil(float64(nRepInc)))
+					nRepInc = math.Ceil(nRepInc)
 				}
 			}
 		}
@@ -203,17 +206,16 @@ func checkPassword(pwd string) string {
 		for s := 0; s < 23; s++ {
 			var sFwd = sAlphas[s:(s + 3)]
 			var sRev = Reverse(sFwd)
-			if strings.ContainsAny(strings.ToLower(pwd), sFwd) || strings.ContainsAny(strings.ToLower(pwd), sRev) {
+			if strings.Contains(strings.ToLower(pwd), sFwd) || strings.Contains(strings.ToLower(pwd), sRev) {
 				nSeqAlpha++
 				nSeqChar++
 			}
 		}
-
 		/* Check for sequential numeric string patterns (forward and reverse) */
 		for s := 0; s < 8; s++ {
 			var sFwd = sNumerics[s:(s + 3)]
 			var sRev = Reverse(sFwd)
-			if strings.ContainsAny(strings.ToLower(pwd), sFwd) || strings.ContainsAny(strings.ToLower(pwd), sRev) {
+			if strings.Contains(strings.ToLower(pwd), sFwd) || strings.Contains(strings.ToLower(pwd), sRev) {
 				nSeqNumber++
 				nSeqChar++
 			}
@@ -223,26 +225,55 @@ func checkPassword(pwd string) string {
 		for s := 0; s < 8; s++ {
 			var sFwd = sSymbols[s:(s + 3)]
 			var sRev = Reverse(sFwd)
-			if strings.ContainsAny(strings.ToLower(pwd), sFwd) || strings.ContainsAny(strings.ToLower(pwd), sRev) {
+			if strings.Contains(strings.ToLower(pwd), sFwd) || strings.Contains(strings.ToLower(pwd), sRev) {
 				nSeqSymbol++
 				nSeqChar++
 			}
 		}
 
 		if nAlphaUC > 0 && nAlphaUC < nLength {
-			nScore = int(nScore + ((nLength - nAlphaUC) * 2))
+			nScore = nScore + ((nLength - nAlphaUC) * 2)
 		}
 		if nAlphaLC > 0 && nAlphaLC < nLength {
-			nScore = int(nScore + ((nLength - nAlphaLC) * 2))
+			nScore = nScore + ((nLength - nAlphaLC) * 2)
 		}
 		if nNumber > 0 && nNumber < nLength {
-			nScore = int(nScore + (nNumber * nMultNumber))
+			nScore = nScore + (nNumber * nMultNumber)
 		}
 		if nSymbol > 0 {
-			nScore = int(nScore + (nSymbol * nMultSymbol))
+			nScore = nScore + (nSymbol * nMultSymbol)
 		}
 		if nMidChar > 0 {
-			nScore = int(nScore + (nMidChar * nMultMidChar))
+			nScore = nScore + (nMidChar * nMultMidChar)
+		}
+
+		/* Point deductions for poor practices */
+		if (nAlphaLC > 0 || nAlphaUC > 0) && nSymbol == 0 && nNumber == 0 { // Only Letters
+			nScore = nScore - nLength
+		}
+		if nAlphaLC == 0 && nAlphaUC == 0 && nSymbol == 0 && nNumber > 0 { // Only Numbers
+			nScore = nScore - nLength
+		}
+		if nRepChar > 0 { // Same character exists more than once
+			nScore = nScore - int(nRepInc)
+		}
+		if nConsecAlphaUC > 0 { // Consecutive Uppercase Letters exist
+			nScore = nScore - (nConsecAlphaUC * nMultConsecAlphaUC)
+		}
+		if nConsecAlphaLC > 0 { // Consecutive Lowercase Letters exist
+			nScore = nScore - (nConsecAlphaLC * nMultConsecAlphaLC)
+		}
+		if nConsecNumber > 0 { // Consecutive Numbers exist
+			nScore = nScore - (nConsecNumber * nMultConsecNumber)
+		}
+		if nSeqAlpha > 0 { // Sequential alpha strings exist (3 characters or more)
+			nScore = nScore - (nSeqAlpha * nMultSeqAlpha)
+		}
+		if nSeqNumber > 0 { // Sequential numeric strings exist (3 characters or more)
+			nScore = nScore - (nSeqNumber * nMultSeqNumber)
+		}
+		if nSeqSymbol > 0 { // Sequential symbol strings exist (3 characters or more)
+			nScore = nScore - (nSeqSymbol * nMultSeqSymbol)
 		}
 
 		var arrChars = [6]int{nLength, nAlphaUC, nAlphaLC, nNumber, nSymbol}
@@ -251,23 +282,22 @@ func checkPassword(pwd string) string {
 		for c := 0; c < arrCharsLen; c++ {
 			var minVal = 0
 			if arrCharsIds[c] == "nLength" {
-				minVal = int(nMinPwdLen - 1)
+				minVal = nMinPwdLen - 1
 			}
-			if arrChars[c] == int(minVal+1) {
-				nReqChar++
-			} else if arrChars[c] > int(minVal+1) {
+			if arrChars[c] == minVal+1 || arrChars[c] > minVal+1 {
 				nReqChar++
 			}
 		}
+
 		nRequirements = nReqChar
-		var nMinReqChars = 0
+		var nMinReqChars int
 		if len(pwd) >= nMinPwdLen {
 			nMinReqChars = 3
 		} else {
 			nMinReqChars = 4
 		}
 		if nRequirements > nMinReqChars { // One or more required characters exist
-			nScore = int(nScore + (nRequirements * 2))
+			nScore = nScore + (nRequirements * 2)
 		}
 
 		/* Determine complexity based on overall score */
@@ -277,21 +307,22 @@ func checkPassword(pwd string) string {
 			nScore = 0
 		}
 		if nScore >= 0 && nScore < 20 {
-			sComplexity = "Very Weak"
+			sComplexity = VeryWeak
 		} else if nScore >= 20 && nScore < 40 {
-			sComplexity = "Weak"
+			sComplexity = Weak
 		} else if nScore >= 40 && nScore < 60 {
-			sComplexity = "Good"
+			sComplexity = Good
 		} else if nScore >= 60 && nScore < 80 {
-			sComplexity = "Strong"
+			sComplexity = Strong
 		} else if nScore >= 80 && nScore <= 100 {
-			sComplexity = "Very Strong"
+			sComplexity = VeryStrong
 		}
 	}
 
 	return sComplexity
 }
 
+//Reverse string
 func Reverse(s string) string {
 	var reverse string
 	for i := len(s) - 1; i >= 0; i-- {

@@ -113,7 +113,7 @@ func NewHTTPHandler(endpoints endpoints.Endpoints,
 			options...,
 		).ServeHTTP)
 
-		r.Post("/settings/changepassword", httptransport.NewServer(
+		r.Post("/settings/password", httptransport.NewServer(
 			endpoints.ChangePassword,
 			decodeChangePasswordRequest,
 			httptransport.EncodeJSONResponse,

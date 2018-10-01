@@ -8,6 +8,32 @@ authentication:
     - username: "aaa"
       password: "abc"      
       role: "admin"
+      database:
+        - name: "fortress"
+          tables:
+          - name: "users"
+            acl: "cr"
+          - name: "books"
+            acl: "rud"
+        - name: "test"
+          tables:
+          - name: "users"
+            acl: "cru"
+          - name: "books"
+            acl: "rud"
     - username: "bbb"
       password: "abc"      
       role: "user"
+      database:
+        - name: "fortress"
+          tables:
+          - name: "users"
+            acl: "cru"
+          - name: "books"
+            acl: "rud"
+        - name: "test"
+          tables:
+          - name: "users"
+            acl: "cru"
+          - name: "books"
+            acl: "rud"

@@ -7,6 +7,8 @@ import (
 	"time"
 
 	"github.com/go-chi/jwtauth"
+
+	backendConfig "github.com/dwarvesf/smithy/backend/config"
 )
 
 const (
@@ -25,6 +27,8 @@ type JWT struct {
 
 // New use in backend.go, use for create jwt object
 func New(secretKey string, username string, role string) *JWT {
+	{
+	}
 	jwt := &JWT{
 		Username:  username,
 		Role:      role,
@@ -54,38 +58,86 @@ func (jwt *JWT) VerifierHandler() func(http.Handler) http.Handler {
 }
 
 //Authorization return json in middleware authorization
-func Authorization(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		_, claims, _ := jwtauth.FromContext(r.Context())
+func Authorization(cfg *backendConfig.Config) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			_, claims, _ := jwtauth.FromContext(r.Context())
 
-		methods := strings.Split(r.RequestURI, "?")
-
-		var err error
-		if len(methods) <= 0 {
-			if err = writeToResponse(w, r, "Unauthorized"); err != nil {
-				http.Error(w, err.Error(), http.StatusUnauthorized)
-			}
-			return
-		}
-		if methods[0] == "/query" {
-			if claims["role"] != Admin && claims["role"] != User {
-				if err = writeToResponse(w, r, "Unauthorized"); err != nil {
-					http.Error(w, err.Error(), http.StatusUnauthorized)
-				}
+			modelMap, userMap := cfg.ModelMap, cfg.ConvertUserListToMap()
+			userInfo, ok := userMap[claims["username"].(string)]
+			if !ok {
+				encodeJSONError(ErrInvalidUserName, w)
 				return
 			}
-		} else {
-			if claims["role"] != Admin {
-				if err = writeToResponse(w, r, "Unauthorized"); err != nil {
-					http.Error(w, err.Error(), http.StatusUnauthorized)
-				}
+			// POST: localhost:2999/databases/fortress/users/create
+			uriParts := strings.Split(r.RequestURI, "/")
+			if len(uriParts) <= 0 {
+				encodeJSONError(ErrInvalidURL, w)
 				return
+			} else if len(uriParts) <= 2 {
+				// case /agent-sync
+				if claims["role"] != Admin {
+					encodeJSONError(ErrUnauthorized, w)
+					return
+				}
+			} else {
+				if claims["role"] != Admin && claims["role"] != User {
+					encodeJSONError(ErrUnauthorized, w)
+					return
+				}
+				var (
+					//fortress
+					dbName = uriParts[2]
+					//users
+					tableName = uriParts[3]
+				)
+				existDB := false
+				for _, db := range userInfo.DatabaseList {
+					// check dbName in URL with dbName in dashboard config
+					if db.DBName == dbName {
+						existDB = true
+						// check dbName is invalid in agent config
+						model, ok := modelMap[dbName]
+						if !ok {
+							encodeJSONError(ErrInvalidDatabaseName, w)
+							return
+						}
+						existTable := true
+						for _, table := range db.Tables {
+							if table.TableName == tableName {
+								existTable = true
+								// check table name is invalid in agent config
+								tableInfo, ok := model[tableName]
+								if !ok {
+									encodeJSONError(ErrInvalidTableName, w)
+									return
+								}
+								// get table ACL in agent config
+								ACLTable := tableInfo.ACL
+								// set ACLDeltail
+								table.MakeACLDetailFromACL()
+								// user just can access the url when user has user permisstion or table permisstion
+								if err := authorizeCRUD(r.Method, table, ACLTable); err != nil {
+									encodeJSONError(err, w)
+									return
+								}
+							}
+						}
+						if !existTable {
+							encodeJSONError(ErrInvalidTableName, w)
+							return
+						}
+					}
+				}
+				if !existDB {
+					encodeJSONError(ErrInvalidDatabaseName, w)
+					return
+				}
 			}
-		}
-
-		// Token is authenticated, pass it through
-		next.ServeHTTP(w, r)
-	})
+			// Token is authenticated, pass it through
+			next.ServeHTTP(w, r)
+		})
+	}
 }
 
 //Authenticator use for authentication user
@@ -94,16 +146,12 @@ func Authenticator(next http.Handler) http.Handler {
 		token, _, err := jwtauth.FromContext(r.Context())
 
 		if err != nil {
-			if err = writeToResponse(w, r, err.Error()); err != nil {
-				http.Error(w, err.Error(), http.StatusUnauthorized)
-			}
+			encodeJSONError(err, w)
 			return
 		}
 
 		if token == nil || !token.Valid {
-			if err = writeToResponse(w, r, err.Error()); err != nil {
-				http.Error(w, err.Error(), http.StatusUnauthorized)
-			}
+			encodeJSONError(err, w)
 			return
 		}
 
@@ -112,9 +160,35 @@ func Authenticator(next http.Handler) http.Handler {
 	})
 }
 
-func writeToResponse(w http.ResponseWriter, r *http.Request, errStr string) error {
+func encodeJSONError(err error, w http.ResponseWriter) {
 	w.WriteHeader(http.StatusUnauthorized)
-	js, _ := json.Marshal(ErrAuthentication{errStr})
-	_, err := w.Write(js)
-	return err
+	// enforce json response
+	_ = json.NewEncoder(w).Encode(map[string]interface{}{
+		"error": err.Error(),
+	})
+}
+
+func authorizeCRUD(method string, table backendConfig.Table, ACLTable string) error {
+	// if user hadn't user permisstion or table permisstion. They would be rejected
+	switch method {
+	case "GET":
+		if !table.ACLDetail.Select || !strings.ContainsAny(ACLTable, "r") {
+			return ErrUnauthorized
+		}
+	case "POST":
+		if !table.ACLDetail.Insert || !strings.ContainsAny(ACLTable, "c") {
+			return ErrUnauthorized
+		}
+	case "PUT":
+		if !table.ACLDetail.Update || !strings.ContainsAny(ACLTable, "u") {
+			return ErrUnauthorized
+		}
+	case "DELETE":
+		if !table.ACLDetail.Delete || !strings.ContainsAny(ACLTable, "d") {
+			return ErrUnauthorized
+		}
+	default:
+		return ErrInvalidHTTPMethod
+	}
+	return nil
 }

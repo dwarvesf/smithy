@@ -1,6 +1,7 @@
 package set1
 
 import (
+	"fmt"
 	"strconv"
 	"testing"
 
@@ -42,11 +43,61 @@ func CreateUserSampleData(db *gorm.DB) ([]utilDB.User, error) {
 	return users, nil
 }
 
+func ACLUsersTable(t *testing.T, cfg *backendConfig.Config) func() {
+	var (
+		isCreateUser = false
+		username     = cfg.DBUsername
+		password     = cfg.DBPassword
+	)
+	for _, dbase := range cfg.Databases {
+		db := cfg.DB(dbase.DBName)
+		schemaName := dbase.SchemaName
+
+		if !isCreateUser {
+			if err := db.Exec(fmt.Sprintf("CREATE ROLE %s LOGIN PASSWORD '%s';", username, password)).Error; err != nil {
+				t.Fatalf("Fail to create ROLE. %s", err.Error())
+			}
+			isCreateUser = true
+		}
+
+		if err := db.Exec(fmt.Sprintf("GRANT USAGE ON SCHEMA %s TO %s ;", schemaName, username)).Error; err != nil {
+			t.Fatalf("Fail to create ROLE. %s", err.Error())
+		}
+		if err := db.Exec(fmt.Sprintf("GRANT USAGE, SELECT ON ALL SEQUENCES IN SCHEMA %s TO %s;", schemaName, username)).Error; err != nil {
+			t.Fatalf("Fail to GRANT SCHEMA. %s", err.Error())
+		}
+		if err := db.Exec(fmt.Sprintf("GRANT SELECT, INSERT ON users TO %s", username)).Error; err != nil {
+			t.Fatalf("Fail to GRANT SELECT, CREATE ON users. %s", err.Error())
+		}
+	}
+
+	return func() {
+		cfg.DBUsername = "postgres"
+		cfg.DBPassword = "example"
+		err := cfg.UpdateDB()
+		if err != nil {
+			t.Fatalf("Fail to update connection. %s", err.Error())
+		}
+		for _, dbase := range cfg.Databases {
+			db := cfg.DB(dbase.DBName)
+			db.Exec(fmt.Sprintf("REASSIGN OWNED BY %s TO postgres;", username))
+			db.Exec(fmt.Sprintf("DROP OWNED BY %s;", username))
+		}
+		if len(cfg.Databases) > 0 {
+			err := cfg.DB(cfg.Databases[0].DBName).Exec(fmt.Sprintf("DROP ROLE IF EXISTS %s;", username)).Error
+			if err != nil {
+				t.Fatalf("Fail to drop ROLE. %s", err.Error())
+			}
+		}
+	}
+}
+
 // CreateModelList fake model list from agent
 func CreateModelList() []database.Model {
 	dm := []database.Model{
 		{
 			TableName: "users",
+			ACL:       "cr",
 			Columns: []database.Column{
 				{
 					Name:      "id",
@@ -93,7 +144,7 @@ func CreateConfig(t *testing.T) (*backendConfig.Config, func()) {
 			DBName:          utilDB.DBName,
 			DBPort:          utilDB.DBPort,
 			DBHostname:      utilDB.DBHost,
-			DBSSLModeOption: "false",
+			DBSSLModeOption: "disable",
 		},
 		Authentication: backendConfig.Authentication{
 			SerectKey: "lalala",
@@ -101,7 +152,27 @@ func CreateConfig(t *testing.T) (*backendConfig.Config, func()) {
 				{
 					Username: "aaa",
 					Password: "abc",
-					Role:     "client",
+					Role:     "admin",
+					DatabaseList: []backendConfig.Database{
+						{
+							DBName: "test1",
+							Tables: []backendConfig.Table{
+								{
+									TableName: "users",
+									ACL:       "cru",
+								},
+							},
+						},
+						{
+							DBName: "test2",
+							Tables: []backendConfig.Table{
+								{
+									TableName: "users",
+									ACL:       "cru",
+								},
+							},
+						},
+					},
 				},
 				{
 					Username: "bbb",

@@ -13,7 +13,7 @@ up-agent:
 
 up-dashboard:
 	go build -o bin/dashboard ./cmd/backend
-	ENV=development PORT=2999 bin/dashboard
+	ENV=development PORT=2999 CONFIG_FILE_PATH=example_dashboard_config.yaml bin/dashboard
 
 local-db:
 	@docker-compose down

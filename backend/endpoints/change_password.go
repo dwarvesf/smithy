@@ -75,8 +75,7 @@ func makeChangePasswordEndpoint(s service.Service) endpoint.Endpoint {
 		tmpCfg := cloneConfig(cfg, userInfo, newPassword)
 
 		// config name
-		configFilePath := os.Getenv("CONFIG_FILE_PATH")
-		wr := backendConfig.WriteYAML(configFilePath)
+		wr := backendConfig.WriteYAML(os.Getenv("CONFIG_FILE_PATH"))
 		if err := wr.Write(tmpCfg); err != nil {
 			log.Fatalln(err)
 		}

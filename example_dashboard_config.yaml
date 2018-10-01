@@ -6,7 +6,7 @@ authentication:
   secret_key: lalala
   users:
   - username: aaa
-    password: cccccc1@!
+    password: cccccc1@!a
     role: admin
     email: aaa@gmai.com
     database:

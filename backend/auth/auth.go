@@ -74,7 +74,7 @@ func Authorization(cfg *backendConfig.Config) func(next http.Handler) http.Handl
 			if len(uriParts) <= 0 {
 				encodeJSONError(ErrInvalidURL, w)
 				return
-			} else if len(uriParts) <= 2 {
+			} else if len(uriParts) <= 3 {
 				// case /agent-sync
 				if claims["role"] != Admin {
 					encodeJSONError(ErrUnauthorized, w)

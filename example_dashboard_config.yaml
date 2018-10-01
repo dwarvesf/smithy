@@ -5,37 +5,37 @@ persistence_file_name: persistent.db
 authentication:
   secret_key: lalala
   users:
-    - username: "aaa"
-      password: "abc"
-      role: "admin"
-      email: aaa@gmai.com
-      database:
-        - name: "fortress"
-          tables:
-            - name: "users"
-              acl: "cr"
-            - name: "books"
-              acl: "rud"
-        - name: "test"
-          tables:
-            - name: "users"
-              acl: "cru"
-            - name: "books"
-              acl: "rud"
-    - username: "bbb"
-      password: "abc"
-      role: "user"
-      email: aaa@gmai.com
-      database:
-        - name: "fortress"
-          tables:
-            - name: "users"
-              acl: "cru"
-            - name: "books"
-              acl: "rud"
-        - name: "test"
-          tables:
-            - name: "users"
-              acl: "cru"
-            - name: "books"
-              acl: "rud"
+  - username: aaa
+    password: cccccc1@!
+    role: admin
+    email: aaa@gmai.com
+    database:
+    - name: fortress
+      tables:
+      - name: users
+        acl: cr
+      - name: books
+        acl: rud
+    - name: test
+      tables:
+      - name: users
+        acl: cru
+      - name: books
+        acl: rud
+  - username: bbb
+    password: abc
+    role: user
+    email: aaa@gmai.com
+    database:
+    - name: fortress
+      tables:
+      - name: users
+        acl: cru
+      - name: books
+        acl: rud
+    - name: test
+      tables:
+      - name: users
+        acl: cru
+      - name: books
+        acl: rud

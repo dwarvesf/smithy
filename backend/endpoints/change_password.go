@@ -5,6 +5,7 @@ import (
 	"errors"
 	"log"
 	"math"
+	"os"
 	"regexp"
 	"strings"
 
@@ -13,15 +14,14 @@ import (
 
 	jwtAuth "github.com/dwarvesf/smithy/backend/auth"
 	backendConfig "github.com/dwarvesf/smithy/backend/config"
-
 	"github.com/dwarvesf/smithy/backend/service"
 )
 
 // ChangePasswordRequest store change password structer
 type ChangePasswordRequest struct {
-	OldPassword   string `json:"old_password"`
-	NewPassword   string `json:"new_password"`
-	ReNewPassword string `json:"re_new_password"`
+	OldPassword             string `json:"old_password"`
+	NewPassword             string `json:"new_password"`
+	NewPasswordConfirmation string `json:"new_password_confirmation"`
 }
 
 // ChangePasswordResponse store change password respone
@@ -36,8 +36,6 @@ const (
 	Good       = "Good"
 	Strong     = "Strong"
 	VeryStrong = "Very Strong"
-	// config name
-	configFilePath = "example_dashboard_config.yaml"
 )
 
 func makeChangePasswordEndpoint(s service.Service) endpoint.Endpoint {
@@ -48,9 +46,9 @@ func makeChangePasswordEndpoint(s service.Service) endpoint.Endpoint {
 		}
 
 		var (
-			oldPassword   = req.OldPassword
-			newPassword   = req.NewPassword
-			reNewPassword = req.ReNewPassword
+			oldPassword             = req.OldPassword
+			newPassword             = req.NewPassword
+			newPasswordConfirmation = req.NewPasswordConfirmation
 		)
 
 		_, claims, _ := jwtauth.FromContext(ctx)
@@ -65,17 +63,19 @@ func makeChangePasswordEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, jwtAuth.ErrOldPasswordInvalid
 		}
 
-		if newPassword != reNewPassword {
+		if newPassword != newPasswordConfirmation {
 			return nil, jwtAuth.ErrRePasswordIsNotMatch
 		}
 
-		complexity := checkPassword(reNewPassword)
+		complexity := checkPassword(newPasswordConfirmation)
 		if complexity == VeryWeak || complexity == TooShort {
 			return nil, jwtAuth.ErrPassWordIsVeryWeak
 		}
 
 		tmpCfg := cloneConfig(cfg, userInfo, newPassword)
 
+		// config name
+		configFilePath := os.Getenv("CONFIG_FILE_PATH")
 		wr := backendConfig.WriteYAML(configFilePath)
 		if err := wr.Write(tmpCfg); err != nil {
 			log.Fatalln(err)

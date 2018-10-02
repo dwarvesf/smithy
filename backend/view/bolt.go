@@ -14,8 +14,8 @@ type boltImpl struct {
 	persistenceFileName string
 }
 
-// NewBoltWriterReaderDeleter Peristent Bolt
-func NewBoltWriterReaderDeleter(persistenceFileName string) WriterReaderDeleter {
+// NewBoltWriteReadDeleter Peristent Bolt
+func NewBoltWriteReadDeleter(persistenceFileName string) WriteReadDeleter {
 	return boltImpl{
 		bucket:              "View",
 		persistenceFileName: persistenceFileName,

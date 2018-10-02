@@ -28,7 +28,7 @@ func makeListViewEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, errors.New("failed to make type assertion")
 		}
 
-		sqlcmds, err := s.WriterReaderDeleter.ListCommandsByDBName(req.DatabaseName)
+		sqlcmds, err := s.WriteReadDeleter.ListCommandsByDBName(req.DatabaseName)
 		if err != nil {
 			return nil, err
 		}

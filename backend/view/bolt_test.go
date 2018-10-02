@@ -38,7 +38,7 @@ func Test_boltImpl_Write(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			b := NewBoltWriterReaderDeleter(persistenceFileName)
+			b := NewBoltWriteReadDeleter(persistenceFileName)
 			if err := b.Write(tt.args.sql); (err != nil) != tt.wantErr {
 				t.Errorf("boltImpl.Write() error = %v, wantErr %v", err, tt.wantErr)
 			}
@@ -58,7 +58,7 @@ func Test_boltImpl_Read(t *testing.T) {
 		CreatedAt:    time.Date(2009, 11, 17, 20, 34, 58, 651387237, time.UTC),
 	}
 
-	b := NewBoltWriterReaderDeleter(persistenceFileName)
+	b := NewBoltWriteReadDeleter(persistenceFileName)
 	err := b.Write(sqlCMD)
 	if err != nil {
 		t.Fatalf("Fail to create sample data %v", err)
@@ -115,7 +115,7 @@ func Test_boltImpl_Delete(t *testing.T) {
 		CreatedAt:    time.Date(2009, 11, 17, 20, 34, 58, 651387237, time.UTC),
 	}
 
-	b := NewBoltWriterReaderDeleter(persistenceFileName)
+	b := NewBoltWriteReadDeleter(persistenceFileName)
 	err := b.Write(sqlCMD)
 	if err != nil {
 		t.Fatalf("Fail to create sample data %v", err)
@@ -180,7 +180,7 @@ func Test_boltImpl_ListCommands(t *testing.T) {
 		},
 	}
 
-	b := NewBoltWriterReaderDeleter(persistenceFileName)
+	b := NewBoltWriteReadDeleter(persistenceFileName)
 	for _, sqlCMD := range listSQLCmd {
 		err := b.Write(sqlCMD)
 		if err != nil {
@@ -243,7 +243,7 @@ func Test_boltImpl_ListCommandsByDBName(t *testing.T) {
 		},
 	}
 
-	b := NewBoltWriterReaderDeleter(persistenceFileName)
+	b := NewBoltWriteReadDeleter(persistenceFileName)
 	for _, sqlCMD := range listSQLCmd1 {
 		err := b.Write(sqlCMD)
 		if err != nil {

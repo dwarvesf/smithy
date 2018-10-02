@@ -35,7 +35,7 @@ func makeAddViewEndpoint(s service.Service) endpoint.Endpoint {
 		}
 
 		req.CreatedAt = time.Now()
-		err = s.WriterReaderDeleter.Write(&req.View)
+		err = s.WriteReadDeleter.Write(&req.View)
 		if err != nil {
 			return nil, err
 		}

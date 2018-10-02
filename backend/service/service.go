@@ -11,7 +11,7 @@ import (
 type Service struct {
 	*backendConfig.Wrapper
 	sqlmapper.Mapper
-	WriterReaderDeleter view.WriterReaderDeleter
+	WriteReadDeleter view.WriteReadDeleter
 }
 
 // NewService new dashboard handler
@@ -21,11 +21,11 @@ func NewService(cfg *backendConfig.Config) (Service, error) {
 		return Service{}, err
 	}
 
-	sqlWriterReaderDeleter := view.NewBoltWriterReaderDeleter(cfg.PersistenceFileName)
+	sqlWriteReadDeleter := view.NewBoltWriteReadDeleter(cfg.PersistenceFileName)
 
 	return Service{
-		Wrapper:             backendConfig.NewWrapper(cfg),
-		Mapper:              mapper,
-		WriterReaderDeleter: sqlWriterReaderDeleter,
+		Wrapper:          backendConfig.NewWrapper(cfg),
+		Mapper:           mapper,
+		WriteReadDeleter: sqlWriteReadDeleter,
 	}, nil
 }

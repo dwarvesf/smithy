@@ -31,7 +31,7 @@ func makeExecuteViewEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, errors.New("failed to make type assertion")
 		}
 
-		view, err := s.WriterReaderDeleter.Read(req.SQLID)
+		view, err := s.WriteReadDeleter.Read(req.SQLID)
 		if err != nil {
 			return nil, err
 		}

@@ -50,8 +50,8 @@ type Deleter interface {
 	Delete(sqlID int) error
 }
 
-// WriterReaderDeleter .
-type WriterReaderDeleter interface {
+// WriteReadDeleter .
+type WriteReadDeleter interface {
 	Reader
 	Writer
 	Deleter

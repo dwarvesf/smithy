@@ -27,7 +27,7 @@ func makeDeleteViewEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, errors.New("failed to make type assertion")
 		}
 
-		err := s.WriterReaderDeleter.Delete(req.SQLID)
+		err := s.WriteReadDeleter.Delete(req.SQLID)
 		if err != nil {
 			return nil, err
 		}

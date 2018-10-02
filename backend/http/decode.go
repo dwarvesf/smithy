@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"strconv"
 
 	"github.com/go-chi/chi"
 
@@ -100,4 +101,51 @@ func decodeAddHookRequest(ctx context.Context, r *http.Request) (interface{}, er
 	defer r.Body.Close()
 
 	return req, err
+}
+
+func decodeAddView(ctx context.Context, r *http.Request) (interface{}, error) {
+	req := endpoints.AddViewRequest{}
+	dbName := chi.URLParam(r, "db_name")
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	defer r.Body.Close()
+
+	req.View.DatabaseName = dbName
+
+	return req, err
+}
+
+func decodeListView(ctx context.Context, r *http.Request) (interface{}, error) {
+	var req endpoints.ListViewRequest
+	dbName := chi.URLParam(r, "db_name")
+	req.DatabaseName = dbName
+	return req, nil
+}
+
+func decodeDeleteView(ctx context.Context, r *http.Request) (interface{}, error) {
+	var req endpoints.DeleteViewRequest
+	dbName := chi.URLParam(r, "db_name")
+	sqlID, err := strconv.Atoi(chi.URLParam(r, "sql_id"))
+	if err != nil {
+		return nil, err
+	}
+
+	req.DatabaseName = dbName
+	req.SQLID = sqlID
+
+	return req, nil
+}
+
+func decodeExecuteView(ctx context.Context, r *http.Request) (interface{}, error) {
+	var req endpoints.ExecuteViewRequest
+	dbName := chi.URLParam(r, "db_name")
+	sqlID, err := strconv.Atoi(chi.URLParam(r, "sql_id"))
+	if err != nil {
+		return nil, err
+	}
+
+	req.DatabaseName = dbName
+	req.SQLID = sqlID
+
+	return req, nil
 }

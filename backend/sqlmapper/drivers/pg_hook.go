@@ -1,6 +1,7 @@
 package drivers
 
 import (
+	"database/sql"
 	"fmt"
 
 	"github.com/jinzhu/gorm"
@@ -34,8 +35,16 @@ func (s *pgHookStore) Query(q sqlmapper.Query) ([]string, []interface{}, error) 
 	return s.pgStore.Query(q)
 }
 
+func (s *pgHookStore) RawQuery(dbName string, sql string) ([]string, []database.Column, []interface{}, error) {
+	return s.pgStore.RawQuery(dbName, sql)
+}
+
 func (s *pgHookStore) ColumnMetadata(q sqlmapper.Query) ([]database.Column, error) {
 	return s.pgStore.ColumnMetadata(q)
+}
+
+func (s *pgHookStore) ColumnMetadataByRows(q *sql.Rows) ([]database.Column, error) {
+	return s.pgStore.ColumnMetadataByRows(q)
 }
 
 func (s *pgHookStore) Create(dbName string, tableName string, row sqlmapper.RowData) (sqlmapper.RowData, error) {
@@ -121,4 +130,8 @@ func (s *pgHookStore) Update(dbName, tableName string, d sqlmapper.RowData) (sql
 	}
 
 	return res, nil
+}
+
+func (s *pgHookStore) Explain(dbName string, sql string) (interface{}, error) {
+	return s.pgStore.Explain(dbName, sql)
 }

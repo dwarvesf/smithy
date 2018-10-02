@@ -227,13 +227,13 @@ type Column struct {
 	IsNullable   bool       `yaml:"is_nullable" json:"is_nullable"`
 	IsPrimary    bool       `yaml:"is_primary" json:"is_primary"`
 	DefaultValue string     `yaml:"default_value" json:"default_value"`
-	ForeignKey   ForeignKey `yaml:"foreign_key" json:"foreign_key"`
+	ForeignKey   ForeignKey `yaml:"foreign_key" json:"foreign_key,omitempty"`
 }
 
 // ForeignKey foreign key of a column
 type ForeignKey struct {
-	Table         string `yaml:"table" json:"table"`
-	ForeignColumn string `yaml:"foreign_column" json:"foreign_column"`
+	Table         string `yaml:"table" json:"table,omitempty"`
+	ForeignColumn string `yaml:"foreign_column" json:"foreign_column,omitempty"`
 }
 
 // Columns array of column

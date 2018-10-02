@@ -80,6 +80,12 @@ func Authorization(cfg *backendConfig.Config) func(next http.Handler) http.Handl
 					encodeJSONError(ErrUnauthorized, w)
 					return
 				}
+			} else if len(uriParts) <= 5 {
+				// case /agent-sync
+				if claims["role"] != Admin {
+					encodeJSONError(ErrUnauthorized, w)
+					return
+				}
 			} else {
 				if claims["role"] != Admin && claims["role"] != User {
 					encodeJSONError(ErrUnauthorized, w)
@@ -89,7 +95,7 @@ func Authorization(cfg *backendConfig.Config) func(next http.Handler) http.Handl
 					//fortress
 					dbName = uriParts[2]
 					//users
-					tableName = uriParts[3]
+					tableName = uriParts[4]
 				)
 				existDB := false
 				for _, db := range userInfo.DatabaseList {

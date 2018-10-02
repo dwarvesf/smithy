@@ -2,6 +2,7 @@ package drivers
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -86,12 +87,37 @@ func (s *pgStore) Query(q sqlmapper.Query) ([]string, []interface{}, error) {
 		rows.Close()
 	}()
 
-	if err != nil {
-		return nil, nil, err
-	}
 	data, err := sqlmapper.SQLRowsToRows(rows)
 
 	return q.Columns(), data, err
+}
+
+func (s *pgStore) RawQuery(dbName string, sql string) ([]string, []database.Column, []interface{}, error) {
+	rows, err := s.db[dbName].Raw(sql).Rows()
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	defer func() {
+		if err != nil {
+			return
+		}
+		rows.Close()
+	}()
+
+	cols, err := rows.Columns()
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	colMeta, err := s.ColumnMetadataByRows(rows)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+
+	data, err := sqlmapper.SQLRowsToRows(rows)
+
+	return cols, colMeta, data, err
 }
 
 func (s *pgStore) ColumnMetadata(q sqlmapper.Query) ([]database.Column, error) {
@@ -101,6 +127,36 @@ func (s *pgStore) ColumnMetadata(q sqlmapper.Query) ([]database.Column, error) {
 	}
 
 	return q.ColumnMetadata(m.Columns)
+}
+
+func (s *pgStore) ColumnMetadataByRows(rows *sql.Rows) ([]database.Column, error) {
+	colTypes, err := rows.ColumnTypes()
+	if err != nil {
+		return nil, err
+	}
+	colMeta := []database.Column{}
+	for _, colType := range colTypes {
+		col := database.Column{}
+
+		nullable, ok := colType.Nullable()
+		if ok {
+			col.IsNullable = nullable
+		}
+
+		col.Name = colType.Name()
+		switch colType.DatabaseTypeName() {
+		case "TEXT":
+			col.Type = "string"
+		case "INT4":
+			col.Type = "int"
+		case "TIMESTAMPTZ":
+			col.Type = "timestamp"
+		}
+
+		colMeta = append(colMeta, col)
+	}
+
+	return colMeta, nil
 }
 
 func (s *pgStore) getRelationshipType(dbName string, tableName string, relateTableName string) (string, error) {
@@ -541,4 +597,31 @@ func (s *pgStore) updateWithHasMany(tx *sql.Tx, dbName, tableName string, rows [
 		}
 	}
 	return nil
+}
+
+func (s *pgStore) Explain(dbName string, sql string) (interface{}, error) {
+	exec := fmt.Sprintf("EXPLAIN (FORMAT JSON) %s", sql)
+	rows, err := s.db[dbName].DB().Query(exec)
+	if err != nil {
+		return nil, err
+	}
+
+	var queryPlan string
+	for rows.Next() {
+		if err := rows.Scan(&queryPlan); err != nil {
+			return nil, err
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	var q interface{}
+	err = json.Unmarshal([]byte(queryPlan), &q)
+	if err != nil {
+		return nil, err
+	}
+
+	return q, nil
 }

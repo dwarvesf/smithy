@@ -69,34 +69,68 @@ func NewHTTPHandler(endpoints endpoints.Endpoints,
 			options...,
 		).ServeHTTP)
 
-		r.Route("/databases/{db_name}/{table_name}", func(r chi.Router) {
-			r.Post("/query", httptransport.NewServer( // Post query for case a query have more than 2048 character
-				endpoints.DBQuery,
-				decodeDBQueryRequest,
-				httptransport.EncodeJSONResponse,
-				options...,
-			).ServeHTTP)
+		r.Route("/databases/{db_name}", func(r chi.Router) {
+			r.Route("/view", func(r chi.Router) {
+				r.Post("/", httptransport.NewServer(
+					endpoints.ViewAdd,
+					decodeAddView,
+					httptransport.EncodeJSONResponse,
+					options...,
+				).ServeHTTP)
 
-			r.Post("/create", httptransport.NewServer(
-				endpoints.DBCreate,
-				decodeDBCreateRequest,
-				httptransport.EncodeJSONResponse,
-				options...,
-			).ServeHTTP)
+				r.Get("/", httptransport.NewServer(
+					endpoints.ViewList,
+					decodeListView,
+					httptransport.EncodeJSONResponse,
+					options...,
+				).ServeHTTP)
 
-			r.Put("/update", httptransport.NewServer(
-				endpoints.DBUpdate,
-				decodeDBUpdateRequest,
-				httptransport.EncodeJSONResponse,
-				options...,
-			).ServeHTTP)
+				r.Route("/{sql_id}", func(r chi.Router) {
+					r.Delete("/", httptransport.NewServer(
+						endpoints.ViewDelete,
+						decodeDeleteView,
+						httptransport.EncodeJSONResponse,
+						options...,
+					).ServeHTTP)
 
-			r.Delete("/delete", httptransport.NewServer(
-				endpoints.DBDelete,
-				decodeDBDeleteRequest,
-				httptransport.EncodeJSONResponse,
-				options...,
-			).ServeHTTP)
+					r.Post("/execute", httptransport.NewServer(
+						endpoints.ViewExecute,
+						decodeExecuteView,
+						httptransport.EncodeJSONResponse,
+						options...,
+					).ServeHTTP)
+				})
+			})
+
+			r.Route("/table/{table_name}", func(r chi.Router) {
+				r.Post("/query", httptransport.NewServer( // Post query for case a query have more than 2048 character
+					endpoints.DBQuery,
+					decodeDBQueryRequest,
+					httptransport.EncodeJSONResponse,
+					options...,
+				).ServeHTTP)
+
+				r.Post("/create", httptransport.NewServer(
+					endpoints.DBCreate,
+					decodeDBCreateRequest,
+					httptransport.EncodeJSONResponse,
+					options...,
+				).ServeHTTP)
+
+				r.Put("/update", httptransport.NewServer(
+					endpoints.DBUpdate,
+					decodeDBUpdateRequest,
+					httptransport.EncodeJSONResponse,
+					options...,
+				).ServeHTTP)
+
+				r.Delete("/delete", httptransport.NewServer(
+					endpoints.DBDelete,
+					decodeDBDeleteRequest,
+					httptransport.EncodeJSONResponse,
+					options...,
+				).ServeHTTP)
+			})
 		})
 
 		r.Get("/models", httptransport.NewServer(

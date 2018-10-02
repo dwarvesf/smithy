@@ -163,7 +163,7 @@ func TestAuthorized(t *testing.T) {
 			name: "success",
 			args: args{
 				HTTPMethod: "POST",
-				url:        fmt.Sprintf("/databases/%s/users/create", dbTest[0]),
+				url:        fmt.Sprintf("/databases/%s/table/users/create", dbTest[0]),
 				data: []byte(`{
 					"fields": 	[ "name" ],
 					"data":     [ "lorem ipsum" ]
@@ -175,10 +175,10 @@ func TestAuthorized(t *testing.T) {
 			name: "Fail to update DB. User has cru permisstion but table permission just has cr permisstion",
 			args: args{
 				HTTPMethod: "PUT",
-				url:        fmt.Sprintf("/databases/%s/users/update", dbTest[0]),
+				url:        fmt.Sprintf("/databases/%s/table/users/update", dbTest[0]),
 				data: []byte(`{
 						"fields": ["id", "name" ],
-						"data":     [1, "aaaaaa" ],
+						"data":     [1, "aaaaaa" ]
 				}`),
 			},
 			wantStatus: http.StatusUnauthorized,
@@ -188,12 +188,12 @@ func TestAuthorized(t *testing.T) {
 			name: "Fail to delete DB. User has cru permisstion. cant delete",
 			args: args{
 				HTTPMethod: "DELETE",
-				url:        fmt.Sprintf("/databases/%s/users/delete", dbTest[0]),
+				url:        fmt.Sprintf("/databases/%s/table/users/delete", dbTest[0]),
 				data: []byte(`{
 					"filter": {
 						"fields": [ "id" ],
 						"data":     [ "1" ]
-				   }	
+				   }
 				}`),
 			},
 			wantStatus: http.StatusUnauthorized,
@@ -203,7 +203,7 @@ func TestAuthorized(t *testing.T) {
 			name: "Invalid HTTP method",
 			args: args{
 				HTTPMethod: "PATCH",
-				url:        fmt.Sprintf("/databases/%s/users/create", dbTest[0]),
+				url:        fmt.Sprintf("/databases/%s/table/users/create", dbTest[0]),
 				data: []byte(`{
 					"fields": [ "name" ],
 					"data":     [ "lorem ipsum" ]

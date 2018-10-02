@@ -18,11 +18,12 @@ import (
 )
 
 var (
-	httpAddr = ":" + os.Getenv("PORT")
+	httpAddr       = ":" + os.Getenv("PORT")
+	configFilePath = os.Getenv("CONFIG_FILE_PATH")
 )
 
 func main() {
-	cfg, err := backend.NewConfig(backendConfig.ReadYAML("example_dashboard_config.yaml"))
+	cfg, err := backend.NewConfig(backendConfig.ReadYAML(configFilePath))
 	if err != nil {
 		panic(err)
 	}

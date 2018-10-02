@@ -46,13 +46,13 @@ type Config struct {
 	PersistenceFileName string `yaml:"persistence_file_name"`
 
 	database.ConnectionInfo `yaml:"-"`
-	Databases               []database.Database                  `yaml:"databases_list" json:"databases_list"`
+	Databases               []database.Database                  `yaml:"databases_list,omitempty" json:"databases_list,omitempty"`
 	ModelMap                map[string]map[string]database.Model `yaml:"-" json:"-"`
 	Version                 Version                              `yaml:"-" json:"version"`
 	db                      map[string]*gorm.DB
 	Authentication          Authentication `yaml:"authentication" json:"authentication"`
 
-	sync.Mutex
+	sync.Mutex `yaml:"-"`
 }
 
 // Version version of backend config
@@ -266,6 +266,7 @@ type User struct {
 	Username     string     `yaml:"username" json:"username"`
 	Password     string     `yaml:"password" json:"password"`
 	Role         string     `yaml:"role" json:"role"`
+	Email        string     `yaml:"email" json:"email"`
 	DatabaseList []Database `yaml:"database" json:"database"`
 }
 

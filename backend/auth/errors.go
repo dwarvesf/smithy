@@ -4,19 +4,22 @@ import "net/http"
 
 var (
 	//ErrLogin return status 401 in login error
-	ErrLogin               = errLogin{}
-	ErrUnauthorized        = errUnauthorized{}
-	ErrInvalidUserName     = errInvalidUserName{}
-	ErrInvalidHTTPMethod   = errInvalidHTTPMethod{}
-	ErrInvalidURL          = errInvalidURL{}
-	ErrInvalidDatabaseName = errInvalidDatabaseName{}
-	ErrInvalidTableName    = errInvalidTableName{}
+	ErrLogin                = errLogin{}
+	ErrUnauthorized         = errUnauthorized{}
+	ErrInvalidUserName      = errInvalidUserName{}
+	ErrInvalidHTTPMethod    = errInvalidHTTPMethod{}
+	ErrInvalidURL           = errInvalidURL{}
+	ErrInvalidDatabaseName  = errInvalidDatabaseName{}
+	ErrInvalidTableName     = errInvalidTableName{}
+	ErrOldPasswordInvalid   = errOldPasswordInvalid{}
+	ErrRePasswordIsNotMatch = errRePasswordIsNotMatch{}
+	ErrPassWordIsVeryWeak   = errPassWordIsVeryWeak{}
 )
 
 type errLogin struct{}
 
 func (errLogin) Error() string {
-	return "User name or password is invalid"
+	return "user name or password is invalid"
 }
 
 func (errLogin) StatusCode() int {
@@ -80,6 +83,36 @@ func (errInvalidTableName) Error() string {
 }
 
 func (errInvalidTableName) StatusCode() int {
+	return http.StatusUnauthorized
+}
+
+type errOldPasswordInvalid struct{}
+
+func (errOldPasswordInvalid) Error() string {
+	return "old password is not correct"
+}
+
+func (errOldPasswordInvalid) StatusCode() int {
+	return http.StatusUnauthorized
+}
+
+type errRePasswordIsNotMatch struct{}
+
+func (errRePasswordIsNotMatch) Error() string {
+	return "new password confirmation is not match"
+}
+
+func (errRePasswordIsNotMatch) StatusCode() int {
+	return http.StatusUnauthorized
+}
+
+type errPassWordIsVeryWeak struct{}
+
+func (errPassWordIsVeryWeak) Error() string {
+	return "new password is very weak! Please try again"
+}
+
+func (errPassWordIsVeryWeak) StatusCode() int {
 	return http.StatusUnauthorized
 }
 

@@ -72,7 +72,8 @@ func makeChangePasswordEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, jwtAuth.ErrPassWordIsVeryWeak
 		}
 
-		tmpCfg := cloneConfig(cfg, userInfo, newPassword)
+		tmpCfg := cloneConfig(cfg)
+		updatePassword(tmpCfg, cfg, userInfo, newPassword)
 
 		// config name
 		wr := backendConfig.WriteYAML(os.Getenv("CONFIG_FILE_PATH"))
@@ -84,20 +85,23 @@ func makeChangePasswordEndpoint(s service.Service) endpoint.Endpoint {
 	}
 }
 
-func cloneConfig(cfg *backendConfig.Config, userInfo backendConfig.User, newPassword string) *backendConfig.Config {
-	tmpCfg := &backendConfig.Config{}
-	tmpCfg.SerectKey = cfg.SerectKey
-	tmpCfg.AgentURL = cfg.AgentURL
-	tmpCfg.PersistenceFileName = cfg.PersistenceFileName
-	tmpCfg.PersistenceSupport = cfg.PersistenceSupport
-
+//UpdatePassword is used for change password and reset password
+func updatePassword(tmpCfg, cfg *backendConfig.Config, userInfo backendConfig.User, newPassword string) {
 	for i, user := range cfg.Authentication.UserList {
 		if user.Username == userInfo.Username {
 			cfg.Authentication.UserList[i].Password = newPassword
 		}
 	}
 	tmpCfg.Authentication = cfg.Authentication
+}
 
+//cloneConfig clone a part of Config
+func cloneConfig(cfg *backendConfig.Config) *backendConfig.Config {
+	tmpCfg := &backendConfig.Config{}
+	tmpCfg.SerectKey = cfg.SerectKey
+	tmpCfg.AgentURL = cfg.AgentURL
+	tmpCfg.PersistenceFileName = cfg.PersistenceFileName
+	tmpCfg.PersistenceSupport = cfg.PersistenceSupport
 	return tmpCfg
 }
 

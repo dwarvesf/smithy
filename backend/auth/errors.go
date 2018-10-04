@@ -14,6 +14,7 @@ var (
 	ErrOldPasswordInvalid   = errOldPasswordInvalid{}
 	ErrRePasswordIsNotMatch = errRePasswordIsNotMatch{}
 	ErrPassWordIsVeryWeak   = errPassWordIsVeryWeak{}
+	ErrUserNameIsNotExist   = errUserNameIsNotExist{}
 )
 
 type errLogin struct{}
@@ -113,6 +114,16 @@ func (errPassWordIsVeryWeak) Error() string {
 }
 
 func (errPassWordIsVeryWeak) StatusCode() int {
+	return http.StatusUnauthorized
+}
+
+type errUserNameIsNotExist struct{}
+
+func (errUserNameIsNotExist) Error() string {
+	return "your account is not exist"
+}
+
+func (errUserNameIsNotExist) StatusCode() int {
 	return http.StatusUnauthorized
 }
 

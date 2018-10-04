@@ -201,6 +201,36 @@ func NewHTTPHandler(endpoints endpoints.Endpoints,
 			httptransport.EncodeJSONResponse,
 			options...,
 		).ServeHTTP)
+
+		r.Post("/identify", httptransport.NewServer(
+			endpoints.FindAccount,
+			decodeFindAccountRequest,
+			httptransport.EncodeJSONResponse,
+			options...,
+		).ServeHTTP)
+	})
+
+	r.Route("/reset", func(r chi.Router) {
+		r.Post("/send-mail", httptransport.NewServer(
+			endpoints.SendEmail,
+			decodeSendEmailRequest,
+			httptransport.EncodeJSONResponse,
+			options...,
+		).ServeHTTP)
+
+		r.Post("/confirm-code", httptransport.NewServer(
+			endpoints.ConfirmCode,
+			decodeConfirmCodeRequest,
+			httptransport.EncodeJSONResponse,
+			options...,
+		).ServeHTTP)
+
+		r.Post("/password", httptransport.NewServer(
+			endpoints.ResetPassword,
+			decodeResetPasswordRequest,
+			httptransport.EncodeJSONResponse,
+			options...,
+		).ServeHTTP)
 	})
 
 	r.Route("/config-versions", func(r chi.Router) {

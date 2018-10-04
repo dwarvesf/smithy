@@ -315,7 +315,11 @@ type User struct {
 	Password     string     `yaml:"password" json:"password"`
 	Role         string     `yaml:"role" json:"role"`
 	Email        string     `yaml:"email" json:"email"`
+<<<<<<< HEAD
 	GroupIDs     []string   `yaml:"groups" json:"groups"`
+=======
+	ConfirmCode  string     `yaml:"confirm_code" json:"confirm_code"`
+>>>>>>> send email & reset password
 	DatabaseList []Database `yaml:"database" json:"database"`
 }
 

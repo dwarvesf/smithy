@@ -29,20 +29,19 @@ func makeFindAccountEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, errors.New("failed to make type assertion")
 		}
 
-		var email string
-		ok, email = confirm(req.Username, s.SyncConfig().ConvertUserListToMap())
-		if !ok {
-			return nil, jwtAuth.ErrUserNameIsNotExist
+		email, err := confirm(req.Username, s.SyncConfig().ConvertUserListToMap())
+		if err != nil {
+			return nil, err
 		}
 
 		return FindAccountResponse{email}, nil
 	}
 }
 
-func confirm(username string, users map[string]BackendConfig.User) (bool, string) {
+func confirm(username string, users map[string]BackendConfig.User) (string, error) {
 	userInfo, ok := users[username]
 	if !ok {
-		return false, ""
+		return "", jwtAuth.ErrUserNameIsNotExist
 	}
-	return true, userInfo.Email
+	return userInfo.Email, nil
 }

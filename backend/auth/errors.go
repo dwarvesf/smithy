@@ -4,17 +4,18 @@ import "net/http"
 
 var (
 	//ErrLogin return status 401 in login error
-	ErrLogin                = errLogin{}
-	ErrUnauthorized         = errUnauthorized{}
-	ErrInvalidUserName      = errInvalidUserName{}
-	ErrInvalidHTTPMethod    = errInvalidHTTPMethod{}
-	ErrInvalidURL           = errInvalidURL{}
-	ErrInvalidDatabaseName  = errInvalidDatabaseName{}
-	ErrInvalidTableName     = errInvalidTableName{}
-	ErrOldPasswordInvalid   = errOldPasswordInvalid{}
-	ErrRePasswordIsNotMatch = errRePasswordIsNotMatch{}
-	ErrPassWordIsVeryWeak   = errPassWordIsVeryWeak{}
-	ErrUserNameIsNotExist   = errUserNameIsNotExist{}
+	ErrLogin                 = errLogin{}
+	ErrUnauthorized          = errUnauthorized{}
+	ErrInvalidUserName       = errInvalidUserName{}
+	ErrInvalidHTTPMethod     = errInvalidHTTPMethod{}
+	ErrInvalidURL            = errInvalidURL{}
+	ErrInvalidDatabaseName   = errInvalidDatabaseName{}
+	ErrInvalidTableName      = errInvalidTableName{}
+	ErrOldPasswordInvalid    = errOldPasswordInvalid{}
+	ErrRePasswordIsNotMatch  = errRePasswordIsNotMatch{}
+	ErrPassWordIsVeryWeak    = errPassWordIsVeryWeak{}
+	ErrUserNameIsNotExist    = errUserNameIsNotExist{}
+	ErrConfirmCodeIsNotMatch = errConfirmCodeIsNotMatch{}
 )
 
 type errLogin struct{}
@@ -124,6 +125,16 @@ func (errUserNameIsNotExist) Error() string {
 }
 
 func (errUserNameIsNotExist) StatusCode() int {
+	return http.StatusUnauthorized
+}
+
+type errConfirmCodeIsNotMatch struct{}
+
+func (errConfirmCodeIsNotMatch) Error() string {
+	return "confirm code is not match"
+}
+
+func (errConfirmCodeIsNotMatch) StatusCode() int {
 	return http.StatusUnauthorized
 }
 

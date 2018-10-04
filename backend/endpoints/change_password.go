@@ -3,7 +3,6 @@ package endpoints
 import (
 	"context"
 	"errors"
-	"log"
 	"math"
 	"os"
 	"regexp"
@@ -45,18 +44,20 @@ func makeChangePasswordEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, errors.New("failed to make type assertion")
 		}
 
+		_, claims, _ := jwtauth.FromContext(ctx)
+
 		var (
+			userName                = claims["username"].(string)
 			oldPassword             = req.OldPassword
 			newPassword             = req.NewPassword
 			newPasswordConfirmation = req.NewPasswordConfirmation
 		)
 
-		_, claims, _ := jwtauth.FromContext(ctx)
 		cfg := s.SyncConfig()
 		userMap := cfg.ConvertUserListToMap()
-		userInfo, ok := userMap[claims["username"].(string)]
+		userInfo, ok := userMap[userName]
 		if !ok {
-			return nil, errors.New("username is invalid")
+			return nil, jwtAuth.ErrUserNameIsNotExist
 		}
 
 		if userInfo.Password != oldPassword {
@@ -72,37 +73,16 @@ func makeChangePasswordEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, jwtAuth.ErrPassWordIsVeryWeak
 		}
 
-		tmpCfg := cloneConfig(cfg)
-		updatePassword(tmpCfg, cfg, userInfo, newPassword)
+		cfg.Authentication.UpdatePassWord(userName, newPassword)
 
 		// config name
 		wr := backendConfig.WriteYAML(os.Getenv("CONFIG_FILE_PATH"))
-		if err := wr.Write(tmpCfg); err != nil {
-			log.Fatalln(err)
+		if err := wr.Write(cfg); err != nil {
+			return nil, err
 		}
 
 		return ChangePasswordResponse{complexity}, nil
 	}
-}
-
-//UpdatePassword is used for change password and reset password
-func updatePassword(tmpCfg, cfg *backendConfig.Config, userInfo backendConfig.User, newPassword string) {
-	for i, user := range cfg.Authentication.UserList {
-		if user.Username == userInfo.Username {
-			cfg.Authentication.UserList[i].Password = newPassword
-		}
-	}
-	tmpCfg.Authentication = cfg.Authentication
-}
-
-//cloneConfig clone a part of Config
-func cloneConfig(cfg *backendConfig.Config) *backendConfig.Config {
-	tmpCfg := &backendConfig.Config{}
-	tmpCfg.SerectKey = cfg.SerectKey
-	tmpCfg.AgentURL = cfg.AgentURL
-	tmpCfg.PersistenceFileName = cfg.PersistenceFileName
-	tmpCfg.PersistenceSupport = cfg.PersistenceSupport
-	return tmpCfg
 }
 
 func checkPassword(pwd string) string {

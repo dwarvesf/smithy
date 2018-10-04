@@ -3,7 +3,6 @@ package endpoints
 import (
 	"context"
 	"errors"
-	"log"
 	"os"
 
 	"github.com/go-kit/kit/endpoint"
@@ -38,13 +37,6 @@ func makeResetPasswordEndpoint(s service.Service) endpoint.Endpoint {
 			newPasswordConfirmation = req.NewPasswordConfirmation
 		)
 
-		cfg := s.SyncConfig()
-		userMap := cfg.ConvertUserListToMap()
-		userInfo, ok := userMap[userName]
-		if !ok {
-			return nil, errors.New("username is invalid")
-		}
-
 		if newPassword != newPasswordConfirmation {
 			return nil, jwtAuth.ErrRePasswordIsNotMatch
 		}
@@ -54,13 +46,13 @@ func makeResetPasswordEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, jwtAuth.ErrPassWordIsVeryWeak
 		}
 
-		tmpCfg := cloneConfig(cfg)
-		updatePassword(tmpCfg, cfg, userInfo, newPassword)
+		cfg := s.SyncConfig()
+		cfg.Authentication.UpdateConfirmCode(userName, newPassword)
 
 		// config name
 		wr := backendConfig.WriteYAML(os.Getenv("CONFIG_FILE_PATH"))
-		if err := wr.Write(tmpCfg); err != nil {
-			log.Fatalln(err)
+		if err := wr.Write(cfg); err != nil {
+			return nil, err
 		}
 
 		return ResetPasswordResponse{complexity}, nil

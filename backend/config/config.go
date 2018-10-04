@@ -309,6 +309,24 @@ type Group struct {
 	DatabaseList []Database `yaml:"database" json:"database"`
 }
 
+// UpdatePassWord update password
+func (auth *Authentication) UpdatePassWord(userName, newPassword string) {
+	for i, user := range auth.UserList {
+		if user.Username == userName {
+			auth.UserList[i].Password = newPassword
+		}
+	}
+}
+
+// UpdateConfirmCode update confirm code
+func (auth *Authentication) UpdateConfirmCode(userName, newCode string) {
+	for i, user := range auth.UserList {
+		if user.Username == userName {
+			auth.UserList[i].ConfirmCode = newCode
+		}
+	}
+}
+
 // User .
 type User struct {
 	Username     string     `yaml:"username" json:"username"`

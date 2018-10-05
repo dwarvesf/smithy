@@ -22,7 +22,7 @@
 
 **1. Clone the repository**
 
-    git@github.com:dwarvesf/smithy.git
+    git clone git@github.com:dwarvesf/smithy.git
 
 **2. Start database or clear data and permisstion**
 

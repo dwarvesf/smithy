@@ -28,11 +28,11 @@
 
     make local-db
 
-**2. Start agent ( PORT 3000 )**
+**3. Start agent ( PORT 3000 )**
 
     make up-agent
 
-**3. Set permission for each table**
+**4. Set permission for each table**
 
     bin/smithy generate user
 

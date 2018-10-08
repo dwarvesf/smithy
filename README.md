@@ -24,15 +24,19 @@
 
     git clone https://github.com/dwarvesf/smithy
 
-**2. Start database or clear data and permisstion**
+**2. Build**
+
+    make build
+
+**3. Start database or clear data and permisstion**
 
     make local-db
 
-**3. Start agent ( PORT 3000 )**
+**4. Start agent ( PORT 3000 )**
 
     make up-agent
 
-**4. Set permission for each table**
+**5. Set permission for each table**
 
     bin/smithy generate user
 
@@ -40,7 +44,7 @@ Note: If user existed. Try it
 
     bin/smithy generate user -f
 
-**5. Start dashboard ( PORT 2999 )**
+**6. Start dashboard ( PORT 2999 )**
 
     make up-dashboard
 

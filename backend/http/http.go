@@ -153,6 +153,45 @@ func NewHTTPHandler(endpoints endpoints.Endpoints,
 			httptransport.EncodeJSONResponse,
 			options...,
 		).ServeHTTP)
+
+		r.Route("/groups", func(r chi.Router) {
+			r.Get("/", httptransport.NewServer(
+				endpoints.GroupList,
+				httptransport.NopRequestDecoder,
+				httptransport.EncodeJSONResponse,
+				options...,
+			).ServeHTTP)
+
+			r.Post("/", httptransport.NewServer(
+				endpoints.GroupCreate,
+				decodeCreateGroup,
+				httptransport.EncodeJSONResponse,
+				options...,
+			).ServeHTTP)
+
+			r.Route("/{group_id}", func(r chi.Router) {
+				r.Get("/", httptransport.NewServer(
+					endpoints.GroupRead,
+					decodeReadGroup,
+					httptransport.EncodeJSONResponse,
+					options...,
+				).ServeHTTP)
+
+				r.Delete("/", httptransport.NewServer(
+					endpoints.GroupDelete,
+					decodeDeleteGroup,
+					httptransport.EncodeJSONResponse,
+					options...,
+				).ServeHTTP)
+
+				r.Put("/", httptransport.NewServer(
+					endpoints.GroupUpdate,
+					decodeUpdateGroup,
+					httptransport.EncodeJSONResponse,
+					options...,
+				).ServeHTTP)
+			})
+		})
 	})
 
 	r.Route("/auth", func(r chi.Router) {

@@ -9,6 +9,7 @@ import (
 	"github.com/go-chi/jwtauth"
 
 	backendConfig "github.com/dwarvesf/smithy/backend/config"
+	"github.com/dwarvesf/smithy/common/database"
 )
 
 const (
@@ -57,86 +58,95 @@ func (jwt *JWT) VerifierHandler() func(http.Handler) http.Handler {
 	return jwtauth.Verifier(jwt.TokenAuth)
 }
 
+const (
+	URITypeAgentSync = 1
+	URITypeCRUD      = 2
+	URITypeGroup     = 3
+)
+
+// parse uri => type, dbName, tableName, method, ok
+func parseURI(uri string) (int, string, string, string, bool) {
+	uriParts := strings.Split(uri, "/")
+	if len(uriParts) <= 0 {
+		return 0, "", "", "", false
+	}
+
+	if uriParts[1] == "groups" {
+		return URITypeGroup, "", "", "", true
+	}
+
+	if len(uriParts) <= 5 {
+		return URITypeAgentSync, "", "", "", true
+	}
+
+	// dbName, tableName, method
+	return URITypeCRUD, uriParts[2], uriParts[4], uriParts[5], true
+}
+
 //Authorization return json in middleware authorization
 func Authorization(cfg *backendConfig.Config) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			_, claims, _ := jwtauth.FromContext(r.Context())
+			userName := claims["username"].(string)
 
-			modelMap, userMap := cfg.ModelMap, cfg.ConvertUserListToMap()
-			userInfo, ok := userMap[claims["username"].(string)]
+			// sample uri: /databases/fortress/table/users/create
+			t, dbName, tableName, method, ok := parseURI(r.RequestURI)
+
 			if !ok {
-				encodeJSONError(ErrInvalidUserName, w)
-				return
-			}
-			// POST: localhost:2999/databases/fortress/users/create
-			uriParts := strings.Split(r.RequestURI, "/")
-			if len(uriParts) <= 0 {
 				encodeJSONError(ErrInvalidURL, w)
 				return
-			} else if len(uriParts) <= 3 {
+			} else if t == URITypeAgentSync || t == URITypeGroup {
 				// case /agent-sync
 				if claims["role"] != Admin {
 					encodeJSONError(ErrUnauthorized, w)
 					return
 				}
-			} else if len(uriParts) <= 5 {
-				// case /agent-sync
-				if claims["role"] != Admin {
-					encodeJSONError(ErrUnauthorized, w)
-					return
-				}
-			} else {
+			} else if t == URITypeCRUD {
 				if claims["role"] != Admin && claims["role"] != User {
 					encodeJSONError(ErrUnauthorized, w)
 					return
 				}
-				var (
-					//fortress
-					dbName = uriParts[2]
-					//users
-					tableName = uriParts[4]
-				)
-				existDB := false
-				for _, db := range userInfo.DatabaseList {
-					// check dbName in URL with dbName in dashboard config
-					if db.DBName == dbName {
-						existDB = true
-						// check dbName is invalid in agent config
-						model, ok := modelMap[dbName]
-						if !ok {
-							encodeJSONError(ErrInvalidDatabaseName, w)
-							return
-						}
-						existTable := true
-						for _, table := range db.Tables {
-							if table.TableName == tableName {
-								existTable = true
-								// check table name is invalid in agent config
-								tableInfo, ok := model[tableName]
-								if !ok {
-									encodeJSONError(ErrInvalidTableName, w)
-									return
-								}
-								// get table ACL in agent config
-								ACLTable := tableInfo.ACL
-								// set ACLDeltail
-								table.MakeACLDetailFromACL()
-								// user just can access the url when user has user permisstion or table permisstion
-								if err := authorizeCRUD(r.Method, table, ACLTable); err != nil {
-									encodeJSONError(err, w)
-									return
-								}
-							}
-						}
-						if !existTable {
-							encodeJSONError(ErrInvalidTableName, w)
-							return
-						}
+
+				// check dbName is invalid in agent config
+				model, ok := cfg.ModelMap[dbName]
+				if !ok {
+					encodeJSONError(ErrInvalidDatabaseName, w)
+					return
+				}
+
+				// check table name is invalid in agent config
+				tableInfo, ok := model[tableName]
+				if !ok {
+					encodeJSONError(ErrInvalidTableName, w)
+					return
+				}
+
+				// get permission (user && group)
+				permissions, err := cfg.Authentication.GetFinalPermission(userName)
+				if err != nil {
+					encodeJSONError(err, w)
+					return
+				}
+
+				// default permission
+				finalPermission := &database.ACLDetail{
+					Insert: false,
+					Delete: false,
+					Select: false,
+					Update: false,
+				}
+				_, ok = permissions[dbName]
+				if ok {
+					p, ok := permissions[dbName][tableName]
+					if ok {
+						finalPermission = p
 					}
 				}
-				if !existDB {
-					encodeJSONError(ErrInvalidDatabaseName, w)
+
+				// user just can access the url when user has user permisstion or table permisstion
+				if err := authorizeCRUD(method, finalPermission, tableInfo.ACL); err != nil {
+					encodeJSONError(err, w)
 					return
 				}
 			}
@@ -174,23 +184,23 @@ func encodeJSONError(err error, w http.ResponseWriter) {
 	})
 }
 
-func authorizeCRUD(method string, table backendConfig.Table, ACLTable string) error {
+func authorizeCRUD(method string, acl *database.ACLDetail, ACLTable string) error {
 	// if user hadn't user permisstion or table permisstion. They would be rejected
 	switch method {
-	case "GET":
-		if !table.ACLDetail.Select || !strings.ContainsAny(ACLTable, "r") {
+	case "query":
+		if !acl.Select || !strings.ContainsAny(ACLTable, "r") {
 			return ErrUnauthorized
 		}
-	case "POST":
-		if !table.ACLDetail.Insert || !strings.ContainsAny(ACLTable, "c") {
+	case "create":
+		if !acl.Insert || !strings.ContainsAny(ACLTable, "c") {
 			return ErrUnauthorized
 		}
-	case "PUT":
-		if !table.ACLDetail.Update || !strings.ContainsAny(ACLTable, "u") {
+	case "update":
+		if !acl.Update || !strings.ContainsAny(ACLTable, "u") {
 			return ErrUnauthorized
 		}
-	case "DELETE":
-		if !table.ACLDetail.Delete || !strings.ContainsAny(ACLTable, "d") {
+	case "delete":
+		if !acl.Delete || !strings.ContainsAny(ACLTable, "d") {
 			return ErrUnauthorized
 		}
 	default:

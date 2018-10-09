@@ -160,7 +160,7 @@ func TestAuthorized(t *testing.T) {
 		wantErr    error
 	}{
 		{
-			name: "success",
+			name: "create record with permission",
 			args: args{
 				HTTPMethod: "POST",
 				url:        fmt.Sprintf("/databases/%s/table/users/create", dbTest[0]),
@@ -200,17 +200,16 @@ func TestAuthorized(t *testing.T) {
 			wantErr:    auth.ErrUnauthorized,
 		},
 		{
-			name: "Invalid HTTP method",
+			name: "query with permission. group has permission but user not",
 			args: args{
-				HTTPMethod: "PATCH",
-				url:        fmt.Sprintf("/databases/%s/table/users/create", dbTest[0]),
+				HTTPMethod: "POST",
+				url:        fmt.Sprintf("/databases/%s/table/users/query", dbTest[0]),
 				data: []byte(`{
-					"fields": [ "name" ],
-					"data":     [ "lorem ipsum" ]
+					"fields": 	[ "name" ]
 				}`),
 			},
 			wantStatus: http.StatusUnauthorized,
-			wantErr:    auth.ErrInvalidHTTPMethod,
+			wantErr:    auth.ErrUnauthorized,
 		},
 	}
 

@@ -4,16 +4,51 @@ persistence_support: boltdb
 persistence_file_name: persistent.db
 authentication:
   secret_key: lalala
+  groups:
+    - id: 1
+      name: admin
+      description: general admins
+      database:
+        - name: fortress
+          tables:
+          - name: users
+            acl: cr
+          - name: books
+            acl: rud
+        - name: test
+          tables:
+          - name: users
+            acl: cru
+          - name: books
+            acl: rud
+    - id: 2
+      name: user
+      description: normal users
+      database:
+        - name: fortress
+          tables:
+          - name: users
+            acl: cr
+          - name: books
+            acl: rud
+        - name: test
+          tables:
+          - name: users
+            acl: cru
+          - name: books
+            acl: rud
   users:
   - username: aaa
     password: cccccc1@!a
     role: admin
     email: aaa@gmai.com
+    groups:
+      - 2
     database:
     - name: fortress
       tables:
       - name: users
-        acl: cr
+        acl: cru
       - name: books
         acl: rud
     - name: test
@@ -26,6 +61,8 @@ authentication:
     password: abc
     role: user
     email: aaa@gmai.com
+    groups:
+      - 2
     database:
     - name: fortress
       tables:

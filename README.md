@@ -24,19 +24,23 @@
 
     git clone https://github.com/dwarvesf/smithy
 
-**2. Build**
+**2. Load environment variables**
+
+    make local-env
+
+**3. Build**
 
     make build
 
-**3. Start database or clear data and permisstion**
+**4. Start database or clear data and permisstion**
 
     make local-db
 
-**4. Start agent ( PORT 3000 )**
+**5. Start agent ( PORT 3000 )**
 
     make up-agent
 
-**5. Set permission for each table**
+**6. Set permission for each table**
 
     bin/smithy generate user
 

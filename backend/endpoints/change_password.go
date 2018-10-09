@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"math"
-	"os"
 	"regexp"
 	"strings"
 
@@ -12,7 +11,7 @@ import (
 	"github.com/go-kit/kit/endpoint"
 
 	jwtAuth "github.com/dwarvesf/smithy/backend/auth"
-	backendConfig "github.com/dwarvesf/smithy/backend/config"
+	"github.com/dwarvesf/smithy/backend/domain"
 	"github.com/dwarvesf/smithy/backend/service"
 )
 
@@ -53,14 +52,13 @@ func makeChangePasswordEndpoint(s service.Service) endpoint.Endpoint {
 			newPasswordConfirmation = req.NewPasswordConfirmation
 		)
 
-		cfg := s.SyncConfig()
-		userMap := cfg.ConvertUserListToMap()
-		userInfo, ok := userMap[userName]
-		if !ok {
-			return nil, jwtAuth.ErrUserNameIsNotExist
+		user := &domain.User{Username: userName}
+		user, err := s.UserService.Find(user)
+		if err != nil {
+			return nil, errors.New("username is invalid")
 		}
 
-		if userInfo.Password != oldPassword {
+		if user.Password != oldPassword {
 			return nil, jwtAuth.ErrOldPasswordInvalid
 		}
 
@@ -73,11 +71,9 @@ func makeChangePasswordEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, jwtAuth.ErrPassWordIsVeryWeak
 		}
 
-		cfg.Authentication.UpdatePassWord(userName, newPassword)
-
-		// config name
-		wr := backendConfig.WriteYAML(os.Getenv("CONFIG_FILE_PATH"))
-		if err := wr.Write(cfg); err != nil {
+		user.Password = newPassword
+		_, err = s.UserService.Update(user)
+		if err != nil {
 			return nil, err
 		}
 

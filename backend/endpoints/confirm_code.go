@@ -7,7 +7,7 @@ import (
 	"github.com/go-kit/kit/endpoint"
 
 	jwtAuth "github.com/dwarvesf/smithy/backend/auth"
-	BackendConfig "github.com/dwarvesf/smithy/backend/config"
+	"github.com/dwarvesf/smithy/backend/domain"
 	"github.com/dwarvesf/smithy/backend/service"
 )
 
@@ -29,24 +29,15 @@ func makeConfirmCodeEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, errors.New("failed to make type assertion")
 		}
 
-		err := confirmCode(req.Username, req.ConfirmCode, s.SyncConfig().ConvertUserListToMap())
+		user, err := s.UserService.Find(&domain.User{Username: req.Username})
 		if err != nil {
 			return nil, err
 		}
 
+		if user.ConfirmCode != req.ConfirmCode {
+			return nil, jwtAuth.ErrConfirmCodeIsNotMatch
+		}
+
 		return ConfirmCodeResponse{"success"}, nil
 	}
-}
-
-func confirmCode(username, confirmCode string, users map[string]BackendConfig.User) error {
-	userInfo, ok := users[username]
-	if !ok {
-		return jwtAuth.ErrUserNameIsNotExist
-	}
-
-	if userInfo.ConfirmCode != confirmCode {
-		return jwtAuth.ErrConfirmCodeIsNotMatch
-	}
-
-	return nil
 }

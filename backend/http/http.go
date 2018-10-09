@@ -11,15 +11,16 @@ import (
 	"github.com/go-kit/kit/log"
 	httptransport "github.com/go-kit/kit/transport/http"
 
-	auth "github.com/dwarvesf/smithy/backend/auth"
+	"github.com/dwarvesf/smithy/backend/auth"
 	backendConfig "github.com/dwarvesf/smithy/backend/config"
 	"github.com/dwarvesf/smithy/backend/endpoints"
+	"github.com/dwarvesf/smithy/backend/service"
 )
 
 // NewHTTPHandler http handler
 func NewHTTPHandler(endpoints endpoints.Endpoints,
 	logger log.Logger,
-	useCORS bool, cfg *backendConfig.Config) http.Handler {
+	useCORS bool, cfg *backendConfig.Config, s service.Service) http.Handler {
 	r := chi.NewRouter()
 
 	if useCORS {
@@ -60,7 +61,7 @@ func NewHTTPHandler(endpoints endpoints.Endpoints,
 	r.Group(func(r chi.Router) {
 		r.Use(jwtauth.Verifier(tokenAuth))
 		r.Use(auth.Authenticator)
-		r.Use(auth.Authorization(cfg))
+		r.Use(auth.Authorization(cfg, s))
 
 		r.Get("/agent-sync", httptransport.NewServer(
 			endpoints.AgentSync,
@@ -155,8 +156,10 @@ func NewHTTPHandler(endpoints endpoints.Endpoints,
 		).ServeHTTP)
 
 		r.Route("/groups", func(r chi.Router) {
+			r.Use(auth.RequireAdmin(s))
+
 			r.Get("/", httptransport.NewServer(
-				endpoints.GroupList,
+				endpoints.GroupFindAll,
 				httptransport.NopRequestDecoder,
 				httptransport.EncodeJSONResponse,
 				options...,
@@ -171,8 +174,8 @@ func NewHTTPHandler(endpoints endpoints.Endpoints,
 
 			r.Route("/{group_id}", func(r chi.Router) {
 				r.Get("/", httptransport.NewServer(
-					endpoints.GroupRead,
-					decodeReadGroup,
+					endpoints.GroupFind,
+					decodeFindGroup,
 					httptransport.EncodeJSONResponse,
 					options...,
 				).ServeHTTP)
@@ -187,6 +190,78 @@ func NewHTTPHandler(endpoints endpoints.Endpoints,
 				r.Put("/", httptransport.NewServer(
 					endpoints.GroupUpdate,
 					decodeUpdateGroup,
+					httptransport.EncodeJSONResponse,
+					options...,
+				).ServeHTTP)
+
+				r.Route("/permissions", func(r chi.Router) {
+					r.Get("/", httptransport.NewServer(
+						endpoints.PermissionFindByGroup,
+						decodePermissionFindByGroup,
+						httptransport.EncodeJSONResponse,
+						options...,
+					).ServeHTTP)
+				})
+			})
+		})
+
+		r.Route("/users", func(r chi.Router) {
+			r.Use(auth.RequireAdmin(s))
+
+			r.Get("/", httptransport.NewServer(
+				endpoints.UserFindAll,
+				httptransport.NopRequestDecoder,
+				httptransport.EncodeJSONResponse,
+				options...,
+			).ServeHTTP)
+
+			r.Post("/", httptransport.NewServer(
+				endpoints.UserCreate,
+				decodeCreateUser,
+				httptransport.EncodeJSONResponse,
+				options...,
+			).ServeHTTP)
+
+			r.Route("/{user_id}", func(r chi.Router) {
+				r.Get("/", httptransport.NewServer(
+					endpoints.UserFind,
+					decodeFindUser,
+					httptransport.EncodeJSONResponse,
+					options...,
+				).ServeHTTP)
+
+				r.Delete("/", httptransport.NewServer(
+					endpoints.UserDelete,
+					decodeDeleteUser,
+					httptransport.EncodeJSONResponse,
+					options...,
+				).ServeHTTP)
+
+				r.Put("/", httptransport.NewServer(
+					endpoints.UserUpdate,
+					decodeUpdateUser,
+					httptransport.EncodeJSONResponse,
+					options...,
+				).ServeHTTP)
+
+				r.Route("/permissions", func(r chi.Router) {
+					r.Get("/", httptransport.NewServer(
+						endpoints.PermissionFindByUser,
+						decodePermissionFindByUser,
+						httptransport.EncodeJSONResponse,
+						options...,
+					).ServeHTTP)
+				})
+			})
+		})
+
+		r.Route("/permissions", func(r chi.Router) {
+			r.Use(auth.RequireAdmin(s))
+
+			r.Route("/{permission_id}", func(r chi.Router) {
+				r.Put("/", httptransport.NewServer(
+					endpoints.PermissionUpdate,
+					decodePermissionUpdate,
 					httptransport.EncodeJSONResponse,
 					options...,
 				).ServeHTTP)

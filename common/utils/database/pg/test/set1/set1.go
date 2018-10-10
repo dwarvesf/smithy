@@ -97,7 +97,7 @@ func CreateModelList() []database.Model {
 	dm := []database.Model{
 		{
 			TableName: "users",
-			ACL:       "cr",
+			ACL:       "crd",
 			Columns: []database.Column{
 				{
 					Name:      "id",
@@ -146,13 +146,12 @@ func CreateConfig(t *testing.T) (*backendConfig.Config, func()) {
 			DBHostname:      utilDB.DBHost,
 			DBSSLModeOption: "disable",
 		},
-		Authentication: backendConfig.Authentication{
+		Authentication: &backendConfig.Authentication{
 			SerectKey: "lalala",
-			UserList: []backendConfig.User{
+			Groups: []backendConfig.Group{
 				{
-					Username: "aaa",
-					Password: "abc",
-					Role:     "admin",
+					ID:   "2",
+					Name: "user",
 					DatabaseList: []backendConfig.Database{
 						{
 							DBName: "test1",
@@ -160,6 +159,25 @@ func CreateConfig(t *testing.T) (*backendConfig.Config, func()) {
 								{
 									TableName: "users",
 									ACL:       "cru",
+								},
+							},
+						},
+					},
+				},
+			},
+			UserList: []backendConfig.User{
+				{
+					Username: "aaa",
+					Password: "abc",
+					Role:     "admin",
+					GroupIDs: []string{"2"},
+					DatabaseList: []backendConfig.Database{
+						{
+							DBName: "test1",
+							Tables: []backendConfig.Table{
+								{
+									TableName: "users",
+									ACL:       "cu",
 								},
 							},
 						},

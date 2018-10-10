@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 
@@ -46,11 +47,11 @@ type Config struct {
 	PersistenceFileName string `yaml:"persistence_file_name"`
 
 	database.ConnectionInfo `yaml:"-"`
-	Databases               []database.Database                  `yaml:"databases_list,omitempty" json:"databases_list,omitempty"`
+	Databases               []database.Database                  `yaml:"-" json:"databases_list,omitempty"`
 	ModelMap                map[string]map[string]database.Model `yaml:"-" json:"-"`
 	Version                 Version                              `yaml:"-" json:"version"`
 	db                      map[string]*gorm.DB
-	Authentication          Authentication `yaml:"authentication" json:"authentication"`
+	Authentication          *Authentication `yaml:"authentication" json:"authentication"`
 
 	sync.Mutex `yaml:"-"`
 }
@@ -257,8 +258,55 @@ func (c *Config) ConvertUserListToMap() map[string]User {
 
 // Authentication use to authenticate
 type Authentication struct {
-	SerectKey string `yaml:"secret_key" json:"secret_key"`
-	UserList  []User `yaml:"users" json:"users"`
+	SerectKey string  `yaml:"secret_key" json:"secret_key"`
+	Groups    []Group `yaml:"groups" json:"groups"`
+	UserList  []User  `yaml:"users" json:"users"`
+}
+
+// AddGroup .
+func (auth *Authentication) AddGroup(g *Group) {
+	g.ID = strconv.FormatInt(time.Now().Unix(), 10)
+	auth.Groups = append(auth.Groups, *g)
+}
+
+// DeleteGroup .
+func (auth *Authentication) DeleteGroup(groupID string) {
+	groups := auth.Groups
+	for i := 0; i < len(groups); i++ {
+		if groups[i].ID == groupID {
+			auth.Groups = append(groups[:i], groups[i+1:]...)
+		}
+	}
+}
+
+// UpdateGroup .
+func (auth *Authentication) UpdateGroup(groupID string, group *Group) {
+	groups := auth.Groups
+	for i := 0; i < len(groups); i++ {
+		if groups[i].ID == groupID {
+			if group.Name != "" {
+				auth.Groups[i].Name = group.Name
+			}
+
+			if group.Description != "" {
+				auth.Groups[i].Description = group.Description
+			}
+
+			if len(group.DatabaseList) > 0 {
+				auth.Groups[i].DatabaseList = group.DatabaseList
+			}
+
+			break
+		}
+	}
+}
+
+// Group .
+type Group struct {
+	ID           string     `yaml:"id" json:"id"`
+	Name         string     `yaml:"name" json:"name"`
+	Description  string     `yaml:"description" json:"description"`
+	DatabaseList []Database `yaml:"database" json:"database"`
 }
 
 // User .
@@ -267,7 +315,75 @@ type User struct {
 	Password     string     `yaml:"password" json:"password"`
 	Role         string     `yaml:"role" json:"role"`
 	Email        string     `yaml:"email" json:"email"`
+	GroupIDs     []string   `yaml:"groups" json:"groups"`
 	DatabaseList []Database `yaml:"database" json:"database"`
+}
+
+// ConvertGroupsToMap convert group list to map
+func (a Authentication) ConvertGroupsToMap() map[string]Group {
+	groupMap := make(map[string]Group)
+
+	for _, group := range a.Groups {
+		groupMap[group.ID] = group
+	}
+	return groupMap
+}
+
+// GetFinalPermission return map[dbname][table]permission
+func (a Authentication) GetFinalPermission(username string) (map[string]map[string]*database.ACLDetail, error) {
+	//find user
+	var user *User
+	for _, u := range a.UserList {
+		if u.Username == username {
+			user = &u
+			break
+		}
+	}
+	if user == nil {
+		//not found user
+		return nil, errors.New("Username is invalid")
+	}
+
+	res := make(map[string]map[string]*database.ACLDetail)
+
+	for _, db := range user.DatabaseList {
+		res[db.DBName] = make(map[string]*database.ACLDetail)
+
+		for _, table := range db.Tables {
+			ad := &database.ACLDetail{
+				Select: true,
+				Delete: true,
+				Insert: true,
+				Update: true,
+			}
+
+			table.MakeACLDetailFromACL()
+			ad.AND(table.ACLDetail)
+
+			// get permision from group by database/table
+			groupMap := a.ConvertGroupsToMap()
+			for _, groupID := range user.GroupIDs {
+				aclDetail := &database.ACLDetail{}
+
+				dbMap := convertDatasesListToMap(groupMap[groupID].DatabaseList)
+				dbGroup, ok := dbMap[db.DBName]
+				if ok {
+					tblMap := convertTableListToMap(dbGroup.Tables)
+					tblGroup, ok := tblMap[table.TableName]
+					if ok {
+						tblGroup.MakeACLDetailFromACL()
+						aclDetail.OR(tblGroup.ACLDetail)
+					}
+				}
+
+				ad.AND(*aclDetail)
+			}
+
+			res[db.DBName][table.TableName] = ad
+		}
+	}
+
+	return res, nil
 }
 
 type Database struct {
@@ -297,4 +413,22 @@ func (table *Table) MakeACLDetailFromACL() {
 	}
 
 	table.ACLDetail = ad
+}
+
+func convertDatasesListToMap(dbs []Database) map[string]Database {
+	dbMap := make(map[string]Database)
+
+	for _, db := range dbs {
+		dbMap[db.DBName] = db
+	}
+	return dbMap
+}
+
+func convertTableListToMap(tables []Table) map[string]Table {
+	tableMap := make(map[string]Table)
+
+	for _, table := range tables {
+		tableMap[table.TableName] = table
+	}
+	return tableMap
 }

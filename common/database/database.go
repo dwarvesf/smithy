@@ -182,6 +182,22 @@ type ACLDetail struct {
 	Delete bool
 }
 
+// AND .
+func (a *ACLDetail) AND(ad ACLDetail) {
+	a.Select = a.Select && ad.Select
+	a.Insert = a.Insert && ad.Insert
+	a.Update = a.Update && ad.Update
+	a.Delete = a.Delete && ad.Delete
+}
+
+// OR .
+func (a *ACLDetail) OR(ad ACLDetail) {
+	a.Select = a.Select || ad.Select
+	a.Insert = a.Insert || ad.Insert
+	a.Update = a.Update || ad.Update
+	a.Delete = a.Delete || ad.Delete
+}
+
 // Models array of model
 type Models []Model
 

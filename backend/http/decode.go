@@ -149,3 +149,37 @@ func decodeExecuteView(ctx context.Context, r *http.Request) (interface{}, error
 
 	return req, nil
 }
+
+func decodeCreateGroup(ctx context.Context, r *http.Request) (interface{}, error) {
+	req := endpoints.CreateGroupRequest{}
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	defer r.Body.Close()
+
+	return req, err
+}
+
+func decodeDeleteGroup(ctx context.Context, r *http.Request) (interface{}, error) {
+	groupID := chi.URLParam(r, "group_id")
+	req := endpoints.DeleteGroupRequest{GroupID: groupID}
+	return req, nil
+}
+
+func decodeReadGroup(ctx context.Context, r *http.Request) (interface{}, error) {
+	groupID := chi.URLParam(r, "group_id")
+	req := endpoints.ReadGroupRequest{GroupID: groupID}
+	return req, nil
+}
+
+func decodeUpdateGroup(ctx context.Context, r *http.Request) (interface{}, error) {
+	var req endpoints.UpdateGroupRequest
+
+	groupID := chi.URLParam(r, "group_id")
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	defer r.Body.Close()
+
+	req.GroupID = groupID
+
+	return req, err
+}

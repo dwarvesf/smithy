@@ -58,14 +58,17 @@ func (jwt *JWT) VerifierHandler() func(http.Handler) http.Handler {
 	return jwtauth.Verifier(jwt.TokenAuth)
 }
 
+// URIType .
+type URIType int
+
 const (
-	URITypeAgentSync = 1
-	URITypeCRUD      = 2
-	URITypeGroup     = 3
+	URITypeAgentSync URIType = 1
+	URITypeCRUD      URIType = 2
+	URITypeGroup     URIType = 3
 )
 
 // parse uri => type, dbName, tableName, method, ok
-func parseURI(uri string) (int, string, string, string, bool) {
+func parseURI(uri string) (URIType, string, string, string, bool) {
 	uriParts := strings.Split(uri, "/")
 	if len(uriParts) <= 0 {
 		return 0, "", "", "", false
@@ -91,18 +94,18 @@ func Authorization(cfg *backendConfig.Config) func(next http.Handler) http.Handl
 			userName := claims["username"].(string)
 
 			// sample uri: /databases/fortress/table/users/create
-			t, dbName, tableName, method, ok := parseURI(r.RequestURI)
+			uriType, dbName, tableName, method, ok := parseURI(r.RequestURI)
 
 			if !ok {
 				encodeJSONError(ErrInvalidURL, w)
 				return
-			} else if t == URITypeAgentSync || t == URITypeGroup {
+			} else if uriType == URITypeAgentSync || uriType == URITypeGroup {
 				// case /agent-sync
 				if claims["role"] != Admin {
 					encodeJSONError(ErrUnauthorized, w)
 					return
 				}
-			} else if t == URITypeCRUD {
+			} else if uriType == URITypeCRUD {
 				if claims["role"] != Admin && claims["role"] != User {
 					encodeJSONError(ErrUnauthorized, w)
 					return

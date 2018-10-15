@@ -1,7 +1,10 @@
 package service
 
 import (
+	"os"
+
 	"github.com/dwarvesf/smithy/backend"
+	"github.com/dwarvesf/smithy/backend/auth/gplus"
 	backendConfig "github.com/dwarvesf/smithy/backend/config"
 	groupSrv "github.com/dwarvesf/smithy/backend/service/group"
 	permissionSrv "github.com/dwarvesf/smithy/backend/service/permission"
@@ -19,6 +22,7 @@ type Service struct {
 	UserService       userSrv.Service
 	GroupService      groupSrv.Service
 	PermissionService permissionSrv.Service
+	*gplus.Provider
 }
 
 // NewService new dashboard handler
@@ -29,6 +33,7 @@ func NewService(cfg *backendConfig.Config, db *gorm.DB) (Service, error) {
 	}
 
 	sqlWriteReadDeleter := view.NewBoltWriteReadDeleter(cfg.PersistenceFileName)
+	provider := gplus.NewProvider(os.Getenv("GOOGLE_CLIENT_ID"), os.Getenv("GOOGLE_CLIENT_SECRET"))
 
 	return Service{
 		Wrapper:           backendConfig.NewWrapper(cfg),
@@ -37,5 +42,6 @@ func NewService(cfg *backendConfig.Config, db *gorm.DB) (Service, error) {
 		UserService:       userSrv.NewPGService(db),
 		GroupService:      groupSrv.NewPGService(db),
 		PermissionService: permissionSrv.NewPGService(db),
+		Provider:          provider,
 	}, nil
 }

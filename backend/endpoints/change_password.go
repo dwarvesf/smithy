@@ -46,7 +46,7 @@ func makeChangePasswordEndpoint(s service.Service) endpoint.Endpoint {
 		_, claims, _ := jwtauth.FromContext(ctx)
 
 		var (
-			userName                = claims["username"].(string)
+			UserID                  = claims["user_id"].(string)
 			oldPassword             = req.OldPassword
 			newPassword             = req.NewPassword
 			newPasswordConfirmation = req.NewPasswordConfirmation

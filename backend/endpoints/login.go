@@ -7,8 +7,9 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"golang.org/x/crypto/bcrypt"
 
-	jwtAuth "github.com/dwarvesf/smithy/backend/auth"
 	"github.com/dwarvesf/smithy/backend/domain"
+	auth "github.com/dwarvesf/smithy/backend/auth"
+	backendConfig "github.com/dwarvesf/smithy/backend/config"
 	"github.com/dwarvesf/smithy/backend/service"
 )
 

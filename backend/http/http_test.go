@@ -45,7 +45,7 @@ func TestNewHTTPHandler(t *testing.T) {
 	}{
 		{
 			name:       "Success",
-			header:     newAuthHeader(auth.New(secretKey, "aaa", Admin).Encode()),
+			header:     newAuthHeader(auth.New(secretKey, "aaa", Admin, false).Encode()),
 			wantStatus: http.StatusOK,
 		},
 		{
@@ -62,7 +62,7 @@ func TestNewHTTPHandler(t *testing.T) {
 		},
 		{
 			name:       "wrong secret key",
-			header:     newAuthHeader(auth.New("wrong", "aaa", Admin).Encode()),
+			header:     newAuthHeader(auth.New("wrong", "aaa", Admin, false).Encode()),
 			wantErr:    "signature is invalid",
 			wantStatus: http.StatusUnauthorized,
 		},
@@ -92,7 +92,7 @@ func TestNewHTTPHandler(t *testing.T) {
 		},
 		{
 			name:       "Client can't agent-sync",
-			header:     newAuthHeader(auth.New(secretKey, "bbb", User).Encode()),
+			header:     newAuthHeader(auth.New(secretKey, "bbb", User, false).Encode()),
 			wantErr:    "Unauthorized",
 			wantStatus: http.StatusUnauthorized,
 		},
@@ -146,6 +146,7 @@ func TestAuthorized(t *testing.T) {
 
 	headerAdmin := newAuthHeader(auth.New(secretKey, "aaa", Admin).Encode())
 	headerUser := newAuthHeader(auth.New(secretKey, "bbb", User).Encode())
+	header := newAuthHeader(auth.New(secretKey, "118168790790272259317", User, true).Encode())
 
 	//user ACL : cru
 	//table ACL : cr

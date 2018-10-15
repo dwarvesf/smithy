@@ -208,7 +208,6 @@ func decodeConfirmCodeRequest(ctx context.Context, r *http.Request) (interface{}
 	err := json.NewDecoder(r.Body).Decode(&req)
 	defer r.Body.Close()
 
-	req.GroupID = groupID
 	return req, err
 }
 

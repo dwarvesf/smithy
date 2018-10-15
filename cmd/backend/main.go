@@ -9,6 +9,7 @@ import (
 
 	"github.com/go-kit/kit/log"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
+	"github.com/joho/godotenv"
 
 	"github.com/dwarvesf/smithy/backend"
 	backendConfig "github.com/dwarvesf/smithy/backend/config"
@@ -17,12 +18,16 @@ import (
 	"github.com/dwarvesf/smithy/backend/service"
 )
 
-var (
-	httpAddr       = ":" + os.Getenv("PORT")
-	configFilePath = os.Getenv("CONFIG_FILE_PATH")
-)
-
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		panic(fmt.Sprintf("failed to load .env by errors: %v", err))
+	}
+	var (
+		httpAddr       = ":" + os.Getenv("PORT")
+		configFilePath = os.Getenv("CONFIG_FILE_PATH")
+	)
+
 	cfg, err := backend.NewConfig(backendConfig.ReadYAML(configFilePath))
 	if err != nil {
 		panic(err)

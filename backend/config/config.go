@@ -309,6 +309,24 @@ type Group struct {
 	DatabaseList []Database `yaml:"database" json:"database"`
 }
 
+// UpdatePassWord update password
+func (auth *Authentication) UpdatePassWord(userName, newPassword string) {
+	for i, user := range auth.UserList {
+		if user.Username == userName {
+			auth.UserList[i].Password = newPassword
+		}
+	}
+}
+
+// UpdateConfirmCode update confirm code
+func (auth *Authentication) UpdateConfirmCode(userName, newCode string) {
+	for i, user := range auth.UserList {
+		if user.Username == userName {
+			auth.UserList[i].ConfirmCode = newCode
+		}
+	}
+}
+
 // User .
 type User struct {
 	Username     string     `yaml:"username" json:"username"`
@@ -316,6 +334,7 @@ type User struct {
 	Role         string     `yaml:"role" json:"role"`
 	Email        string     `yaml:"email" json:"email"`
 	GroupIDs     []string   `yaml:"groups" json:"groups"`
+	ConfirmCode  string     `yaml:"confirm_code" json:"confirm_code"`
 	DatabaseList []Database `yaml:"database" json:"database"`
 }
 

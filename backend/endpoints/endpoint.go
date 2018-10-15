@@ -28,6 +28,10 @@ type Endpoints struct {
 	GroupDelete     endpoint.Endpoint
 	GroupRead       endpoint.Endpoint
 	GroupUpdate     endpoint.Endpoint
+	FindAccount     endpoint.Endpoint
+	SendEmail       endpoint.Endpoint
+	ConfirmCode     endpoint.Endpoint
+	ResetPassword   endpoint.Endpoint
 }
 
 // MakeServerEndpoints returns an Endpoints struct
@@ -53,5 +57,9 @@ func MakeServerEndpoints(s service.Service) Endpoints {
 		GroupDelete:     makeDeleteGroupEndpoint(s),
 		GroupRead:       makeReadGroupEndpoint(s),
 		GroupUpdate:     makeUpdateGroupEndpoint(s),
+		FindAccount:     makeFindAccountEndpoint(s),
+		SendEmail:       makeSendEmailEndpoint(s),
+		ConfirmCode:     makeConfirmCodeEndpoint(s),
+		ResetPassword:   makeResetPasswordEndpoint(s),
 	}
 }

@@ -159,6 +159,15 @@ func decodeCreateGroup(ctx context.Context, r *http.Request) (interface{}, error
 	return req, err
 }
 
+func decodeFindAccountRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	req := endpoints.FindAccountRequest{}
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	defer r.Body.Close()
+
+	return req, err
+}
+
 func decodeDeleteGroup(ctx context.Context, r *http.Request) (interface{}, error) {
 	groupID := chi.URLParam(r, "group_id")
 	req := endpoints.DeleteGroupRequest{GroupID: groupID}
@@ -180,6 +189,33 @@ func decodeUpdateGroup(ctx context.Context, r *http.Request) (interface{}, error
 	defer r.Body.Close()
 
 	req.GroupID = groupID
+
+	return req, err
+}
+
+func decodeSendEmailRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	req := endpoints.SendEmailRequest{}
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	defer r.Body.Close()
+
+	return req, err
+}
+
+func decodeConfirmCodeRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	req := endpoints.ConfirmCodeRequest{}
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	defer r.Body.Close()
+
+	return req, err
+}
+
+func decodeResetPasswordRequest(ctx context.Context, r *http.Request) (interface{}, error) {
+	req := endpoints.ResetPasswordRequest{}
+
+	err := json.NewDecoder(r.Body).Decode(&req)
+	defer r.Body.Close()
 
 	return req, err
 }

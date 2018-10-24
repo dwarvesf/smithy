@@ -13,6 +13,7 @@ import (
 
 	"github.com/dwarvesf/smithy/backend"
 	backendConfig "github.com/dwarvesf/smithy/backend/config"
+	pgConfig "github.com/dwarvesf/smithy/backend/config/database/pg"
 	"github.com/dwarvesf/smithy/backend/endpoints"
 	serviceHttp "github.com/dwarvesf/smithy/backend/http"
 	"github.com/dwarvesf/smithy/backend/service"
@@ -51,7 +52,17 @@ func main() {
 		logger = log.With(logger, "caller", log.DefaultCaller)
 	}
 
-	s, err := service.NewService(cfg)
+	pg, closeDB, err := pgConfig.NewPG()
+	defer closeDB()
+	if err != nil {
+		panic(fmt.Sprintf("fail to connect to dashboard database by error %v", err))
+	}
+
+	if err = pgConfig.SeedCreateTable(pg); err != nil {
+		panic(fmt.Sprintf("fail to migrate table by error %v", err))
+	}
+
+	s, err := service.NewService(cfg, pg)
 	if err != nil {
 		panic(err)
 	}
@@ -63,6 +74,7 @@ func main() {
 			logger,
 			os.Getenv("ENV") == "local" || os.Getenv("ENV") == "development",
 			cfg,
+			s,
 		)
 	}
 	errs := make(chan error)

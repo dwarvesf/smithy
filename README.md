@@ -52,6 +52,12 @@ Note: If user existed. Try it
 
     make up-dashboard
 
+This command will generate groups, users in database:
+
+Default:
+    username: admin
+    password: admin
+
 **Note:** From here. You just need make up-dashboard to start server. Because agent's data have been saved into your local PC
 
 ### Quick start

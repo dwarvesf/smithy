@@ -17,6 +17,7 @@ import (
 
 	auth "github.com/dwarvesf/smithy/backend/auth"
 	backendConfig "github.com/dwarvesf/smithy/backend/config"
+	utilPG "github.com/dwarvesf/smithy/backend/config/database/pg/util"
 	"github.com/dwarvesf/smithy/backend/endpoints"
 	"github.com/dwarvesf/smithy/backend/service"
 	utilTest "github.com/dwarvesf/smithy/common/utils/database/pg/test/set1"
@@ -143,7 +144,8 @@ func TestAuthorized(t *testing.T) {
 	tsDashboard := httptest.NewServer(initDashboardServer(t, cfg))
 	defer tsDashboard.Close()
 
-	header := newAuthHeader(auth.New(secretKey, "aaa", Admin).Encode())
+	headerAdmin := newAuthHeader(auth.New(secretKey, "aaa", Admin).Encode())
+	headerUser := newAuthHeader(auth.New(secretKey, "bbb", User).Encode())
 
 	//user ACL : cru
 	//table ACL : cr
@@ -151,6 +153,7 @@ func TestAuthorized(t *testing.T) {
 	type args struct {
 		HTTPMethod, url string
 		data            []byte
+		header          http.Header
 	}
 
 	tests := []struct {
@@ -164,6 +167,7 @@ func TestAuthorized(t *testing.T) {
 			args: args{
 				HTTPMethod: "POST",
 				url:        fmt.Sprintf("/databases/%s/table/users/create", dbTest[0]),
+				header:     headerAdmin,
 				data: []byte(`{
 					"fields": 	[ "name" ],
 					"data":     [ "lorem ipsum" ]
@@ -176,6 +180,7 @@ func TestAuthorized(t *testing.T) {
 			args: args{
 				HTTPMethod: "PUT",
 				url:        fmt.Sprintf("/databases/%s/table/users/update", dbTest[0]),
+				header:     headerAdmin,
 				data: []byte(`{
 						"fields": ["id", "name" ],
 						"data":     [1, "aaaaaa" ]
@@ -189,6 +194,7 @@ func TestAuthorized(t *testing.T) {
 			args: args{
 				HTTPMethod: "DELETE",
 				url:        fmt.Sprintf("/databases/%s/table/users/delete", dbTest[0]),
+				header:     headerAdmin,
 				data: []byte(`{
 					"filter": {
 						"fields": [ "id" ],
@@ -204,8 +210,40 @@ func TestAuthorized(t *testing.T) {
 			args: args{
 				HTTPMethod: "POST",
 				url:        fmt.Sprintf("/databases/%s/table/users/query", dbTest[0]),
+				header:     headerAdmin,
 				data: []byte(`{
 					"fields": 	[ "name" ]
+				}`),
+			},
+			wantStatus: http.StatusUnauthorized,
+			wantErr:    auth.ErrUnauthorized,
+		},
+		{
+			name: "create group with admin permission",
+			args: args{
+				HTTPMethod: "POST",
+				url:        fmt.Sprintf("/groups"),
+				header:     headerAdmin,
+				data: []byte(`{
+					"group": {
+						"name": "admin1",
+						"description": "lora"
+					}
+				}`),
+			},
+			wantStatus: http.StatusOK,
+		},
+		{
+			name: "create group with user permission",
+			args: args{
+				HTTPMethod: "POST",
+				url:        fmt.Sprintf("/groups"),
+				header:     headerUser,
+				data: []byte(`{
+					"group": {
+						"name": "admin1",
+						"description": "lora"
+					}
 				}`),
 			},
 			wantStatus: http.StatusUnauthorized,
@@ -215,13 +253,12 @@ func TestAuthorized(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			status, resp := testRequest(t, tsDashboard, tt.args.HTTPMethod, tt.args.url, header, tt.args.data)
+			status, resp := testRequest(t, tsDashboard, tt.args.HTTPMethod, tt.args.url, tt.args.header, tt.args.data)
 			if status != tt.wantStatus || (tt.wantErr != nil && resp != tt.wantErr.Error()) {
 				t.Errorf("Authorized() = (%v, %d), want (%v, %d)", resp, status, tt.wantErr, tt.wantStatus)
 			}
 		})
 	}
-
 }
 
 func TestLogin(t *testing.T) {
@@ -321,7 +358,14 @@ func initDashboardServer(t *testing.T, cfg *backendConfig.Config) http.Handler {
 		logger = log.With(logger, "caller", log.DefaultCaller)
 	}
 
-	s, err := service.NewService(cfg)
+	pg, _, _ := utilPG.CreateTestDatabase(t)
+	// defer closeDB()
+
+	if err := utilPG.SeedCreateTable(pg); err != nil {
+		panic(fmt.Sprintf("fail to migrate table by error %v", err))
+	}
+
+	s, err := service.NewService(cfg, pg)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -331,6 +375,7 @@ func initDashboardServer(t *testing.T, cfg *backendConfig.Config) http.Handler {
 		logger,
 		os.Getenv("ENV") == "local",
 		cfg,
+		s,
 	)
 }
 

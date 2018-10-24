@@ -7,9 +7,10 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/dwarvesf/smithy/backend/domain"
+
 	"github.com/go-kit/kit/endpoint"
 
-	backendConfig "github.com/dwarvesf/smithy/backend/config"
 	"github.com/dwarvesf/smithy/backend/email"
 	"github.com/dwarvesf/smithy/backend/service"
 )
@@ -46,12 +47,8 @@ func makeSendEmailEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, err
 		}
 
-		cfg := s.SyncConfig()
-		cfg.Authentication.UpdateConfirmCode(userName, code)
-
-		// config name
-		wr := backendConfig.WriteYAML(os.Getenv("CONFIG_FILE_PATH"))
-		if err := wr.Write(cfg); err != nil {
+		_, err := s.UserService.Update(&domain.User{Username: userName, ConfirmCode: code})
+		if err != nil {
 			return nil, err
 		}
 

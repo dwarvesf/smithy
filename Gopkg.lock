@@ -591,6 +591,14 @@
   version = "v0.8.0"
 
 [[projects]]
+  digest = "1:274f67cb6fed9588ea2521ecdac05a6d62a8c51c074c1fccc6a49a40ba80e925"
+  name = "github.com/satori/go.uuid"
+  packages = ["."]
+  pruneopts = "UT"
+  revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
+  version = "v1.2.0"
+
+[[projects]]
   digest = "1:043a68c728982a54355d57e347dd4b52ba5ab3fec50e7a57894b1baa80aa7a9e"
   name = "github.com/sendgrid/rest"
   packages = ["."]
@@ -686,9 +694,13 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:3f3a05ae0b95893d90b9b3b5afdb79a9b3d96e4e36e099d841ae602e4aca0da8"
+  digest = "1:001a4e7a40e50ff2ef32e2556bca50c4f77daa457db3ac6afc8bea9bb2122cfb"
   name = "golang.org/x/crypto"
-  packages = ["ssh/terminal"]
+  packages = [
+    "bcrypt",
+    "blowfish",
+    "ssh/terminal",
+  ]
   pruneopts = "UT"
   revision = "614d502a4dac94afa3a6ce146bd1736da82514c6"
 
@@ -793,10 +805,12 @@
     "github.com/jinzhu/gorm/dialects/postgres",
     "github.com/joho/godotenv",
     "github.com/mattn/anko/vm",
+    "github.com/satori/go.uuid",
     "github.com/sendgrid/sendgrid-go",
     "github.com/sendgrid/sendgrid-go/helpers/mail",
     "github.com/spf13/cobra",
     "github.com/volatiletech/sqlboiler/strmangle",
+    "golang.org/x/crypto/bcrypt",
     "gopkg.in/yaml.v2",
   ]
   solver-name = "gps-cdcl"

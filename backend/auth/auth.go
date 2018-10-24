@@ -2,6 +2,7 @@ package auth
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"strings"
 	"time"
@@ -9,7 +10,8 @@ import (
 	"github.com/go-chi/jwtauth"
 
 	backendConfig "github.com/dwarvesf/smithy/backend/config"
-	"github.com/dwarvesf/smithy/common/database"
+	"github.com/dwarvesf/smithy/backend/domain"
+	"github.com/dwarvesf/smithy/backend/service"
 )
 
 const (
@@ -28,8 +30,6 @@ type JWT struct {
 
 // New use in backend.go, use for create jwt object
 func New(secretKey string, username string, role string) *JWT {
-	{
-	}
 	jwt := &JWT{
 		Username:  username,
 		Role:      role,
@@ -37,6 +37,11 @@ func New(secretKey string, username string, role string) *JWT {
 	}
 
 	return jwt
+}
+
+//NewAuthenticate New JWT Authenticain
+func NewAuthenticate(c *backendConfig.Config, username string, rule string) *JWT {
+	return New(c.Authentication.SerectKey, username, rule)
 }
 
 // Encode use for encode jwt
@@ -87,7 +92,7 @@ func parseURI(uri string) (URIType, string, string, string, bool) {
 }
 
 //Authorization return json in middleware authorization
-func Authorization(cfg *backendConfig.Config) func(next http.Handler) http.Handler {
+func Authorization(cfg *backendConfig.Config, s service.Service) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			_, claims, _ := jwtauth.FromContext(r.Context())
@@ -126,25 +131,10 @@ func Authorization(cfg *backendConfig.Config) func(next http.Handler) http.Handl
 				}
 
 				// get permission (user && group)
-				permissions, err := cfg.Authentication.GetFinalPermission(userName)
+				finalPermission, err := s.UserService.GetPermissionUserAndGroup(&domain.User{Username: userName}, dbName, tableName)
 				if err != nil {
 					encodeJSONError(err, w)
 					return
-				}
-
-				// default permission
-				finalPermission := &database.ACLDetail{
-					Insert: false,
-					Delete: false,
-					Select: false,
-					Update: false,
-				}
-				_, ok = permissions[dbName]
-				if ok {
-					p, ok := permissions[dbName][tableName]
-					if ok {
-						finalPermission = p
-					}
 				}
 
 				// user just can access the url when user has user permisstion or table permisstion
@@ -154,6 +144,42 @@ func Authorization(cfg *backendConfig.Config) func(next http.Handler) http.Handl
 				}
 			}
 			// Token is authenticated, pass it through
+			next.ServeHTTP(w, r)
+		})
+	}
+}
+
+//RequireAdmin return authorization if is admin
+func RequireAdmin(s service.Service) func(next http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			_, claims, _ := jwtauth.FromContext(r.Context())
+			userName := claims["username"].(string)
+			role := claims["role"].(string)
+
+			user := &domain.User{Username: userName}
+			user, err := s.UserService.Find(user)
+			if err != nil {
+				encodeJSONError(err, w)
+				return
+			}
+
+			isAdmin := role == Admin
+			groups, err := s.GroupService.FindByUser(user)
+			if err != nil {
+				encodeJSONError(err, w)
+				return
+			}
+
+			for _, group := range groups {
+				isAdmin = isAdmin || (group.Role == Admin)
+			}
+
+			if !isAdmin {
+				encodeJSONError(errors.New("only admin can access"), w)
+				return
+			}
+
 			next.ServeHTTP(w, r)
 		})
 	}
@@ -187,7 +213,7 @@ func encodeJSONError(err error, w http.ResponseWriter) {
 	})
 }
 
-func authorizeCRUD(method string, acl *database.ACLDetail, ACLTable string) error {
+func authorizeCRUD(method string, acl *domain.Permission, ACLTable string) error {
 	// if user hadn't user permisstion or table permisstion. They would be rejected
 	switch method {
 	case "query":

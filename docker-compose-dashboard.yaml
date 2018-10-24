@@ -1,0 +1,20 @@
+version: '3.1'
+
+services:
+  smithy-dashboard-db:
+    image: postgres:10.4
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: example
+      POSTGRES_DB: smithy
+    ports:
+      - 5433:5432
+
+  smithy-dashboard-db-test:
+    image: postgres:10.4
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: example
+      POSTGRES_DB: test
+    ports:
+      - 5434:5432

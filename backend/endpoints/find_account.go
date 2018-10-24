@@ -4,10 +4,10 @@ import (
 	"context"
 	"errors"
 
+	"github.com/dwarvesf/smithy/backend/domain"
+
 	"github.com/go-kit/kit/endpoint"
 
-	jwtAuth "github.com/dwarvesf/smithy/backend/auth"
-	BackendConfig "github.com/dwarvesf/smithy/backend/config"
 	"github.com/dwarvesf/smithy/backend/service"
 )
 
@@ -29,19 +29,11 @@ func makeFindAccountEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, errors.New("failed to make type assertion")
 		}
 
-		email, err := confirm(req.Username, s.SyncConfig().ConvertUserListToMap())
+		user, err := s.UserService.Find(&domain.User{Username: req.Username})
 		if err != nil {
 			return nil, err
 		}
 
-		return FindAccountResponse{email}, nil
+		return FindAccountResponse{user.Email}, nil
 	}
-}
-
-func confirm(username string, users map[string]BackendConfig.User) (string, error) {
-	userInfo, ok := users[username]
-	if !ok {
-		return "", jwtAuth.ErrUserNameIsNotExist
-	}
-	return userInfo.Email, nil
 }

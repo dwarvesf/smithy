@@ -5,10 +5,10 @@ import (
 	"errors"
 
 	"github.com/go-kit/kit/endpoint"
+	"golang.org/x/crypto/bcrypt"
 
-	"github.com/dwarvesf/smithy/backend"
 	jwtAuth "github.com/dwarvesf/smithy/backend/auth"
-	BackendConfig "github.com/dwarvesf/smithy/backend/config"
+	"github.com/dwarvesf/smithy/backend/domain"
 	"github.com/dwarvesf/smithy/backend/service"
 )
 
@@ -36,31 +36,24 @@ func makeLoginEndpoint(s service.Service) endpoint.Endpoint {
 		// otherwise return login fail
 
 		// if login fail
-		ok, rule := login(req.Username, req.Password, s.SyncConfig().ConvertUserListToMap())
+		user := &domain.User{Username: req.Username}
+		user, err := s.UserService.Find(user)
+		if err != nil {
+			return nil, jwtAuth.ErrLogin
+		}
 
-		if !ok {
+		err = bcrypt.CompareHashAndPassword([]byte(user.PasswordDigest), []byte(req.Password))
+
+		if err != nil {
 			return nil, jwtAuth.ErrLogin
 		}
 
 		// create user authentication
-		loginAuth := backend.NewAuthenticate(s.SyncConfig(), req.Username, rule)
+		loginAuth := jwtAuth.NewAuthenticate(s.SyncConfig(), req.Username, user.Role)
 
 		// login success
 		// return json with jwt is attached
 
 		return LoginResponse{loginAuth.Encode()}, nil
 	}
-}
-
-func login(username, password string, users map[string]BackendConfig.User) (bool, string) {
-	userInfo, ok := users[username]
-
-	if !ok {
-		return false, ""
-	}
-	if userInfo.Password != password {
-		return false, ""
-	}
-
-	return true, userInfo.Role
 }

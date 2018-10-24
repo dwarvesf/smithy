@@ -3,12 +3,11 @@ package endpoints
 import (
 	"context"
 	"errors"
-	"os"
 
 	"github.com/go-kit/kit/endpoint"
 
 	jwtAuth "github.com/dwarvesf/smithy/backend/auth"
-	backendConfig "github.com/dwarvesf/smithy/backend/config"
+	"github.com/dwarvesf/smithy/backend/domain"
 	"github.com/dwarvesf/smithy/backend/service"
 )
 
@@ -46,12 +45,8 @@ func makeResetPasswordEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, jwtAuth.ErrPassWordIsVeryWeak
 		}
 
-		cfg := s.SyncConfig()
-		cfg.Authentication.UpdateConfirmCode(userName, newPassword)
-
-		// config name
-		wr := backendConfig.WriteYAML(os.Getenv("CONFIG_FILE_PATH"))
-		if err := wr.Write(cfg); err != nil {
+		_, err := s.UserService.Update(&domain.User{Username: userName, ConfirmCode: newPassword})
+		if err != nil {
 			return nil, err
 		}
 

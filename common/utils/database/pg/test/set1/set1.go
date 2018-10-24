@@ -148,56 +148,6 @@ func CreateConfig(t *testing.T) (*backendConfig.Config, func()) {
 		},
 		Authentication: &backendConfig.Authentication{
 			SerectKey: "lalala",
-			Groups: []backendConfig.Group{
-				{
-					ID:   "2",
-					Name: "user",
-					DatabaseList: []backendConfig.Database{
-						{
-							DBName: "test1",
-							Tables: []backendConfig.Table{
-								{
-									TableName: "users",
-									ACL:       "cru",
-								},
-							},
-						},
-					},
-				},
-			},
-			UserList: []backendConfig.User{
-				{
-					Username: "aaa",
-					Password: "abc",
-					Role:     "admin",
-					GroupIDs: []string{"2"},
-					DatabaseList: []backendConfig.Database{
-						{
-							DBName: "test1",
-							Tables: []backendConfig.Table{
-								{
-									TableName: "users",
-									ACL:       "cu",
-								},
-							},
-						},
-						{
-							DBName: "test2",
-							Tables: []backendConfig.Table{
-								{
-									TableName: "users",
-									ACL:       "cru",
-								},
-							},
-						},
-					},
-				},
-				{
-					Username: "bbb",
-					Password: "abc",
-					Role:     "user",
-				},
-			},
 		},
 	}
 

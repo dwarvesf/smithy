@@ -1,4 +1,4 @@
-.PHONY: build up-agent up-dashboard up-swagger local-db local-env unit-test integration-test lint-test test
+.PHONY: build up-agent up-dashboard up-swagger local-db local-db-dashboard local-env unit-test integration-test lint-test test
 
 LINT := $(shell command -v golangci-lint 2> /dev/null)
 
@@ -19,8 +19,12 @@ local-env:
 	@cat .env.example > .env
 
 local-db:
-	@docker-compose down
-	@docker-compose up -d
+	@docker-compose -p smithy down
+	@docker-compose -p smithy up -d
+
+local-db-dashboard:
+	@docker-compose -f docker-compose-dashboard.yaml -p smithy-dashboard down
+	@docker-compose -f docker-compose-dashboard.yaml -p smithy-dashboard up -d
 
 integration-test:
 	go test ./... -tags=integration -count=1

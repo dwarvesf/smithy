@@ -3,6 +3,8 @@ package service
 import (
 	"os"
 
+	"github.com/jinzhu/gorm"
+
 	"github.com/dwarvesf/smithy/backend"
 	"github.com/dwarvesf/smithy/backend/auth/gplus"
 	backendConfig "github.com/dwarvesf/smithy/backend/config"
@@ -11,7 +13,6 @@ import (
 	userSrv "github.com/dwarvesf/smithy/backend/service/user"
 	"github.com/dwarvesf/smithy/backend/sqlmapper"
 	"github.com/dwarvesf/smithy/backend/view"
-	"github.com/jinzhu/gorm"
 )
 
 // Service ...

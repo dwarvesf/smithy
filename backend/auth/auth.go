@@ -23,16 +23,18 @@ const (
 
 //JWT for user authenticaion
 type JWT struct {
-	UserID         string
+	UserName       string
+	Email          string
 	Role           string
 	IsEmailAccount bool
 	TokenAuth      *jwtauth.JWTAuth
 }
 
 // New use in backend.go, use for create jwt object
-func New(secretKey, userID, role string, isEmailAccount bool) *JWT {
+func New(secretKey, userName, email, role string, isEmailAccount bool) *JWT {
 	jwt := &JWT{
-		UserID:         userID,
+		UserName:       userName,
+		Email:          email,
 		Role:           role,
 		IsEmailAccount: isEmailAccount,
 		TokenAuth:      jwtauth.New("HS256", []byte(secretKey), nil),
@@ -44,7 +46,8 @@ func New(secretKey, userID, role string, isEmailAccount bool) *JWT {
 //NewAuthenticate New JWT Authenticain
 func NewAuthenticate(c *backendConfig.Config, setters ...Option) *JWT {
 	args := &JWT{
-		UserID:         "",
+		UserName:       "",
+		Email:          "",
 		Role:           "",
 		IsEmailAccount: false,
 	}
@@ -52,15 +55,22 @@ func NewAuthenticate(c *backendConfig.Config, setters ...Option) *JWT {
 		setter(args)
 	}
 
-	return New(c.Authentication.SerectKey, args.UserID, args.Role, args.IsEmailAccount)
+	return New(c.Authentication.SerectKey, args.UserName, args.Email, args.Role, args.IsEmailAccount)
 }
 
 type Option func(*JWT)
 
 //SetUserID is to set userid
-func SetUserID(userID string) Option {
+func SetUserName(userName string) Option {
 	return func(jwt *JWT) {
-		jwt.UserID = userID
+		jwt.UserName = userName
+	}
+}
+
+//SetUserEmail is to set email
+func SetEmail(email string) Option {
+	return func(jwt *JWT) {
+		jwt.Email = email
 	}
 }
 
@@ -88,7 +98,8 @@ func SetTokenAuth(jwtAuth *jwtauth.JWTAuth) Option {
 // Encode use for encode jwt
 func (jwt *JWT) Encode() string {
 	_, tokenString, err := jwt.TokenAuth.Encode(jwtauth.Claims{
-		"user_id":          jwt.UserID,
+		"username":         jwt.UserName,
+		"email":            jwt.Email,
 		"role":             jwt.Role,
 		"is_email_account": jwt.IsEmailAccount,
 	}.SetExpiryIn(time.Second * 3600 * 100))
@@ -112,7 +123,6 @@ const (
 	URITypeAgentSync URIType = iota + 1
 	URITypeCRUD
 	URITypeGroup
-	URILogOut
 )
 
 // parse uri => type, dbName, tableName, method, ok
@@ -124,10 +134,6 @@ func parseURI(uri string) (URIType, string, string, string, bool) {
 
 	if uriParts[1] == "groups" {
 		return URITypeGroup, "", "", "", true
-	}
-
-	if uriParts[1] == "log-out" {
-		return URILogOut, "", "", "", true
 	}
 
 	if len(uriParts) <= 5 {
@@ -144,12 +150,11 @@ func Authorization(cfg *backendConfig.Config, s service.Service) func(next http.
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			_, claims, _ := jwtauth.FromContext(r.Context())
 
-			// if isEmailAccount = true | userID = username
-			// else  userID = emailID
-			var (
-				isEmailAccount = claims["is_email_account"].(bool)
-				userID         = claims["user_id"].(string)
-			)
+			user := &domain.User{
+				Username:       claims["username"].(string),
+				IsEmailAccount: claims["is_email_account"].(bool),
+				Email:          claims["email"].(string),
+			}
 
 			// sample uri: /databases/fortress/table/users/create
 			uriType, dbName, tableName, method, ok := parseURI(r.RequestURI)
@@ -183,8 +188,7 @@ func Authorization(cfg *backendConfig.Config, s service.Service) func(next http.
 				}
 
 				// get permission (user && group)
-				finalPermission, err := s.UserService.GetPermissionUserAndGroup(&domain.User{Username: userName}, dbName, tableName)
-				//permissions, err := cfg.Authentication.GetFinalPermission(userID, isEmailAccount)
+				finalPermission, err := s.UserService.GetPermissionUserAndGroup(user, dbName, tableName)
 				if err != nil {
 					encodeJSONError(err, w)
 					return
@@ -207,17 +211,21 @@ func RequireAdmin(s service.Service) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			_, claims, _ := jwtauth.FromContext(r.Context())
-			userName := claims["username"].(string)
-			role := claims["role"].(string)
 
-			user := &domain.User{Username: userName}
+			user := &domain.User{
+				Username:       claims["username"].(string),
+				IsEmailAccount: claims["is_email_account"].(bool),
+				Email:          claims["email"].(string),
+				Role:           claims["role"].(string),
+			}
+
 			user, err := s.UserService.Find(user)
 			if err != nil {
 				encodeJSONError(err, w)
 				return
 			}
 
-			isAdmin := role == Admin
+			isAdmin := user.Role == Admin
 			groups, err := s.GroupService.FindByUser(user)
 			if err != nil {
 				encodeJSONError(err, w)
@@ -265,10 +273,10 @@ func RequireNormalUser(next http.Handler) http.Handler {
 
 		var (
 			isEmailAccount = claims["is_email_account"].(bool)
-			userID         = claims["user_id"].(string)
+			userName       = claims["username"].(string)
 		)
 
-		if userID == "" {
+		if userName == "" {
 			encodeJSONError(ErrInvalidUserName, w)
 			return
 		}

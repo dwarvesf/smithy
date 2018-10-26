@@ -1,6 +1,8 @@
 package user
 
 import (
+	"errors"
+
 	"github.com/jinzhu/gorm"
 
 	"github.com/dwarvesf/smithy/backend/domain"
@@ -25,14 +27,22 @@ func (s *pgService) Create(p *domain.User) error {
 // Update implement Update for User service
 func (s *pgService) Update(p *domain.User) (*domain.User, error) {
 	old := &domain.User{
-		Model:    domain.Model{ID: p.ID},
-		Username: p.Username,
+		Model:          domain.Model{ID: p.ID},
+		Username:       p.Username,
+		Email:          p.Email,
+		IsEmailAccount: p.IsEmailAccount,
 	}
 
 	//if don't have id, find by username
 	if old.ID.IsZero() {
-		if err := s.db.Where("username = ?", old.Username).First(old).Error; err != nil {
-			return nil, err
+		if !old.IsEmailAccount && old.Username != "" {
+			if err := s.db.Where("username = ?", old.Username).First(old).Error; err != nil {
+				return nil, err
+			}
+		} else {
+			if err := s.db.Where("email = ?", old.Email).First(old).Error; err != nil {
+				return nil, err
+			}
 		}
 	} else {
 		if err := s.db.Find(old).Error; err != nil {
@@ -66,9 +76,20 @@ func (s *pgService) Update(p *domain.User) (*domain.User, error) {
 // Find implement Find for User service
 func (s *pgService) Find(p *domain.User) (*domain.User, error) {
 	res := p
+	if p.IsEmailAccount && p.Username != "" {
+		return nil, errors.New("username is invalid")
+	}
+
 	if res.ID.IsZero() {
-		if err := s.db.Where("username = ?", res.Username).First(res).Error; err != nil {
-			return nil, err
+		if !p.IsEmailAccount || p.Username != "" {
+			if err := s.db.Where("username = ?", p.Username).First(p).Error; err != nil {
+				return nil, err
+			}
+		} else {
+			if err := s.db.Where("email = ?", p.Email).First(p).Error; err != nil {
+				return nil, err
+			}
+
 		}
 	} else {
 		if err := s.db.Find(&res).Error; err != nil {
@@ -109,8 +130,14 @@ func (s *pgService) GetPermission(p *domain.User, dbName string, tableName strin
 // GetPermissionUserAndGroup implement get permission (include group permission) for User service
 func (s *pgService) GetPermissionUserAndGroup(p *domain.User, dbName string, tableName string) (*domain.Permission, error) {
 	if p.ID.IsZero() {
-		if err := s.db.Where("username = ?", p.Username).First(p).Error; err != nil {
-			return nil, err
+		if !p.IsEmailAccount {
+			if err := s.db.Where("username = ?", p.Username).First(p).Error; err != nil {
+				return nil, err
+			}
+		} else {
+			if err := s.db.Where("email = ?", p.Email).First(p).Error; err != nil {
+				return nil, err
+			}
 		}
 	}
 

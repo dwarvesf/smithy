@@ -7,9 +7,8 @@ import (
 	"github.com/go-kit/kit/endpoint"
 	"golang.org/x/crypto/bcrypt"
 
+	"github.com/dwarvesf/smithy/backend/auth"
 	"github.com/dwarvesf/smithy/backend/domain"
-	auth "github.com/dwarvesf/smithy/backend/auth"
-	backendConfig "github.com/dwarvesf/smithy/backend/config"
 	"github.com/dwarvesf/smithy/backend/service"
 )
 
@@ -40,17 +39,17 @@ func makeLoginEndpoint(s service.Service) endpoint.Endpoint {
 		user := &domain.User{Username: req.Username}
 		user, err := s.UserService.Find(user)
 		if err != nil {
-			return nil, jwtAuth.ErrLogin
+			return nil, auth.ErrLogin
 		}
 
 		err = bcrypt.CompareHashAndPassword([]byte(user.PasswordDigest), []byte(req.Password))
 
 		if err != nil {
-			return nil, jwtAuth.ErrLogin
+			return nil, auth.ErrLogin
 		}
 
 		// create user authentication
-		loginAuth := jwtAuth.NewAuthenticate(s.SyncConfig(), req.Username, user.Role)
+		loginAuth := auth.NewAuthenticate(s.SyncConfig(), auth.SetUserName(req.Username), auth.SetRole(user.Role))
 
 		// login success
 		// return json with jwt is attached

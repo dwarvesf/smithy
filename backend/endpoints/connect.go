@@ -3,54 +3,49 @@ package endpoints
 import (
 	"context"
 	"errors"
-	"os"
 
 	"github.com/go-kit/kit/endpoint"
 
-	auth "github.com/dwarvesf/smithy/backend/auth"
-	backendConfig "github.com/dwarvesf/smithy/backend/config"
+	"github.com/dwarvesf/smithy/backend/auth"
 	"github.com/dwarvesf/smithy/backend/service"
 )
 
 // ConnectGoogleRequest
-type ConnectGoogleRequest struct {
-	Code string `json:"code"`
+type LoginGoogleRequest struct {
+	Code        string `json:"code"`
+	RedirectURI string `json:"redirect_uri"`
 }
 
 // ConnectGoogleResponse
-type ConnectGoogleResponse struct {
+type LoginGoogleResponse struct {
 	AccessToken string `json:"access_token"`
 }
 
-func makeConnectGoogleEndpoint(s service.Service) endpoint.Endpoint {
+func makeLoginGoogleEndpoint(s service.Service) endpoint.Endpoint {
 	return func(ctx context.Context, request interface{}) (interface{}, error) {
-		req, ok := request.(ConnectGoogleRequest)
+		req, ok := request.(LoginGoogleRequest)
 		if !ok {
 			return nil, errors.New("failed to make type assertion")
 		}
 
-		email, err := s.Provider.CompleteUserAuth(req.Code)
+		user, err := s.Provider.CompleteUserAuth(req.Code, req.RedirectURI)
 		if err != nil {
 			return nil, err
 		}
 
-		user := &backendConfig.User{Email: email, IsEmailAccount: true, Role: "user"}
-
-		cfg := s.Wrapper.SyncConfig()
-		if cfg.Authentication.IsEmailAccountExist(email.ID) {
-			cfg.Authentication.UpdateUser(user)
+		if userExist, _ := s.UserService.Find(user); userExist == nil {
+			err = s.UserService.Create(user)
 		} else {
-			cfg.Authentication.AddUser(user)
+			user, err = s.UserService.Update(user)
 		}
 
-		wr := backendConfig.WriteYAML(os.Getenv("CONFIG_FILE_PATH"))
-		if err := wr.Write(cfg); err != nil {
+		if err != nil {
 			return nil, err
 		}
 
 		// create token jwt
-		authToken := auth.NewAuthenticate(cfg, auth.SetUserID(email.ID), auth.SetRole("user"), auth.SetIsEmailAccount(true))
+		authToken := auth.NewAuthenticate(s.SyncConfig(), auth.SetEmail(user.Email), auth.SetRole(user.Role), auth.SetIsEmailAccount(true))
 
-		return ConnectGoogleResponse{authToken.Encode()}, nil
+		return LoginGoogleResponse{authToken.Encode()}, nil
 	}
 }

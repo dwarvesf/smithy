@@ -2,6 +2,7 @@ package gplus
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,8 +13,7 @@ import (
 
 	"golang.org/x/oauth2"
 
-	auth "github.com/dwarvesf/smithy/backend/auth"
-	backendConfig "github.com/dwarvesf/smithy/backend/config"
+	"github.com/dwarvesf/smithy/backend/domain"
 )
 
 const (
@@ -28,9 +28,8 @@ const (
 // one manually.
 func NewProvider(clientKey, secret string, scopes ...string) *Provider {
 	p := &Provider{
-		ClientKey:   clientKey,
-		Secret:      secret,
-		CallbackURL: "postmessage",
+		ClientKey: clientKey,
+		Secret:    secret,
 	}
 	p.Config = newConfig(p)
 	return p
@@ -46,7 +45,7 @@ type Provider struct {
 }
 
 func (p *Provider) Client() *http.Client {
-	return auth.HTTPClientWithFallBack(p.HTTPClient)
+	return HTTPClientWithFallBack(p.HTTPClient)
 }
 
 // GetAuthURL get url to direct to permission form
@@ -55,54 +54,51 @@ func (p *Provider) GetAuthURL() string {
 }
 
 //FetchUser will go to Google+ and access basic information about the user.
-func (p *Provider) FetchUser(tok *oauth2.Token) (backendConfig.Email, error) {
-	user := auth.UserInfo{
+func (p *Provider) FetchUser(tok *oauth2.Token) (*domain.User, error) {
+	userInfo := UserInfo{
 		AccessToken:  tok.AccessToken,
 		RefreshToken: tok.RefreshToken,
 		ExpiresAt:    tok.Expiry.String(),
 	}
 
-	email := backendConfig.Email{}
-
-	if user.AccessToken == "" {
+	if userInfo.AccessToken == "" {
 		// data is not yet retrieved since accessToken is still empty
-		return email, errors.New("gplus cannot get user information without accessToken")
+		return &domain.User{}, errors.New("gplus cannot get user information without accessToken")
 	}
 
-	response, err := p.Client().Get(endpointProfile + "?access_token=" + url.QueryEscape(user.AccessToken))
+	response, err := p.Client().Get(endpointProfile + "?access_token=" + url.QueryEscape(userInfo.AccessToken))
 	if err != nil {
-		return email, err
+		return &domain.User{}, err
 	}
 	defer response.Body.Close()
 
 	if response.StatusCode != http.StatusOK {
-		return email, fmt.Errorf("gplus responded with a %d trying to fetch user information", response.StatusCode)
+		return &domain.User{}, fmt.Errorf("gplus responded with a %d trying to fetch user information", response.StatusCode)
 	}
 
 	bits, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return email, err
+		return &domain.User{}, err
 	}
 
-	err = json.NewDecoder(bytes.NewReader(bits)).Decode(&user.RawData)
+	err = json.NewDecoder(bytes.NewReader(bits)).Decode(&userInfo.RawData)
 	if err != nil {
-		return email, err
+		return &domain.User{}, err
 	}
 
-	err = userFromReader(bytes.NewReader(bits), &user)
-
-	email = backendConfig.Email{
-		ID:           user.UserID,
-		Name:         user.Email,
-		AccessToken:  tok.AccessToken,
-		RefreshToken: tok.RefreshToken,
-		ExpiresAt:    tok.Expiry.String(),
+	err = userFromReader(bytes.NewReader(bits), &userInfo)
+	if err != nil {
+		return &domain.User{}, err
 	}
 
-	return email, err
+	return &domain.User{
+		Email:          userInfo.Email,
+		IsEmailAccount: true,
+		Role:           "user",
+	}, nil
 }
 
-func userFromReader(reader io.Reader, user *auth.UserInfo) error {
+func userFromReader(reader io.Reader, user *UserInfo) error {
 	u := struct {
 		ID        string `json:"id"`
 		Email     string `json:"email"`
@@ -147,18 +143,19 @@ func newConfig(provider *Provider) *oauth2.Config {
 }
 
 //CompleteUserAuth complete the auth process
-func (p *Provider) CompleteUserAuth(code string) (backendConfig.Email, error) {
+func (p *Provider) CompleteUserAuth(code, redirectURL string) (*domain.User, error) {
 	// get new token and retry fetch
+	p.Config.RedirectURL = redirectURL
 	tok, err := p.Exchange(code)
 	if err != nil {
-		return backendConfig.Email{}, err
+		return &domain.User{}, err
 	}
 	return p.FetchUser(tok)
 }
 
 //Exchange to get new token
 func (p *Provider) Exchange(code string) (*oauth2.Token, error) {
-	token, err := p.Config.Exchange(auth.ContextForClient(p.Client()), code)
+	token, err := p.Config.Exchange(ContextForClient(p.Client()), code)
 	if err != nil {
 		return nil, err
 	}
@@ -168,4 +165,39 @@ func (p *Provider) Exchange(code string) (*oauth2.Token, error) {
 	}
 
 	return token, err
+}
+
+// ContextForClient provides a context for use with oauth2.
+func ContextForClient(h *http.Client) context.Context {
+	if h == nil {
+		return context.Background()
+	}
+	return context.WithValue(context.Background(), oauth2.HTTPClient, h)
+}
+
+// HTTPClientWithFallBack to be used in all fetch operations.
+func HTTPClientWithFallBack(h *http.Client) *http.Client {
+	if h != nil {
+		return h
+	}
+	return http.DefaultClient
+}
+
+// UserInfo contains the information common amongst most OAuth and OAuth2 providers.
+// All of the "raw" datafrom the provider can be found in the `RawData` field.
+type UserInfo struct {
+	RawData           map[string]interface{}
+	Provider          string
+	Email             string
+	Name              string
+	FirstName         string
+	LastName          string
+	NickName          string
+	Description       string
+	UserID            string
+	AvatarURL         string
+	AccessToken       string
+	AccessTokenSecret string
+	RefreshToken      string
+	ExpiresAt         string
 }

@@ -49,9 +49,8 @@ type Endpoints struct {
 	PermissionFindByUser  endpoint.Endpoint
 	PermissionUpdate      endpoint.Endpoint
 
-	AuthInformation  endpoint.Endpoint
-	ConnectGoogle    endpoint.Endpoint
-	DisConnectGoogle endpoint.Endpoint
+	AuthInformation endpoint.Endpoint
+	LoginGoogle     endpoint.Endpoint
 }
 
 // MakeServerEndpoints returns an Endpoints struct
@@ -94,8 +93,7 @@ func MakeServerEndpoints(s service.Service) Endpoints {
 		PermissionFindByUser:  endpointPermission.MakePermissionFindByUserEndpoint(s),
 		PermissionUpdate:      endpointPermission.MakeUpdatePermissionEndpoint(s),
 
-		AuthInformation:  makeAuthInformationEndpoint(s),
-		ConnectGoogle:    makeConnectGoogleEndpoint(s),
-		DisConnectGoogle: makeDisConnectGoogleEndpoint(s),
+		AuthInformation: makeAuthInformationEndpoint(s),
+		LoginGoogle:     makeLoginGoogleEndpoint(s),
 	}
 }

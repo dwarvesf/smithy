@@ -70,13 +70,6 @@ func NewHTTPHandler(endpoints endpoints.Endpoints,
 			options...,
 		).ServeHTTP)
 
-		r.Get("/logout", httptransport.NewServer(
-			endpoints.DisConnectGoogle,
-			httptransport.NopRequestDecoder,
-			httptransport.EncodeJSONResponse,
-			options...,
-		).ServeHTTP)
-
 		r.Route("/databases/{db_name}", func(r chi.Router) {
 			r.Route("/view", func(r chi.Router) {
 				r.Post("/", httptransport.NewServer(
@@ -303,8 +296,8 @@ func NewHTTPHandler(endpoints endpoints.Endpoints,
 		).ServeHTTP)
 
 		r.Post("/gplus", httptransport.NewServer(
-			endpoints.ConnectGoogle,
-			decodeConnectGoogle,
+			endpoints.LoginGoogle,
+			decodeLoginGoogle,
 			httptransport.EncodeJSONResponse,
 			options...,
 		).ServeHTTP)

@@ -16,6 +16,7 @@ var (
 	ErrPassWordIsVeryWeak    = errPassWordIsVeryWeak{}
 	ErrUserNameIsNotExist    = errUserNameIsNotExist{}
 	ErrConfirmCodeIsNotMatch = errConfirmCodeIsNotMatch{}
+	ErrRequireNormalUser     = errRequireNormalUser{}
 )
 
 type errLogin struct{}
@@ -135,6 +136,16 @@ func (errConfirmCodeIsNotMatch) Error() string {
 }
 
 func (errConfirmCodeIsNotMatch) StatusCode() int {
+	return http.StatusUnauthorized
+}
+
+type errRequireNormalUser struct{}
+
+func (errRequireNormalUser) Error() string {
+	return "email account can't change or reset password"
+}
+
+func (errRequireNormalUser) StatusCode() int {
 	return http.StatusUnauthorized
 }
 

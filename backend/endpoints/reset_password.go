@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 
-	jwtAuth "github.com/dwarvesf/smithy/backend/auth"
+	"github.com/dwarvesf/smithy/backend/auth"
 	"github.com/dwarvesf/smithy/backend/domain"
 	"github.com/dwarvesf/smithy/backend/service"
 )
@@ -37,15 +37,15 @@ func makeResetPasswordEndpoint(s service.Service) endpoint.Endpoint {
 		)
 
 		if newPassword != newPasswordConfirmation {
-			return nil, jwtAuth.ErrRePasswordIsNotMatch
+			return nil, auth.ErrRePasswordIsNotMatch
 		}
 
 		complexity := checkPassword(newPasswordConfirmation)
 		if complexity == VeryWeak || complexity == TooShort {
-			return nil, jwtAuth.ErrPassWordIsVeryWeak
+			return nil, auth.ErrPassWordIsVeryWeak
 		}
 
-		_, err := s.UserService.Update(&domain.User{Username: userName, ConfirmCode: newPassword})
+		_, err := s.UserService.Update(&domain.User{Username: userName, Password: newPassword})
 		if err != nil {
 			return nil, err
 		}

@@ -14,8 +14,9 @@ type User struct {
 	Password       string       `yaml:"-" json:"-"`
 	PasswordDigest string       `yaml:"password_digest" json:"password_digest"`
 	Role           string       `yaml:"role" json:"role"`
-	Email          string       `yaml:"email" json:"email"`
 	ConfirmCode    string       `yaml:"confirm_code" json:"confirm_code"`
+	IsEmailAccount bool         `yaml:"is_email_account" json:"is_email_account"`
+	Email          string       `yaml:"email" json:"email"`
 	Groups         []Group      `gorm:"many2many:user_groups;" yaml:"-" json:"-"`
 	Permissions    []Permission `yaml:"-" json:"-"`
 }

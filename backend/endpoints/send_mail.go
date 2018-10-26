@@ -7,15 +7,14 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/dwarvesf/smithy/backend/domain"
-
 	"github.com/go-kit/kit/endpoint"
 
+	"github.com/dwarvesf/smithy/backend/domain"
 	"github.com/dwarvesf/smithy/backend/email"
 	"github.com/dwarvesf/smithy/backend/service"
 )
 
-// SendMailRequest store SendMail structer
+//SendMailRequest store SendMail structer
 type SendEmailRequest struct {
 	Username string `json:"username"`
 	Email    string `json:"email"`
@@ -24,6 +23,7 @@ type SendEmailRequest struct {
 // SendMailResponse store SendMail respone
 type SendEmailResponse struct {
 	Status string `json:"status"`
+	Code   string `json:"code"`
 }
 
 func makeSendEmailEndpoint(s service.Service) endpoint.Endpoint {
@@ -52,6 +52,6 @@ func makeSendEmailEndpoint(s service.Service) endpoint.Endpoint {
 			return nil, err
 		}
 
-		return SendEmailResponse{"success"}, nil
+		return SendEmailResponse{Status: "success", Code: code}, nil
 	}
 }

@@ -66,6 +66,7 @@ func SeedCreateTable(db *gorm.DB) error {
 	seedUserID := domain.MustGetUUIDFromString("18a5cac3-1024-43c8-acbe-22be76006041")
 	seedPermission1ID := domain.MustGetUUIDFromString("18a5cac3-1024-43c8-acbe-22be76006042")
 	seedPermission2ID := domain.MustGetUUIDFromString("18a5cac3-1024-43c8-acbe-22be76006043")
+
 	group1 := domain.Group{
 		Model:       domain.Model{ID: seedGroup1ID},
 		Name:        "admin",
@@ -73,11 +74,12 @@ func SeedCreateTable(db *gorm.DB) error {
 		Role:        "admin",
 		Users: []domain.User{
 			{
-				Model:    domain.Model{ID: seedUserID},
-				Username: "admin",
-				Role:     "admin",
-				Password: "admin",
-				Email:    "aaa@gmai.com",
+				Model:          domain.Model{ID: seedUserID},
+				Username:       "admin",
+				Role:           "admin",
+				Password:       "admin",
+				Email:          "aaa@gmai.com",
+				IsEmailAccount: false,
 			},
 		},
 	}

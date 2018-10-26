@@ -47,12 +47,19 @@ func makeChangePasswordEndpoint(s service.Service) endpoint.Endpoint {
 
 		var (
 			userName                = claims["username"].(string)
+			email                   = claims["email"].(string)
+			isEmailAccount          = claims["is_email_account"].(bool)
 			oldPassword             = req.OldPassword
 			newPassword             = req.NewPassword
 			newPasswordConfirmation = req.NewPasswordConfirmation
 		)
 
-		user := &domain.User{Username: userName}
+		user := &domain.User{
+			Username:       userName,
+			Email:          email,
+			IsEmailAccount: isEmailAccount,
+		}
+
 		user, err := s.UserService.Find(user)
 		if err != nil {
 			return nil, errors.New("username is invalid")

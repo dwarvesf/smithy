@@ -191,6 +191,14 @@
   version = "v1.1.1"
 
 [[projects]]
+  digest = "1:97df918963298c287643883209a2c3f642e6593379f97ab400c2a2e219ab647d"
+  name = "github.com/golang/protobuf"
+  packages = ["proto"]
+  pruneopts = "UT"
+  revision = "aa810b61a9c79d51363740d207bb46cf8e620ed5"
+  version = "v1.2.0"
+
+[[projects]]
   branch = "master"
   digest = "1:c173565780edcf5d43c5f983be0e9085266764465422d4ad230355abd2e0d252"
   name = "github.com/golangci/check"
@@ -719,6 +727,17 @@
 
 [[projects]]
   branch = "master"
+  digest = "1:28b360454e161aae382c007449bcb1296087b5b52b4f37623bba0f9f9d7207f4"
+  name = "golang.org/x/oauth2"
+  packages = [
+    ".",
+    "internal",
+  ]
+  pruneopts = "UT"
+  revision = "c57b0facaced709681d9f90397429b9430a74754"
+
+[[projects]]
+  branch = "master"
   digest = "1:7710ea76bd73d3154e86eaf2db8b36a6dffbd6114e4e37b516f1d232c03ddd8d"
   name = "golang.org/x/sys"
   packages = [
@@ -761,6 +780,22 @@
   ]
   pruneopts = "UT"
   revision = "90fa682c2a6e6a37b3a1364ce2fe1d5e41af9d6d"
+
+[[projects]]
+  digest = "1:6247f76e55a1e1a5c19a81e2d4b4dff6730461eeb5bbb0a16dd4a8ec8637ee93"
+  name = "google.golang.org/appengine"
+  packages = [
+    "internal",
+    "internal/base",
+    "internal/datastore",
+    "internal/log",
+    "internal/remote_api",
+    "internal/urlfetch",
+    "urlfetch",
+  ]
+  pruneopts = "UT"
+  revision = "ae0ab99deb4dc413a2b4bd6c8bdd0eb67f1e4d06"
+  version = "v1.2.0"
 
 [[projects]]
   digest = "1:342378ac4dcb378a5448dd723f0784ae519383532f5e70ade24132c4c8693202"
@@ -811,6 +846,8 @@
     "github.com/spf13/cobra",
     "github.com/volatiletech/sqlboiler/strmangle",
     "golang.org/x/crypto/bcrypt",
+    "golang.org/x/net/context",
+    "golang.org/x/oauth2",
     "gopkg.in/yaml.v2",
   ]
   solver-name = "gps-cdcl"

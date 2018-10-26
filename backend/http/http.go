@@ -148,12 +148,16 @@ func NewHTTPHandler(endpoints endpoints.Endpoints,
 			options...,
 		).ServeHTTP)
 
-		r.Post("/settings/password", httptransport.NewServer(
-			endpoints.ChangePassword,
-			decodeChangePasswordRequest,
-			httptransport.EncodeJSONResponse,
-			options...,
-		).ServeHTTP)
+		r.Route("/settings", func(r chi.Router) {
+			r.Use(auth.RequireNormalUser)
+
+			r.Post("/password", httptransport.NewServer(
+				endpoints.ChangePassword,
+				decodeChangePasswordRequest,
+				httptransport.EncodeJSONResponse,
+				options...,
+			).ServeHTTP)
+		})
 
 		r.Route("/groups", func(r chi.Router) {
 			r.Use(auth.RequireAdmin(s))
@@ -283,6 +287,20 @@ func NewHTTPHandler(endpoints endpoints.Endpoints,
 			httptransport.EncodeJSONResponse,
 			options...,
 		).ServeHTTP)
+
+		r.Get("/information", httptransport.NewServer(
+			endpoints.AuthInformation,
+			httptransport.NopRequestDecoder,
+			httptransport.EncodeJSONResponse,
+			options...,
+		).ServeHTTP)
+
+		r.Post("/gplus", httptransport.NewServer(
+			endpoints.LoginGoogle,
+			decodeLoginGoogle,
+			httptransport.EncodeJSONResponse,
+			options...,
+		).ServeHTTP)
 	})
 
 	r.Route("/reset", func(r chi.Router) {
@@ -306,6 +324,7 @@ func NewHTTPHandler(endpoints endpoints.Endpoints,
 			httptransport.EncodeJSONResponse,
 			options...,
 		).ServeHTTP)
+
 	})
 
 	r.Route("/config-versions", func(r chi.Router) {

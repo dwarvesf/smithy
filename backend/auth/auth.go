@@ -23,32 +23,85 @@ const (
 
 //JWT for user authenticaion
 type JWT struct {
-	Username  string
-	Role      string
-	TokenAuth *jwtauth.JWTAuth
+	UserName       string
+	Email          string
+	Role           string
+	IsEmailAccount bool
+	TokenAuth      *jwtauth.JWTAuth
 }
 
 // New use in backend.go, use for create jwt object
-func New(secretKey string, username string, role string) *JWT {
+func New(secretKey, userName, email, role string, isEmailAccount bool) *JWT {
 	jwt := &JWT{
-		Username:  username,
-		Role:      role,
-		TokenAuth: jwtauth.New("HS256", []byte(secretKey), nil),
+		UserName:       userName,
+		Email:          email,
+		Role:           role,
+		IsEmailAccount: isEmailAccount,
+		TokenAuth:      jwtauth.New("HS256", []byte(secretKey), nil),
 	}
 
 	return jwt
 }
 
 //NewAuthenticate New JWT Authenticain
-func NewAuthenticate(c *backendConfig.Config, username string, rule string) *JWT {
-	return New(c.Authentication.SerectKey, username, rule)
+func NewAuthenticate(c *backendConfig.Config, setters ...Option) *JWT {
+	args := &JWT{
+		UserName:       "",
+		Email:          "",
+		Role:           "",
+		IsEmailAccount: false,
+	}
+	for _, setter := range setters {
+		setter(args)
+	}
+
+	return New(c.Authentication.SerectKey, args.UserName, args.Email, args.Role, args.IsEmailAccount)
+}
+
+type Option func(*JWT)
+
+//SetUserID is to set userid
+func SetUserName(userName string) Option {
+	return func(jwt *JWT) {
+		jwt.UserName = userName
+	}
+}
+
+//SetUserEmail is to set email
+func SetEmail(email string) Option {
+	return func(jwt *JWT) {
+		jwt.Email = email
+	}
+}
+
+//SetRole is to set role
+func SetRole(role string) Option {
+	return func(jwt *JWT) {
+		jwt.Role = role
+	}
+}
+
+//SetIsEmailAccount is to set isEmailAccount
+func SetIsEmailAccount(isEmailAccount bool) Option {
+	return func(jwt *JWT) {
+		jwt.IsEmailAccount = isEmailAccount
+	}
+}
+
+//SetTokenAuth is to set tokenauth
+func SetTokenAuth(jwtAuth *jwtauth.JWTAuth) Option {
+	return func(jwt *JWT) {
+		jwt.TokenAuth = jwtAuth
+	}
 }
 
 // Encode use for encode jwt
 func (jwt *JWT) Encode() string {
 	_, tokenString, err := jwt.TokenAuth.Encode(jwtauth.Claims{
-		"username": jwt.Username,
-		"role":     jwt.Role,
+		"username":         jwt.UserName,
+		"email":            jwt.Email,
+		"role":             jwt.Role,
+		"is_email_account": jwt.IsEmailAccount,
 	}.SetExpiryIn(time.Second * 3600 * 100))
 
 	if err != nil {
@@ -67,9 +120,9 @@ func (jwt *JWT) VerifierHandler() func(http.Handler) http.Handler {
 type URIType int
 
 const (
-	URITypeAgentSync URIType = 1
-	URITypeCRUD      URIType = 2
-	URITypeGroup     URIType = 3
+	URITypeAgentSync URIType = iota + 1
+	URITypeCRUD
+	URITypeGroup
 )
 
 // parse uri => type, dbName, tableName, method, ok
@@ -96,11 +149,15 @@ func Authorization(cfg *backendConfig.Config, s service.Service) func(next http.
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			_, claims, _ := jwtauth.FromContext(r.Context())
-			userName := claims["username"].(string)
+
+			user := &domain.User{
+				Username:       claims["username"].(string),
+				IsEmailAccount: claims["is_email_account"].(bool),
+				Email:          claims["email"].(string),
+			}
 
 			// sample uri: /databases/fortress/table/users/create
 			uriType, dbName, tableName, method, ok := parseURI(r.RequestURI)
-
 			if !ok {
 				encodeJSONError(ErrInvalidURL, w)
 				return
@@ -131,7 +188,7 @@ func Authorization(cfg *backendConfig.Config, s service.Service) func(next http.
 				}
 
 				// get permission (user && group)
-				finalPermission, err := s.UserService.GetPermissionUserAndGroup(&domain.User{Username: userName}, dbName, tableName)
+				finalPermission, err := s.UserService.GetPermissionUserAndGroup(user, dbName, tableName)
 				if err != nil {
 					encodeJSONError(err, w)
 					return
@@ -154,17 +211,21 @@ func RequireAdmin(s service.Service) func(next http.Handler) http.Handler {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			_, claims, _ := jwtauth.FromContext(r.Context())
-			userName := claims["username"].(string)
-			role := claims["role"].(string)
 
-			user := &domain.User{Username: userName}
+			user := &domain.User{
+				Username:       claims["username"].(string),
+				IsEmailAccount: claims["is_email_account"].(bool),
+				Email:          claims["email"].(string),
+				Role:           claims["role"].(string),
+			}
+
 			user, err := s.UserService.Find(user)
 			if err != nil {
 				encodeJSONError(err, w)
 				return
 			}
 
-			isAdmin := role == Admin
+			isAdmin := user.Role == Admin
 			groups, err := s.GroupService.FindByUser(user)
 			if err != nil {
 				encodeJSONError(err, w)
@@ -197,6 +258,31 @@ func Authenticator(next http.Handler) http.Handler {
 
 		if token == nil || !token.Valid {
 			encodeJSONError(err, w)
+			return
+		}
+
+		// Token is authenticated, pass it through
+		next.ServeHTTP(w, r)
+	})
+}
+
+//Authenticator use for authentication user
+func RequireNormalUser(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		_, claims, _ := jwtauth.FromContext(r.Context())
+
+		var (
+			isEmailAccount = claims["is_email_account"].(bool)
+			userName       = claims["username"].(string)
+		)
+
+		if userName == "" {
+			encodeJSONError(ErrInvalidUserName, w)
+			return
+		}
+
+		if isEmailAccount {
+			encodeJSONError(ErrRequireNormalUser, w)
 			return
 		}
 

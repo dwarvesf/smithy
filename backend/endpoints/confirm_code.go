@@ -6,7 +6,7 @@ import (
 
 	"github.com/go-kit/kit/endpoint"
 
-	jwtAuth "github.com/dwarvesf/smithy/backend/auth"
+	"github.com/dwarvesf/smithy/backend/auth"
 	"github.com/dwarvesf/smithy/backend/domain"
 	"github.com/dwarvesf/smithy/backend/service"
 )
@@ -35,7 +35,7 @@ func makeConfirmCodeEndpoint(s service.Service) endpoint.Endpoint {
 		}
 
 		if user.ConfirmCode != req.ConfirmCode {
-			return nil, jwtAuth.ErrConfirmCodeIsNotMatch
+			return nil, auth.ErrConfirmCodeIsNotMatch
 		}
 
 		return ConfirmCodeResponse{"success"}, nil

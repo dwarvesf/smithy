@@ -249,3 +249,11 @@ func (c *Config) openNewDBConnection(dbName string) (*gorm.DB, error) {
 type Authentication struct {
 	SerectKey string `yaml:"secret_key" json:"secret_key"`
 }
+
+type Email struct {
+	ID           string `yaml:"id" json:"id"`
+	Name         string `yaml:"name" json:"name"`
+	AccessToken  string `yaml:"access_token" json:"access_token"`
+	RefreshToken string `yaml:"refresh_token" json:"refresh_token"`
+	ExpiresAt    string `yaml:"expires_at" json:"expires_at"`
+}
